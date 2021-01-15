@@ -10,6 +10,12 @@ import torch.optim as optim
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
+def tv_norm(X, eps=1e-3):
+    X = X - torch.mean(X,dim=1, keepdim=True)
+    X = X/torch.sqrt(torch.sum(X**2,dim=1,keepdim=True) + eps)
+    return X
+
+
 def getConnectivity(X):
 
     D = torch.pow(X,2).sum(dim=1,keepdim=True) + torch.pow(X,2).sum(dim=1,keepdim=True).transpose(2,1) - 2*X@X.t()
@@ -76,38 +82,42 @@ class graphDiffusionLayer(nn.Module):
 
 
 
-nnodes = 512
-II = torch.torch.zeros(nnodes*(nnodes-1)//2)
-JJ = torch.torch.zeros(nnodes*(nnodes-1)//2)
 
-k = 0
-for i in range(nnodes):
-    for j in range(i+1,nnodes):
-        II[k] = i
-        JJ[k] = j
-        k+=1
+###### Testing stuff
+tests = 0
+if tests:
+    nnodes = 512
+    II = torch.torch.zeros(nnodes*(nnodes-1)//2)
+    JJ = torch.torch.zeros(nnodes*(nnodes-1)//2)
 
-G = graph(II,JJ,nnodes)
-x  = torch.randn(1,128,nnodes)
+    k = 0
+    for i in range(nnodes):
+        for j in range(i+1,nnodes):
+            II[k] = i
+            JJ[k] = j
+            k+=1
 
-test_adjoint = 0
-if test_adjoint:
-    # Adjoint test
-    w = torch.rand(G.iInd.shape[0])
-    y = G.nodeGrad(x,w)
-    ne = G.iInd.numel()
-    z = torch.randn(1,128,ne)
-    a1 = torch.sum(z*y)
-    v = G.edgeDiv(z,w)
-    a2 = torch.sum(v*x)
-    print(a1,a2)
+    G = graph(II,JJ,nnodes)
+    x  = torch.randn(1,128,nnodes)
+
+    test_adjoint = 0
+    if test_adjoint:
+        # Adjoint test
+        w = torch.rand(G.iInd.shape[0])
+        y = G.nodeGrad(x,w)
+        ne = G.iInd.numel()
+        z = torch.randn(1,128,ne)
+        a1 = torch.sum(z*y)
+        v = G.edgeDiv(z,w)
+        a2 = torch.sum(v*x)
+        print(a1,a2)
 
 
 
-nhid = 8
-L = graphDiffusionLayer(G,x.shape[1],nhid)
+    nhid = 8
+    L = graphDiffusionLayer(G,x.shape[1],nhid)
 
-y = L(x)
+    y = L(x)
 
 
 
