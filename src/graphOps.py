@@ -18,10 +18,12 @@ def tv_norm(X, eps=1e-3):
 
 def getConnectivity(X):
 
-    D = torch.pow(X,2).sum(dim=1,keepdim=True) + torch.pow(X,2).sum(dim=1,keepdim=True).transpose(2,1) - 2*X@X.t()
-    D = F.softshrink(D,D.mean()/2)
-    II, JJ = torch.find(torch.D>1e-5)
-    return II, JJ
+    D = torch.pow(X,2).sum(dim=1,keepdim=True) + \
+        torch.pow(X,2).sum(dim=1,keepdim=True).transpose(2,1) - \
+        2*X.transpose(2,1)@X
+    D = F.softshrink(D,D.mean())
+    IJ = torch.nonzero(D>1e-5)
+    return IJ
 
 class graph(nn.Module):
 
@@ -35,6 +37,11 @@ class graph(nn.Module):
         g = w*(x[:,:,self.iInd] - x[:,:,self.jInd])
         return g
 
+    def nodeAve(self,x,w=1.0):
+        g = w*(x[:,:,self.iInd] + x[:,:,self.jInd])/2.0
+        return g
+
+
     def edgeDiv(self,g, w=1.0):
         x = torch.zeros(g.shape[0],g.shape[1],self.nnodes,device=g.device)
         #z = torch.zeros(g.shape[0],g.shape[1],self.nnodes,device=g.device)
@@ -47,6 +54,19 @@ class graph(nn.Module):
         x.index_add_(2, self.jInd, -w*g)
 
         return x
+
+    def edgeAve(self,g, w=1.0, method='max'):
+        x1 = torch.zeros(g.shape[0],g.shape[1],self.nnodes,device=g.device)
+        x2 = torch.zeros(g.shape[0],g.shape[1],self.nnodes,device=g.device)
+
+        x1.index_add_(2, self.iInd, w*g)
+        x2.index_add_(2, self.jInd, w*g)
+        if method=='max':
+            x = torch.max(x1,x2)
+        else:
+            x = (x1 + x2)/2
+        return x
+
 
     def nodeLap(self,x,w=1.0):
         g = self.nodeGrad(x,w)
@@ -84,40 +104,40 @@ class graphDiffusionLayer(nn.Module):
 
 
 ###### Testing stuff
-tests = 0
-if tests:
-    nnodes = 512
-    II = torch.torch.zeros(nnodes*(nnodes-1)//2)
-    JJ = torch.torch.zeros(nnodes*(nnodes-1)//2)
-
-    k = 0
-    for i in range(nnodes):
-        for j in range(i+1,nnodes):
-            II[k] = i
-            JJ[k] = j
-            k+=1
-
-    G = graph(II,JJ,nnodes)
-    x  = torch.randn(1,128,nnodes)
-
-    test_adjoint = 0
-    if test_adjoint:
-        # Adjoint test
-        w = torch.rand(G.iInd.shape[0])
-        y = G.nodeGrad(x,w)
-        ne = G.iInd.numel()
-        z = torch.randn(1,128,ne)
-        a1 = torch.sum(z*y)
-        v = G.edgeDiv(z,w)
-        a2 = torch.sum(v*x)
-        print(a1,a2)
-
-
-
-    nhid = 8
-    L = graphDiffusionLayer(G,x.shape[1],nhid)
-
-    y = L(x)
+# tests = 0
+# if tests:
+#     nnodes = 512
+#     II = torch.torch.zeros(nnodes*(nnodes-1)//2)
+#     JJ = torch.torch.zeros(nnodes*(nnodes-1)//2)
+#
+#     k = 0
+#     for i in range(nnodes):
+#         for j in range(i+1,nnodes):
+#             II[k] = i
+#             JJ[k] = j
+#             k+=1
+#
+#     G = graph(II,JJ,nnodes)
+#     x  = torch.randn(1,128,nnodes)
+#
+#     test_adjoint = 0
+#     if test_adjoint:
+#         # Adjoint test
+#         w = torch.rand(G.iInd.shape[0])
+#         y = G.nodeGrad(x,w)
+#         ne = G.iInd.numel()
+#         z = torch.randn(1,128,ne)
+#         a1 = torch.sum(z*y)
+#         v = G.edgeDiv(z,w)
+#         a2 = torch.sum(v*x)
+#         print(a1,a2)
+#
+#
+#
+#     nhid = 8
+#     L = graphDiffusionLayer(G,x.shape[1],nhid)
+#
+#     y = L(x)
 
 
 
