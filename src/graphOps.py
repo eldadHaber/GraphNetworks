@@ -91,12 +91,12 @@ class graphDiffusionLayer(nn.Module):
         return W
 
     def forward(self,x,w=1.0):
-        z = G.nodeGrad(x,w)
+        z = self.Graph.nodeGrad(x,w)
         z = self.Weight@z
         z = F.instance_norm(z)
         z = torch.relu(z)
         z = self.Weight.t()@z
-        z = G.edgeDiv(z,w)
+        z = self.Graph.edgeDiv(z,w)
 
         return z
 

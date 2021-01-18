@@ -18,11 +18,11 @@ def tv_norm(X, eps=1e-3):
 
 
 
-class varletNetworks(nn.Module):
+class verletNetworks(nn.Module):
     def __init__(self, G,nNIn, nEin,nopenN, nopenE, ncloseN, ncloseE,nlayer,h=0.1):
-        super(varletNetworks, self).__init__()
+        super(verletNetworks, self).__init__()
         self.Graph  = G
-        KNopen, KEopen, KNclose, KEclose, KN, KE = \
+        KNopen, KEopen, KNclose, KEclose, KN, KE, KD = \
             self.init_weights(nNIn,nEin,nopenN,nopenE,ncloseN, ncloseE,nlayer)
         self.KNopen = KNopen
         self.KEopen = KEopen
@@ -30,6 +30,8 @@ class varletNetworks(nn.Module):
         self.KEclose = KEclose
         self.KN      = KN
         self.KE      = KE
+        self.KD      = KD
+
         self.h       = h
 
     def init_weights(self,nNIn,nEIn,nopenN,nopenE,ncloseN, ncloseE,nlayer):
@@ -39,57 +41,117 @@ class varletNetworks(nn.Module):
         KNclose = nn.Parameter(torch.randn(ncloseN,nopenN)*1e-1)
         KEclose = nn.Parameter(torch.randn(ncloseE,nopenE)*1e-1)
 
-        KN = nn.Parameter(torch.randn(nlayer,nopenE, nopenN)*1e-1)
-        KE = nn.Parameter(torch.randn(nlayer,nopenN, nopenE)*1e-1)
+        KN = nn.Parameter(torch.rand(nlayer,nopenE, nopenN)*1e-1)
+        KE = nn.Parameter(torch.rand(nlayer,nopenN, nopenE)*1e-1)
+        KD = nn.Parameter(torch.rand(nlayer, nopenN, nopenN) * 1e-1)
 
-        return KNopen, KEopen, KNclose, KEclose, KN, KE
+        return KNopen, KEopen, KNclose, KEclose, KN, KE, KD
 
     def forward(self, xn, xe):
         # xn - node feature
         # xe - edge features
-        XX = []
+        XX = []; XE = []
         nL = self.KN.shape[0]
 
         xn = self.KNopen@xn
         xe = self.KEopen@xe
 
         XX.append(self.KNclose@xn)
-
+        XE.append(xe)
         for i in range(nL):
             Kni = self.KN[i]
             Kei = self.KE[i]
+            Kdi = self.KD[i]
 
             Coords = self.KNclose@xn
             R      = self.Graph.nodeGrad(Coords)
             dsq    = torch.sum(R**2,dim=1, keepdim=True)
-            #sigma  = 10*dsq.mean()**2
-            #print(sigma)
-            w      = torch.exp(-dsq/0.1) #1/(dsq+1e-3) #
-            Ai = Kni@self.Graph.nodeGrad(xn,w)
-            Ai = F.instance_norm(Ai) #tv_norm(Ai)
-            xe = xe + self.h*torch.relu(Ai)
-            Bi = Kei@self.Graph.edgeDiv(xe, w)
-            #Bi = Kei @ self.Graph.edgeAve(xe, w)
 
-            Bi = F.instance_norm(Bi)
-            xn = xn + self.h*torch.relu(Bi)
+            w      = torch.exp(-dsq/0.1) #1/(dsq+1e-3) #
+            # Move to edges and compute flux
+            Ai = Kni@self.Graph.nodeGrad(xn,w)
+            Ai = tv_norm(Ai)
+            xe = xe + self.h*torch.relu(Ai)
+            XE.append(xe)
+
+            # Edge to node
+            Bi = Kei@self.Graph.edgeDiv(xe, w)
+            Bi = tv_norm(Bi)
+            Bi = torch.relu(Bi)
+
+            # diffusion term
+            Ci = Kdi@xn
+            Ci = tv_norm(Ci)
+            Ci = torch.relu(Ci)
+
+            # Update
+            xn = xn - self.h*(Bi+Ci)
+
             XX.append(self.KNclose@xn)
         xn = self.KNclose @ xn
         xe = self.KEclose @ xe
-        return xn, xe, XX
+        return xn, xe, XX, XE
+
+    def backProp(self, xn, xe):
+        # xn - node feature
+        # xe - edge features
+        XX = []; XE = []
+        nL = self.KN.shape[0]
+
+        xn = self.KNclose.t()@xn
+        xe = self.KEclose.t()@xe
+
+        XX.append(self.KNclose@xn)
+        XE.append(xe)
+        for i in reversed(range(nL)):
+            Kni = self.KN[i]
+            Kei = self.KE[i]
+            Kdi = self.KD[i]
+
+            Coords = self.KNclose@xn
+            R      = self.Graph.nodeGrad(Coords)
+            dsq    = torch.sum(R**2,dim=1, keepdim=True)
+
+            w      = torch.exp(-dsq/0.1) #1/(dsq+1e-3) #
+            # Move to edges and compute flux
+            Ai = Kni@self.Graph.nodeGrad(xn,w)
+            Ai = tv_norm(Ai)
+            xe = xe - self.h*torch.relu(Ai)
+            XE.append(xe)
+
+            # Edge to node
+            Bi = Kei@self.Graph.edgeDiv(xe, w)
+            Bi = tv_norm(Bi)
+            Bi = torch.relu(Bi)
+
+            # diffusion term
+            Ci = Kdi@xn
+            Ci = tv_norm(Ci)
+            Ci = torch.relu(Ci)
+
+            # Update
+            xn = xn + self.h*(Bi+Ci)
+
+            XX.append(self.KNclose@xn)
+        xn = self.KNopen.t()@xn
+        xe = self.KEopen.t()@xe
+        return xn, xe, XX, XE
 
 
 class diffusionNetworks(nn.Module):
     def __init__(self, G,nNIn, nEin,nopenN, nopenE, ncloseN, ncloseE,nlayer,h=0.1):
         super(diffusionNetworks, self).__init__()
         self.Graph  = G
-        KNopen, KEopen, KNclose, KEclose, KN = \
+        KNopen, KEopen, KNclose, KEclose, KN, KE, KR = \
             self.init_weights(nNIn,nEin,nopenN,nopenE,ncloseN, ncloseE,nlayer)
         self.KNopen = KNopen
         self.KEopen = KEopen
         self.KNclose = KNclose
         self.KEclose = KEclose
         self.KN      = KN
+        self.KE      = KE
+        self.KR      = KR
+
         self.h       = h
 
     def init_weights(self,nNIn,nEIn,nopenN,nopenE,ncloseN, ncloseE,nlayer):
@@ -99,23 +161,26 @@ class diffusionNetworks(nn.Module):
         KNclose = nn.Parameter(torch.randn(ncloseN,nopenN)*1e-1)
         KEclose = nn.Parameter(torch.randn(ncloseE,nopenE)*1e-1)
 
-        KN = nn.Parameter(torch.randn(nlayer,nopenE, nopenN)*1e-1)
+        KN = nn.Parameter(torch.rand(nlayer,nopenE, nopenN)*1e-1)
+        KE = nn.Parameter(torch.rand(nlayer,nopenN, nopenN)*1e-1)
+        KR = nn.Parameter(torch.rand(nlayer, nopenN, nopenN)*1e-1)
 
-        return KNopen, KEopen, KNclose, KEclose, KN
+        return KNopen, KEopen, KNclose, KEclose, KN, KE, KR
 
-    def forward(self, xn, xe):
+    def forward(self, xn):
         # xn - node feature
         # xe - edge features
         XX = []
         nL = self.KN.shape[0]
 
         xn = self.KNopen@xn
-        xe = self.KEopen@xe
 
         XX.append(self.KNclose@xn)
 
         for i in range(nL):
             Kni = self.KN[i]
+            Kei = self.KE[i]
+            Kri = self.KR[i]
 
             Coords = self.KNclose@xn
             R      = self.Graph.nodeGrad(Coords)
@@ -123,57 +188,78 @@ class diffusionNetworks(nn.Module):
 
             # Compute the "flux"
             #w      = 1/(dsq+1e-3) #torch.exp(-dsq/sigma)
-            w = torch.exp(-dsq/0.1)
+            w = torch.exp(-dsq/10)
 
-            Ai = Kni@self.Graph.nodeGrad(xn,w)
-            Ai = F.instance_norm(Ai) #tv_norm(Ai)
-            xe = torch.relu(Ai)
+            gradX  = self.Graph.nodeGrad(xn,w)
+            # Diffusion
+            Ai     = Kni@gradX
+            Ai     = tv_norm(Ai)
+            xeDiff = torch.relu(Ai)
+            Jdiff = Kni.t()@self.Graph.edgeDiv(xeDiff, w)
+            # Advection
+            Ci    = Kei@gradX
+            Ci    = tv_norm(Ci)
+            xeAdv = torch.relu(Ci)
+            Jadv  = self.Graph.edgeAve(xeAdv, w)
+            # reaction
+            Ri = Kri@xn
+            Ri = tv_norm(Ri)
+            ri = torch.relu(Ri)
+            # Apdate
+            xn = xn - self.h*(Jadv + Jdiff + ri)
 
-            #Bi = Kei@self.Graph.edgeDiv(xe, w)
-            Bi = Kni.t()@self.Graph.edgeDiv(xe, w)
-
-            xn = xn - self.h*Bi
             XX.append(self.KNclose@xn)
-        xn = self.KNclose @ xn
-        xe = self.KEclose @ xe
-        return xn, xe, XX
+
+        xn = self.KNclose@xn
+
+        return xn, XX
 
 test = True
 if test:
 
     nNodes = 100
-    nEdges = 100
-    I = torch.tensor(np.arange(99),dtype=torch.long)
-    I = torch.cat((I, 99+torch.zeros(1)))
-    J = torch.tensor(np.arange(99)+1,dtype=torch.long)
-    J = torch.cat((J, torch.zeros(1)))
+    nEdges = 99
+    I = torch.tensor(np.arange(nEdges),dtype=torch.long)
+    #I = torch.cat((I, 99+torch.zeros(1)))
+    J = torch.tensor(np.arange(nEdges)+1,dtype=torch.long)
+    #J = torch.cat((J, torch.zeros(1)))
 
     G = GO.graph(I,J,nNodes)
 
     nNin  = 20
     nEin  = 30
-    nopenN = 512
-    nopenE = 1024
+    nopenN = 64
+    nopenE = 128
     ncloseN = 3
     ncloseE = 1
     nlayer  = 50
 
-    #model = varletNetworks(G,nNin, nEin,nopenN, nopenE, ncloseN,ncloseE,nlayer,h=.1)
-    model = diffusionNetworks(G, nNin, nEin, nopenN, nopenE, ncloseN, ncloseE, nlayer, h=.01)
+    mm = 'adv'
+    if mm == 'diff':
+        model = diffusionNetworks(G, nNin, nEin, nopenN, nopenE, ncloseN, ncloseE, nlayer, h=.05)
+    elif mm == 'adv':
+        model = verletNetworks(G,nNin, nEin,nopenN, nopenE, ncloseN,ncloseE,nlayer,h=.1)
 
     total_params = sum(p.numel() for p in model.parameters())
     print('Number of parameters ',total_params)
 
     xn = torch.zeros(1,20,nNodes)
     xe = torch.zeros(1,30,nEdges)
-    #xn[0,10,:] = torch.linspace(0,1,100)
-    xn[0, 0,  50] = 1
-    xn[0, 19, 50] = -1
+    xn[0, 1, 40] = 1
+    xn[0, 1, 60] = 1
+    if mm=='diff':
+        xnOut, XX = model(xn)
+    elif mm=="adv":
+        xnOut, xeOut, XX, XE = model(xn,xe)
 
-    xnOut, xeOut, XX = model(xn,xe)
+    kk = 1
     for i in range(model.KN.shape[0]):
-        plt.figure(i+1)
-        xx = XX[i]
-        plt.plot(xx[0, 0, :].detach())
-        plt.plot(xx[0, 1, :].detach())
-        plt.plot(xx[0, 2, :].detach())
+        if i%5 == 0:
+            print(i)
+            plt.figure(kk)
+            xx = XX[i]
+            xx = xx.detach().squeeze(0)
+            plt.plot(xx.sum(dim=0))
+            kk += 1
+        #plt.plot(xx[0, 1, :].detach())
+        #plt.plot(xx[0, 2, :].detach())
