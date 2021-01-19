@@ -46,110 +46,6 @@ def getPointDistance(output, targets, alpha=0.5):
     misfit = alpha*misfitDis + (1-alpha)*misfitCoo
     return misfit, misfitDis, misfitCoo
 
-def getRandomMask(n,m):
-    mask = torch.ones(m)
-    i = torch.randint(0,m-n,(1,))
-    mask[i:i+n] = 0
-    return mask
-
-
-def getRandomCrop(X,M, winsize=64, batchSize=[]):
-
-    # Find potential windows
-    k = X.shape[-1]
-    ind = []
-    T = []
-    for i in range(k-winsize):
-        t = torch.sum(M[i:i+winsize])
-        if t == winsize:
-            ind.append(i)
-            T.append(X[:,:,i:i+winsize])
-
-    # Choose on in random
-    n = len(ind)
-    Xout = []
-    Tout = []
-    if n > 0:
-        ii = torch.randint(0,n,(1, ))
-        Xout = X[:,:,ind[ii]:ind[ii]+winsize]
-        Tout = torch.Tensor(len(T),X.shape[1],winsize)
-        for i in range(n):
-            Tout[i,:,:] = T[i]
-    if len(batchSize)>0:
-        if n>batchSize[0]:
-            jj = torch.randint(0,n-batchSize[0],(1,))
-            Tout = Tout[jj:jj+batchSize[0],:,:]
-    return Xout, Tout
-
-
-def getRotMat(t):
-    A1 = torch.tensor([[torch.cos(t[0]), -torch.sin(t[0]), 0],
-                       [torch.sin(t[0]), torch.cos(t[0]), 0],
-                         [0, 0, 1.0]])
-    A2 = torch.tensor([[torch.cos(t[1]),  0, -torch.sin(t[1])],
-                       [0, 1.0, 0],
-                       [torch.sin(t[1]), 0 , torch.cos(t[1])]])
-    A3 = torch.tensor([[1,0,0],
-                       [0, torch.cos(t[2]), -torch.sin(t[2])],
-                       [0, torch.sin(t[2]), torch.cos(t[2])]])
-    return A1@A2@A3
-
-def tr2Dist(Y):
-
-    k = Y.shape[2]
-    Z = Y[0,:,:]
-    Z = Z - torch.mean(Z, dim=0, keepdim=True)
-    D = torch.sum(Z**2, dim=1).unsqueeze(0) + torch.sum(Z**2, dim=1).unsqueeze(1) - 2*Z@Z.t()
-    D = 3*D/k
-    return torch.sqrt(torch.relu(D))
-
-def Seq2Dist(Y):
-
-    D = torch.sum(Y**2,dim=1) + torch.sum(Y**2,dim=1).t() -  Y[0,:,:].t()@Y[0,:,:]
-    return D
-
-def rotatePoints(X, Xo):
-    # Find a matrix R such that Xo@R = X
-    # Translate X to fit Xo
-    # (X+c)R = V*S*V' R + c*R = Xo
-    # X = Uo*So*Vo'*R' - C
-
-    # R = V*inv(S)*U'
-    X = X.squeeze(0).t()
-    Xo = Xo.t()
-    if X.shape != Xo.shape:
-        U, S, V =  torch.svd(X)
-        X = U[:,:3]@torch.diag(S[:3])@V[:3,:3].t()
-
-    n, dim = X.shape
-
-    Xc  = X - X.mean(dim=0)
-    Xco = Xo - Xo.mean(dim=0)
-
-    C = (Xc.t()@Xco) / n
-    U, S, V = torch.svd(C)
-    d = torch.sign((torch.det(U) * torch.det(V)))
-
-    R  = V@torch.diag(torch.tensor([1.0,1,d],dtype=U.dtype))@U.t()
-
-    Xr = Xc@R.t()
-    #print(torch.norm(Xco - Xc @ R.t()))
-
-    return Xr.t(), Xco.t(), R
-
-def getRotDist(Xc, Xo, alpha = 1.0):
-
-    Xr, Xco, R = rotatePoints(Xc, Xo)
-    Do = torch.sum(Xo**2,dim=1,keepdim=True) + torch.sum(Xo**2,dim=1,keepdim=True).t() - 2*Xo@Xo.t()
-    Do = torch.sqrt(torch.relu(Do))
-    Dc = torch.sum(Xc**2,dim=1,keepdim=True) + torch.sum(Xc**2,dim=1,keepdim=True).t() - 2*Xc@Xc.t()
-    Dc = torch.sqrt(torch.relu(Dc))
-
-    dcoord = torch.norm(Xr-Xco)**2/torch.norm(Xco)**2
-    ddmat  = torch.norm(Dc-Do)**2/torch.norm(Do)**2
-    return dcoord + alpha*ddmat
-# Define some functions
-
 def coord_loss(r1s, r2s, mask):
     ind = mask.squeeze()>0
     r1 = r1s[0, :, ind]
@@ -177,32 +73,13 @@ def coord_loss(r1s, r2s, mask):
     loss_tr = torch.norm(r1cr - r2cr) ** 2 / torch.norm(r2cr) ** 2
     return loss_tr, r1cr, r2cr
 
-def move_tuple_to(args,device,non_blocking=True):
-    new_args = ()
-    for arg in args:
-        new_args += (arg.to(device,non_blocking=non_blocking),)
-    return new_args
-
-
-def fix_seed(seed, include_cuda=True):
-    torch.manual_seed(seed)
-    np.random.seed(seed)
-    random.seed(seed)
-    # if you are using GPU
-    if include_cuda:
-        torch.cuda.manual_seed(seed)
-        torch.cuda.manual_seed_all(seed)
-        torch.backends.cudnn.enabled = False
-        torch.backends.cudnn.benchmark = False
-        torch.backends.cudnn.deterministic = True
-
-def determine_network_param(net):
-    return sum(p.numel() for p in net.parameters() if p.requires_grad)
-
 
 
 def getDistMat(X,msk=torch.tensor([1.0])):
-    D = torch.sum(torch.pow(X,2), dim=0, keepdim=True) + torch.sum(torch.pow(X,2), dim=0, keepdim=True).t() - 2*X.t()@X
+    X = X.squeeze(0)
+    D = torch.sum(torch.pow(X,2), dim=0, keepdim=True) + \
+        torch.sum(torch.pow(X,2), dim=0, keepdim=True).t() - \
+        2*X.t()@X
     
     dev = X.device
     msk = msk.to(dev)
@@ -240,54 +117,6 @@ def orgProtData(x,normals,s, msk, sigma=1.0):
 
 
 
-def getGraphLap(X,sig=10):
-
-    # normalize the data
-    X = X - torch.mean(X, dim=1, keepdim=True)
-    X = X / (torch.std(X, dim=1, keepdim=True) + 1e-3)
-    #X = X/torch.sqrt(torch.sum(X**2,dim=1,keepdim=True)/X.shape[1] + 1e-4)
-    # add  position vector
-    pos = torch.linspace(-0.5, 0.5, X.shape[1]).unsqueeze(0)
-    dev = X.device
-    pos = pos.to(dev)
-    Xa = torch.cat((X, 5e1*pos), dim=0)
-    W = getDistMat(Xa)
-    We = torch.exp(-W/sig)
-    D = torch.diag(torch.sum(We, dim=0))
-    L = D - We
-    Dh = torch.diag(1/torch.sqrt(torch.diag(D)));
-    L = Dh @ L @ Dh
-
-    L = 0.5 * (L + L.t())
-
-    return L, W
-
-
-def randsvd(A,k):
-
-    n = A.shape
-    Omega = torch.randn(n[1],k,dtype=A.dtype)
-    Y     = A@Omega
-    Q,R   = torch.qr(Y)
-    B     = Q.t()@A
-    U, S, V = torch.svd(B)
-    U = Q@U
-    return U, S, V
-
-def cheby(K,L,Z):
-# apply T_k(x) = 2x*T_{k-1}(x) - T_{k-2}(x)
-# KZ = \sum K[i] T_i(Z)
-    n  = len(K)
-    T0 = torch.ones(Z.shape) #torch.eye(L.shape[0])
-    A  = K[0]*T0 #K[0]*Z@T0
-    T1 = Z@L #L
-    A  = A + K[1]*T1 #A + K[1]*Z@T1
-    for i in range(2,n):
-        T2 = 2*T1@L - T0
-        A  = A + K[i]*T2
-        T0 = T1.clone()
-        T1 = T2.clone()
-    return A
 
 def linearInterp1D(X,M):
     n  = X.shape[1]
@@ -337,30 +166,3 @@ def kl_div(p, q, weight=False):
     r = r/r.sum()
     KLD = torch.diag(1-r)@KLD
     return KLD.sum()/KLD.shape[1]
-
-def graphGrad(b, D):
-    #D = torch.relu(torch.sum(X**2,dim=0,keepdim=True) + torch.sum(X**2, dim=0, keepdim=True).t() - 2*X.t()@X)
-    n = D.shape[1]
-    m = b.shape[0]
-    idx = torch.triu(torch.ones(n, n,device=b.device), 1) > 0
-    h = D[idx]
-
-    B = b.unsqueeze(2) - b.unsqueeze(2).transpose(1,2)
-    c = B[:,idx]/h
-    return c
-
-def graphDiv(c, D):
-
-    #D = torch.relu(torch.sum(X **2,dim=0,keepdim=True) + torch.sum(X**2,dim=0,keepdim=True).t() - 2*X.t()@X)
-    n = D.shape[1]
-    m = c.shape[0]
-    idx = torch.triu(torch.ones(n, n,device=D.device), 1) > 0
-    h = D[idx]
-
-    C = torch.zeros(m,n,n,device=D.device)
-    C[:,idx] = c/h
-
-    b = torch.sum(C,2) - torch.sum(C,1)
-
-    return b
-

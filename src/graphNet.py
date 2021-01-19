@@ -214,7 +214,7 @@ class diffusionNetworks(nn.Module):
 
         return xn, XX
 
-test = True
+test = False
 if test:
 
     nNodes = 100

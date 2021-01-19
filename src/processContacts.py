@@ -4,35 +4,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 import math
-from src import pnetProcess
 from src import utils
 
-import matplotlib.pyplot as plt
-import torch.optim as optim
-
-device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
-
-# load training data
-Aind = torch.load('../../../data/casp11/AminoAcidIdx.pt')
-Yobs = torch.load('../../../data/casp11/RCalpha.pt')
-MSK  = torch.load('../../../data/casp11/Masks.pt')
-S     = torch.load('../../../data/casp11/PSSM.pt')
-# load validation data
-AindVal = torch.load('../../../data/casp11/AminoAcidIdxVal.pt')
-YobsVal = torch.load('../../../data/casp11/RCalphaVal.pt')
-MSKVal  = torch.load('../../../data/casp11/MasksVal.pt')
-SVal     = torch.load('../../../data/casp11/PSSMVal.pt')
-
-# load Testing data
-AindTesting = torch.load('../../../data/casp11/AminoAcidIdxTesting.pt')
-YobsTesting = torch.load('../../../data/casp11/RCalphaTesting.pt')
-MSKTesting  = torch.load('../../../data/casp11/MasksTesting.pt')
-STesting     = torch.load('../../../data/casp11/PSSMTesting.pt')
-
-
-
-print('Number of data: ', len(S))
-n_data_total = len(S)
 
 
 def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
@@ -76,5 +49,4 @@ def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
 
     return Seq, Coords, M, IJ, Ds
 
-PSSM, Coords, M, IJ, Ds = getIterData(S, Aind, Yobs, MSK, 30006, device=device)
 
