@@ -16,12 +16,9 @@ def tv_norm(X, eps=1e-3):
     X = X/torch.sqrt(torch.sum(X**2,dim=1,keepdim=True) + eps)
     return X
 
-
-
 class verletNetworks(nn.Module):
-    def __init__(self, G,nNIn, nEin,nopenN, nopenE, ncloseN, ncloseE,nlayer,h=0.1):
+    def __init__(self, nNIn, nEin,nopenN, nopenE, ncloseN, ncloseE,nlayer,h=0.1):
         super(verletNetworks, self).__init__()
-        self.Graph  = G
         KNopen, KEopen, KNclose, KEclose, KN, KE, KD = \
             self.init_weights(nNIn,nEin,nopenN,nopenE,ncloseN, ncloseE,nlayer)
         self.KNopen = KNopen
@@ -47,35 +44,35 @@ class verletNetworks(nn.Module):
 
         return KNopen, KEopen, KNclose, KEclose, KN, KE, KD
 
-    def forward(self, xn, xe):
+    def forward(self, xn, xe, Graph):
         # xn - node feature
         # xe - edge features
-        XX = []; XE = []
+        # XX = []; XE = []
         nL = self.KN.shape[0]
 
         xn = self.KNopen@xn
         xe = self.KEopen@xe
 
-        XX.append(self.KNclose@xn)
-        XE.append(xe)
+        #XX.append(self.KNclose@xn)
+        #XE.append(xe)
         for i in range(nL):
             Kni = self.KN[i]
             Kei = self.KE[i]
             Kdi = self.KD[i]
 
             Coords = self.KNclose@xn
-            R      = self.Graph.nodeGrad(Coords)
-            dsq    = torch.sum(R**2,dim=1, keepdim=True)
+            #R      = Graph.nodeGrad(Coords)
+            #dsq    = torch.sum(R**2,dim=1, keepdim=True)
 
-            w      = torch.exp(-dsq/0.1) #1/(dsq+1e-3) #
+            w      = 1 #torch.exp(-dsq/0.1) #1/(dsq+1e-3) #
             # Move to edges and compute flux
-            Ai = Kni@self.Graph.nodeGrad(xn,w)
+            Ai = Kni@Graph.nodeGrad(xn,w)
             Ai = tv_norm(Ai)
             xe = xe + self.h*torch.relu(Ai)
-            XE.append(xe)
+            #XE.append(xe)
 
             # Edge to node
-            Bi = Kei@self.Graph.edgeDiv(xe, w)
+            Bi = Kei@Graph.edgeDiv(xe, w)
             Bi = tv_norm(Bi)
             Bi = torch.relu(Bi)
 
@@ -87,37 +84,37 @@ class verletNetworks(nn.Module):
             # Update
             xn = xn - self.h*(Bi+Ci)
 
-            XX.append(self.KNclose@xn)
+            #XX.append(self.KNclose@xn)
         xn = self.KNclose @ xn
         xe = self.KEclose @ xe
-        return xn, xe, XX, XE
+        return xn, xe  #, XX, XE
 
-    def backProp(self, xn, xe):
+    def backProp(self, xn, xe, Graph):
         # xn - node feature
         # xe - edge features
-        XX = []; XE = []
+        # XX = []; XE = []
         nL = self.KN.shape[0]
 
         xn = self.KNclose.t()@xn
         xe = self.KEclose.t()@xe
 
-        XX.append(self.KNclose@xn)
-        XE.append(xe)
+        #XX.append(self.KNclose@xn)
+        #XE.append(xe)
         for i in reversed(range(nL)):
             Kni = self.KN[i]
             Kei = self.KE[i]
             Kdi = self.KD[i]
 
             Coords = self.KNclose@xn
-            R      = self.Graph.nodeGrad(Coords)
-            dsq    = torch.sum(R**2,dim=1, keepdim=True)
+            #R      = Graph.nodeGrad(Coords)
+            #dsq    = torch.sum(R**2,dim=1, keepdim=True)
 
-            w      = torch.exp(-dsq/0.1) #1/(dsq+1e-3) #
+            w      = 1 #torch.exp(-dsq/0.1) #1/(dsq+1e-3) #
             # Move to edges and compute flux
-            Ai = Kni@self.Graph.nodeGrad(xn,w)
+            Ai = Kni@Graph.nodeGrad(xn,w)
             Ai = tv_norm(Ai)
             xe = xe - self.h*torch.relu(Ai)
-            XE.append(xe)
+            #XE.append(xe)
 
             # Edge to node
             Bi = Kei@self.Graph.edgeDiv(xe, w)
@@ -132,16 +129,15 @@ class verletNetworks(nn.Module):
             # Update
             xn = xn + self.h*(Bi+Ci)
 
-            XX.append(self.KNclose@xn)
+            #XX.append(self.KNclose@xn)
         xn = self.KNopen.t()@xn
         xe = self.KEopen.t()@xe
-        return xn, xe, XX, XE
+        return xn, xe #, XX, XE
 
 
 class diffusionNetworks(nn.Module):
-    def __init__(self, G,nNIn, nEin,nopenN, nopenE, ncloseN, ncloseE,nlayer,h=0.1):
+    def __init__(self, nNIn, nEin,nopenN, nopenE, ncloseN, ncloseE,nlayer,h=0.1):
         super(diffusionNetworks, self).__init__()
-        self.Graph  = G
         KNopen, KEopen, KNclose, KEclose, KN, KE, KR = \
             self.init_weights(nNIn,nEin,nopenN,nopenE,ncloseN, ncloseE,nlayer)
         self.KNopen = KNopen
@@ -167,15 +163,15 @@ class diffusionNetworks(nn.Module):
 
         return KNopen, KEopen, KNclose, KEclose, KN, KE, KR
 
-    def forward(self, xn):
+    def forward(self, xn, Graph):
         # xn - node feature
         # xe - edge features
-        XX = []
+        #XX = []
         nL = self.KN.shape[0]
 
         xn = self.KNopen@xn
 
-        XX.append(self.KNclose@xn)
+        #XX.append(self.KNclose@xn)
 
         for i in range(nL):
             Kni = self.KN[i]
@@ -183,14 +179,14 @@ class diffusionNetworks(nn.Module):
             Kri = self.KR[i]
 
             Coords = self.KNclose@xn
-            R      = self.Graph.nodeGrad(Coords)
-            dsq    = torch.sum(R**2,dim=1, keepdim=True)
+            #R      = Graph.nodeGrad(Coords)
+            #dsq    = torch.sum(R**2,dim=1, keepdim=True)
 
             # Compute the "flux"
-            #w      = 1/(dsq+1e-3) #torch.exp(-dsq/sigma)
-            w = torch.exp(-dsq/10)
+            w      = 1 #1/(dsq+1e-3) #torch.exp(-dsq/sigma)
+            #w = torch.exp(-dsq/10)
 
-            gradX  = self.Graph.nodeGrad(xn,w)
+            gradX  = Graph.nodeGrad(xn,w)
             # Diffusion
             Ai     = Kni@gradX
             Ai     = tv_norm(Ai)
@@ -200,7 +196,7 @@ class diffusionNetworks(nn.Module):
             Ci    = Kei@gradX
             Ci    = tv_norm(Ci)
             xeAdv = torch.relu(Ci)
-            Jadv  = self.Graph.edgeAve(xeAdv, w)
+            Jadv  = Graph.edgeAve(xeAdv)
             # reaction
             Ri = Kri@xn
             Ri = tv_norm(Ri)
@@ -208,11 +204,11 @@ class diffusionNetworks(nn.Module):
             # Apdate
             xn = xn - self.h*(Jadv + Jdiff + ri)
 
-            XX.append(self.KNclose@xn)
+            #XX.append(self.KNclose@xn)
 
         xn = self.KNclose@xn
 
-        return xn, XX
+        return xn #, XX
 
 test = False
 if test:
@@ -236,9 +232,9 @@ if test:
 
     mm = 'adv'
     if mm == 'diff':
-        model = diffusionNetworks(G, nNin, nEin, nopenN, nopenE, ncloseN, ncloseE, nlayer, h=.05)
+        model = diffusionNetworks(nNin, nEin, nopenN, nopenE, ncloseN, ncloseE, nlayer, h=.05)
     elif mm == 'adv':
-        model = verletNetworks(G,nNin, nEin,nopenN, nopenE, ncloseN,ncloseE,nlayer,h=.1)
+        model = verletNetworks(nNin, nEin,nopenN, nopenE, ncloseN,ncloseE,nlayer,h=.1)
 
     total_params = sum(p.numel() for p in model.parameters())
     print('Number of parameters ',total_params)
@@ -248,9 +244,9 @@ if test:
     xn[0, 1, 40] = 1
     xn[0, 1, 60] = 1
     if mm=='diff':
-        xnOut, XX = model(xn)
+        xnOut, XX = model(xn, G)
     elif mm=="adv":
-        xnOut, xeOut, XX, XE = model(xn,xe)
+        xnOut, xeOut, XX, XE = model(xn,xe, G)
 
     kk = 1
     for i in range(model.KN.shape[0]):
