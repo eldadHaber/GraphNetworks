@@ -68,12 +68,12 @@ xnOut = utils.distConstraint(xnOut,dc=0.379)
 
 Dout  = utils.getDistMat(xnOut)
 Dtrue = utils.getDistMat(Coords)
-#plt.figure(1)
-#plt.imshow(Ds)
-#plt.figure(2)
-#plt.imshow(Dout.detach())
-#plt.figure(3)
-#plt.imshow(Dtrue.detach())
+plt.figure(1)
+plt.imshow(Ds)
+plt.figure(2)
+plt.imshow(Dout.detach())
+plt.figure(3)
+plt.imshow(Dtrue.detach())
 
 M = torch.ger(M.squeeze(),M.squeeze())
 err1 = torch.norm(M*(Dout.detach()-Dtrue))/torch.norm(M*Dtrue)
@@ -84,14 +84,16 @@ dm = Dtrue.max()
 Dout = torch.exp(-Dout ** 2 / (dm * sig) ** 2)
 Dtrue = torch.exp(-Dtrue ** 2 / (dm * sig) ** 2)
 
-#plt.figure(4)
-#plt.imshow(Dout.detach())
-#plt.figure(5)
-#plt.imshow(Dtrue.detach())
+plt.figure(4)
+plt.imshow(Dout.detach())
+plt.figure(5)
+plt.imshow(Dtrue.detach())
 
 err3 = torch.norm(M*(Dout.detach()-Dtrue))/torch.norm(M*Dtrue)
 
 print('Initial Error pretraining = ',err1, err2, err3 )
+
+error
 
 #### Start Training ####
 
