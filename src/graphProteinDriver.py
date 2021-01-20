@@ -62,7 +62,7 @@ model = GN.verletNetworks(nNin, nEin, nopenN, nopenE, ncloseN, ncloseE, nlayer, 
 total_params = sum(p.numel() for p in model.parameters())
 print('Number of parameters ', total_params)
 
-xnOut, xeOut, XX, XE = model(xn,xe, G)
+xnOut, xeOut = model(xn,xe, G)
 #xnOut, XX = model(xn)
 xnOut = utils.distConstraint(xnOut,dc=0.379)
 
@@ -113,7 +113,7 @@ optimizer = optim.Adam([{'params': model.KNopen, 'lr': lrO},
 alossBest = 1e6
 epochs = 30
 sig   = 0.3
-ndata = 10 #n_data_total
+ndata = 1000 #n_data_total
 bestModel = model
 hist = torch.zeros(epochs)
 
@@ -139,7 +139,7 @@ for j in range(epochs):
 
         optimizer.zero_grad()
 
-        xnOut, xeOut, _, _ = model(xn, xe, G)
+        xnOut, xeOut = model(xn, xe, G)
         xnOut = utils.distConstraint(xnOut, dc=0.379)
 
         Dout = utils.getDistMat(xnOut)
@@ -188,7 +188,7 @@ for j in range(epochs):
             xe = edgeProperties
             M = torch.ger(M.squeeze(), M.squeeze())
 
-            xnOut, xeOut, _, _ = model(xn, xe, G)
+            xnOut, xeOut = model(xn, xe, G)
             xnOut = utils.distConstraint(xnOut, dc=0.379)
 
             Dout = utils.getDistMat(xnOut)
