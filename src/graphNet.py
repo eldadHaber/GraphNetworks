@@ -60,7 +60,7 @@ class verletNetworks(nn.Module):
             Kei = self.KE[i]
             Kdi = self.KD[i]
 
-            Coords = self.KNclose@xn
+            #Coords = self.KNclose@xn
             #R      = Graph.nodeGrad(Coords)
             #dsq    = torch.sum(R**2,dim=1, keepdim=True)
 
