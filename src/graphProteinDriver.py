@@ -39,83 +39,61 @@ n_data_total = len(S)
 nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs, MSK, 0, device=device)
 
 nNodes = Ds.shape[0]
-I = IJ[:,0]
-J = IJ[:,1]
-G = GO.graph(I, J, nNodes)
+W = torch.diag(torch.ones(nNodes - 1), 1) + torch.diag(torch.ones(nNodes - 1), -1) + \
+    torch.diag(torch.ones(nNodes - 2), 2) + torch.diag(torch.ones(nNodes - 2), -2) + \
+    torch.diag(torch.ones(nNodes - 3), 3) + torch.diag(torch.ones(nNodes - 3), -3)
+
+G = GO.dense_graph(nNodes, W)
 
 # Organize the node data
 xn = nodeProperties
-xe = edgeProperties
+xe = Ds.unsqueeze(0).unsqueeze(0) #edgeProperties
 
 # Setup the network and its parameters
-nNin = 40
-nEin = 1
-nopenN = 256
-nopenE = 256
+nNin    = 40
+nEin    = 1
+nopenN  = 64
+nopenE  = 64
 ncloseN = 3
 ncloseE = 1
-nlayer = 50
+nlayer  = 50
 
 model = GN.verletNetworks(nNin, nEin, nopenN, nopenE, ncloseN, ncloseE, nlayer, h=.1)
-#model = GN.diffusionNetworks(nNin, nEin, nopenN, nopenE, ncloseN, ncloseE, nlayer, h=.05)
 
 total_params = sum(p.numel() for p in model.parameters())
 print('Number of parameters ', total_params)
 
 xnOut, xeOut = model(xn,xe, G)
-#xnOut, XX = model(xn)
-xnOut = utils.distConstraint(xnOut,dc=0.379)
+#xnOut = utils.distConstraint(xnOut,dc=3.79)
 
 Dout  = utils.getDistMat(xnOut)
 Dtrue = utils.getDistMat(Coords)
-plt.figure(1)
-plt.imshow(Ds)
-plt.figure(2)
-plt.imshow(Dout.detach())
-plt.figure(3)
-plt.imshow(Dtrue.detach())
 
-M = torch.ger(M.squeeze(),M.squeeze())
-err1 = torch.norm(M*(Dout.detach()-Dtrue))/torch.norm(M*Dtrue)
-err2 = (M*(Dout.detach()-Dtrue)).abs().mean().item()/M.sum()
+M   = torch.ger(M.squeeze(),M.squeeze())
+err = F.mse_loss(M*Dout, M*Dtrue)
+err0 = F.mse_loss(M*Dout, M*Dtrue)/F.mse_loss(M*Dout*0, M*Dtrue)
+print('Initial Error pretraining = ',err.item(),err0.item())
 
-sig = 0.3
-dm = Dtrue.max()
-Dout = torch.exp(-Dout ** 2 / (dm * sig) ** 2)
-Dtrue = torch.exp(-Dtrue ** 2 / (dm * sig) ** 2)
-
-plt.figure(4)
-plt.imshow(Dout.detach())
-plt.figure(5)
-plt.imshow(Dtrue.detach())
-
-err3 = torch.norm(M*(Dout.detach()-Dtrue))/torch.norm(M*Dtrue)
-
-print('Initial Error pretraining = ',err1, err2, err3 )
-
-error
 
 #### Start Training ####
 
-lrO = 1e-4
-lrC = 1e-4
-lrN = 1e-3
-lrE = 1e-3
-lrD = 1e-3
+lrO = 4e-3
+lrC = 4e-3
+lrN = 4e-3
+lrE = 4e-3
 
 optimizer = optim.Adam([{'params': model.KNopen, 'lr': lrO},
                         {'params': model.KNclose, 'lr': lrC},
                         {'params': model.KEopen, 'lr': lrO},
                         {'params': model.KEclose, 'lr': lrC},
                         {'params': model.KE, 'lr': lrN},
-                        {'params': model.KN, 'lr': lrE},
-                        {'params': model.KD, 'lr': lrD}])
+                        {'params': model.KN, 'lr': lrE}])
 
 
 alossBest = 1e6
-epochs = 30
-sig   = 0.3
-ndata = 1000 #n_data_total
+epochs = 50
+
+ndata = 2 #n_data_total
 bestModel = model
 hist = torch.zeros(epochs)
 
@@ -128,33 +106,29 @@ for j in range(epochs):
 
         # Get the data
         nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
-                                                                            MSK, i, device=device)
+                                                                            MSK, 0, device=device)
 
         nNodes = Ds.shape[0]
-        I = IJ[:, 0]
-        J = IJ[:, 1]
-        G = GO.graph(I, J, nNodes)
+        G = GO.dense_graph(nNodes, Ds)
         # Organize the node data
         xn = nodeProperties
-        xe = edgeProperties
+        xe = Ds.unsqueeze(0).unsqueeze(0)  # edgeProperties
+
         M = torch.ger(M.squeeze(), M.squeeze())
 
         optimizer.zero_grad()
 
         xnOut, xeOut = model(xn, xe, G)
-        xnOut = utils.distConstraint(xnOut, dc=0.379)
-
+        # xnOut = utils.distConstraint(xnOut, dc=3.79)
         Dout = utils.getDistMat(xnOut)
         Dtrue = utils.getDistMat(Coords)
-        dm = Dtrue.max()
-        Dout  = torch.exp(-Dout**2 / (dm * sig)**2)
-        Dtrue = torch.exp(-Dtrue**2 / (dm * sig)**2)
 
-        loss = torch.norm(M*(Dout-Dtrue))**2/torch.norm(M*Dtrue)**2
+        loss = F.mse_loss(M*Dout, M*Dtrue)
         loss.backward()
 
         aloss += loss.detach()
         gN = model.KN.grad.norm().item()
+        gE = model.KE.grad.norm().item()
         gO = model.KNopen.grad.norm().item()
         gC = model.KNclose.grad.norm().item()
 
@@ -163,47 +137,48 @@ for j in range(epochs):
         nprnt = 1
         if (i + 1) % nprnt == 0:
             aloss = aloss / nprnt
-            print("%2d.%1d   %10.3E   %10.3E   %10.3E   %10.3E" %
-                  (j, i, aloss, gO, gN, gC))
+            print("%2d.%1d   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E" %
+                  (j, i, aloss, gO, gN, gE, gC))
             aloss = 0.0
     if aloss < alossBest:
         alossBest = aloss
         bestModel = model
 
     # Validation on 0-th data
-    with torch.no_grad():
-        misVal  = 0
-        AQdis   = 0
-        nVal = len(STesting)
-        for jj in range(nVal):
+    if False:
+        with torch.no_grad():
+            misVal  = 0
+            AQdis   = 0
+            nVal = len(STesting)
+            for jj in range(nVal):
 
-            # Get the data
-            nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(STesting, AindTesting, YobsTesting,
-                                                                                MSKTesting, jj, device=device)
-            # Organize the node data
-            nNodes = Ds.shape[0]
-            I = IJ[:, 0]
-            J = IJ[:, 1]
-            G = GO.graph(I, J, nNodes)
+                # Get the data
+                nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(STesting, AindTesting, YobsTesting,
+                                                                                    MSKTesting, jj, device=device)
+                # Organize the node data
+                nNodes = Ds.shape[0]
+                I = IJ[:, 0]
+                J = IJ[:, 1]
+                G = GO.graph(I, J, nNodes)
 
-            xn = nodeProperties
-            xe = edgeProperties
-            M = torch.ger(M.squeeze(), M.squeeze())
+                xn = nodeProperties
+                xe = edgeProperties
+                M = torch.ger(M.squeeze(), M.squeeze())
 
-            xnOut, xeOut = model(xn, xe, G)
-            xnOut = utils.distConstraint(xnOut, dc=0.379)
+                xnOut, xeOut = model(xn, xe, G)
+                xnOut = utils.distConstraint(xnOut, dc=0.379)
 
-            Dout = utils.getDistMat(xnOut)
-            Dtrue = utils.getDistMat(Coords)
-            AQdis += torch.norm(M * (Dout - Dtrue)) / torch.sum(M > 0)
+                Dout = utils.getDistMat(xnOut)
+                Dtrue = utils.getDistMat(Coords)
+                AQdis += torch.norm(M * (Dout - Dtrue)) / torch.sum(M > 0)
 
-            dm = Dtrue.max()
-            Dout = torch.exp(-Dout ** 2 / (dm * sig) ** 2)
-            Dtrue = torch.exp(-Dtrue ** 2 / (dm * sig) ** 2)
+                dm = Dtrue.max()
+                Dout = torch.exp(-Dout ** 2 / (dm * sig) ** 2)
+                Dtrue = torch.exp(-Dtrue ** 2 / (dm * sig) ** 2)
 
-            loss = torch.norm(M * (Dout.detach() - Dtrue)) ** 2 / torch.norm(M * Dtrue) ** 2
+                loss = torch.norm(M * (Dout.detach() - Dtrue)) ** 2 / torch.norm(M * Dtrue) ** 2
 
-            misVal += loss.detach()
+                misVal += loss.detach()
 
 
 

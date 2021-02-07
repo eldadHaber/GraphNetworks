@@ -21,6 +21,7 @@ def getConnectivity(X):
     D = torch.pow(X,2).sum(dim=1,keepdim=True) + \
         torch.pow(X,2).sum(dim=1,keepdim=True).transpose(2,1) - \
         2*X.transpose(2,1)@X
+    D = torch.relu(D)
     D = F.softshrink(D,D.mean())
     IJ = torch.nonzero(D>1e-5)
     return IJ
@@ -103,76 +104,87 @@ class graphDiffusionLayer(nn.Module):
 
 class dense_graph(nn.Module):
 
-    def __init__(self,nnodes):
+    def __init__(self,nnodes, W=torch.ones(1)):
         super(dense_graph, self).__init__()
         self.nnodes = nnodes
+        self.W      = W
 
-    def nodeGrad(self,x,w=torch.ones(1)):
+    def nodeGrad(self,x,w=True):
+        if w:
+            w = self.W
+
         x = x.squeeze(0).unsqueeze(1)
-        if torch.numel(w) != 1:
-            g = w*x - w.transpose(1,2)*x.transpose(1,2)
-        else:
-            g = x - x.transpose(1,2)
+        g = w*(x - x.transpose(1,2))
         g = g.unsqueeze(0)
         return g
 
-    def nodeAve(self,x,w=torch.ones(1)):
+    def nodeAve(self,x,w=True):
+        if w:
+            w = self.W
+
         x = x.squeeze(0).unsqueeze(1)
-        if torch.numel(w) != 1:
-            g = (w*x + w.transpose(1,2)*x.transpose(1,2))/2.0
-        else:
-            g = (x + x.transpose(1,2))/2.0
+        g = w*(x + x.transpose(1,2))/2.0
         g = g.unsqueeze(0)
         return g
 
 
-    def edgeDiv(self,g, w=torch.ones(1)):
+    def edgeDiv(self,g, w=True):
+        if w:
+            w = self.W
+        g = w*g
         x1 = g.sum(dim=2,keepdim=True).squeeze(0)
         x2 = g.sum(dim=3,keepdim=True).squeeze(0)
-        x  = w*(x1-x2.transpose(2,1))
+        x  = x1-x2.transpose(2,1)
         x  = x.squeeze(1).unsqueeze(0)
         return x
 
-    def edgeAve(self,g, w=torch.ones(1), method='max'):
+    def edgeAve(self,g, w=True, method='max'):
+        if w:
+            w = self.W
+        g = w*g
         x1 = g.sum(dim=2,keepdim=True).squeeze(0)
         x2 = g.sum(dim=3,keepdim=True).squeeze(0)
         x2 = x2.transpose(1, 2)
         if method=='max':
-            x = torch.max(w*x1,w*x2)
+            x = torch.max(x1,x2)
         else:
-            x = w*(x1 + x2)/2
+            x = (x1 + x2)/2
         x = x.squeeze(1).unsqueeze(0)
         return x
 
 
-    def nodeLap(self,x,w=torch.ones(1)):
+    def nodeLap(self,x,w=True):
+        if w:
+            w = self.W
         g = self.nodeGrad(x,w)
         d = self.edgeDiv(g,w)
         return d
 
     def edgeLength(self,x):
         g = self.nodeGrad(x)
-        L = torch.sqrt(torch.pow(g,2).sum(dim=1))
+        L = torch.pow(g,2).sum(dim=1)
         return L
 
 
 # Test dense stuff
-nnodes = 512
-nf     = 2
-G = dense_graph(nnodes)
-w = torch.rand(1,1,nnodes)
-x = torch.randn(1,nf,nnodes)
-g = G.nodeGrad(x,w)
-v = torch.randn(1,nf,nnodes,nnodes)
-cp1 = torch.sum(g*v)
-q = G.edgeDiv(v,w)
-cp2 = torch.sum(x*q)
+#nnodes = 512
+#nf     = 256
+#G = dense_graph(nnodes)
+#w = torch.rand(1,1,nnodes)
+#w = torch.rand(nf,nnodes,nnodes)
 
-Lx = G.edgeDiv(G.nodeGrad(x,w),w)
+#x = torch.randn(1,nf,nnodes)
+#g = G.nodeGrad(x,w)
+#v = torch.randn(1,nf,nnodes,nnodes)
+#cp1 = torch.sum(g*v)
+#q = G.edgeDiv(v,w)
+#cp2 = torch.sum(x*q)
 
-print(cp1,cp2)
+#Lx = G.edgeDiv(G.nodeGrad(x,w),w)
 
-a = G.edgeAve(v,w)
+#print(cp1,cp2)
+
+#a = G.edgeAve(v,w)
 
 ###### Testing stuff
 #tests = 1

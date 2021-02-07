@@ -9,7 +9,7 @@ from src import utils
 
 
 def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
-    scale = 1e-3
+    scale = 1e-2
     PSSM = S[i].t()
     n = PSSM.shape[1]
     M = MSK[i][:n]
@@ -41,9 +41,9 @@ def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
                    torch.sum(Coords ** 2, dim=0, keepdim=True).t() - \
                    2 * Coords.t() @ Coords)
 
-    D = torch.sqrt(D)
-    Ds = torch.exp(-D / 10)
-    Ds = F.softshrink(Ds, 0.92)
+    D = D / D.std()
+    D = torch.exp(-D)
+    Ds = F.softshrink(D, 0.92)
     Ds[Ds > 0] = 1
     IJ = torch.nonzero(Ds)
 
@@ -63,6 +63,6 @@ def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
     xe     = xe.to(device=device, non_blocking=True)
     Ds      = Ds.to(device=device, non_blocking=True)
 
-    return Seq.unsqueeze(0), Coords.unsqueeze(0), M.unsqueeze(0).unsqueeze(0), IJ, xe, Ds
+    return Seq.unsqueeze(0), Coords.unsqueeze(0), M.unsqueeze(0).unsqueeze(0), IJ, xe, D
 
 
