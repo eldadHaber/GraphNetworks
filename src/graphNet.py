@@ -48,7 +48,7 @@ class graphNetwork(nn.Module):
         Nnfeatures = 2*nEhid + nEopen
         self.KN  = nn.Parameter(torch.rand(nlayer,nEopen, Nnfeatures)*stdvp)
 
-    def forward(self,xn, xe, Kein, Keout, Knout, w=True):
+    def forward(self,xn, xe, Graph, w=True):
 
         # Opening layer
         # xn = [B, C, N]
@@ -65,8 +65,8 @@ class graphNetwork(nn.Module):
             Kni  = self.KN[i]
 
             # Move from node to the edge space
-            gradX =  self.nodeGrad(xn, w)
-            intX  =  self.nodeAve(xn, w)
+            gradX =  Graph.nodeGrad(xn, w)
+            intX  =  Graph.nodeAve(xn, w)
             xec    = torch.cat([gradX, intX, xe], dim=1)
 
             # 1D convs on the edge space and nonlinearity
@@ -75,8 +75,8 @@ class graphNetwork(nn.Module):
             xec    = torch.relu(xec)
 
             # back to the node space
-            divXe  = self.edgeDiv(xec, w)
-            intXe  = self.edgeAve(xec, w)
+            divXe  = Graph.edgeDiv(xec, w)
+            intXe  = Graph.edgeAve(xec, w)
             xnc    = torch.cat([divXe, intXe, xn], dim=1)
 
             # Edge and node updates
