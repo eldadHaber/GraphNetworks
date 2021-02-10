@@ -14,6 +14,8 @@ from src import graphNet as GN
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
+device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+
 # load training data
 Aind = torch.load('../../../data/casp11/AminoAcidIdx.pt')
 Yobs = torch.load('../../../data/casp11/RCalpha.pt')
@@ -32,7 +34,6 @@ MSKTesting  = torch.load('../../../data/casp11/MasksTesting.pt')
 STesting     = torch.load('../../../data/casp11/PSSMTesting.pt')
 
 
-
 print('Number of data: ', len(S))
 n_data_total = len(S)
 
@@ -43,22 +44,27 @@ W = torch.diag(torch.ones(nNodes - 1), 1) + torch.diag(torch.ones(nNodes - 1), -
     torch.diag(torch.ones(nNodes - 2), 2) + torch.diag(torch.ones(nNodes - 2), -2) + \
     torch.diag(torch.ones(nNodes - 3), 3) + torch.diag(torch.ones(nNodes - 3), -3)
 
+W = W.to(device)
 G = GO.dense_graph(nNodes, W)
 
+
 # Organize the node data
-xn = nodeProperties
-xe = Ds.unsqueeze(0).unsqueeze(0) #edgeProperties
+xn = nodeProperties.to(device)
+xe = Ds.unsqueeze(0).unsqueeze(0).to(device) #edgeProperties
 
 # Setup the network and its parameters
 nNin    = 40
 nEin    = 1
-nopenN  = 64
-nopenE  = 64
+nopenN  = 512
+nopenE  = 5
 ncloseN = 3
 ncloseE = 1
-nlayer  = 50
+nlayer  = 18
 
 model = GN.verletNetworks(nNin, nEin, nopenN, nopenE, ncloseN, ncloseE, nlayer, h=.1)
+model.to(device)
+
+
 
 total_params = sum(p.numel() for p in model.parameters())
 print('Number of parameters ', total_params)
@@ -77,10 +83,10 @@ print('Initial Error pretraining = ',err.item(),err0.item())
 
 #### Start Training ####
 
-lrO = 4e-3
-lrC = 4e-3
-lrN = 4e-3
-lrE = 4e-3
+lrO = 1e-4
+lrC = 1e-4
+lrN = 1e-4
+lrE = 1e-4
 
 optimizer = optim.Adam([{'params': model.KNopen, 'lr': lrO},
                         {'params': model.KNclose, 'lr': lrC},
@@ -91,7 +97,7 @@ optimizer = optim.Adam([{'params': model.KNopen, 'lr': lrO},
 
 
 alossBest = 1e6
-epochs = 50
+epochs    = 500
 
 ndata = 2 #n_data_total
 bestModel = model
@@ -100,13 +106,12 @@ hist = torch.zeros(epochs)
 for j in range(epochs):
     # Prepare the data
     aloss = 0.0
-    amis = 0.0
-    amisb = 0.0
+    alossAQ = 0.0
     for i in range(ndata):
 
         # Get the data
         nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
-                                                                            MSK, 0, device=device)
+                                                                            MSK, i, device=device)
 
         nNodes = Ds.shape[0]
         G = GO.dense_graph(nNodes, Ds)
@@ -126,7 +131,8 @@ for j in range(epochs):
         loss = F.mse_loss(M*Dout, M*Dtrue)
         loss.backward()
 
-        aloss += loss.detach()
+        aloss   += loss.detach()
+        alossAQ += (torch.norm(M*Dout - M*Dtrue)/torch.sum(M>0)).detach()
         gN = model.KN.grad.norm().item()
         gE = model.KE.grad.norm().item()
         gO = model.KNopen.grad.norm().item()
@@ -134,55 +140,46 @@ for j in range(epochs):
 
         optimizer.step()
         # scheduler.step()
-        nprnt = 1
+        nprnt = 100
         if (i + 1) % nprnt == 0:
             aloss = aloss / nprnt
-            print("%2d.%1d   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E" %
-                  (j, i, aloss, gO, gN, gE, gC))
+            print("%2d.%1d   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E" %
+                  (j, i, aloss, alossAQ, gO, gN, gE, gC))
             aloss = 0.0
+
+        # Validation
+        if True:
+            with torch.no_grad():
+                misVal  = 0
+                AQdis   = 0
+                nVal = len(STesting)
+                for jj in range(nVal):
+                    nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
+                                                                                        MSK, 0, device=device)
+
+                    nNodes = Ds.shape[0]
+                    G = GO.dense_graph(nNodes, Ds)
+                    # Organize the node data
+                    xn = nodeProperties
+                    xe = Ds.unsqueeze(0).unsqueeze(0)  # edgeProperties
+
+                    M = torch.ger(M.squeeze(), M.squeeze())
+
+                    xnOut, xeOut = model(xn, xe, G)
+
+                    Dout = utils.getDistMat(xnOut)
+                    Dtrue = utils.getDistMat(Coords)
+                    loss = F.mse_loss(M * Dout, M * Dtrue)
+
+                    AQdis  += (torch.norm(M * Dout - M * Dtrue) / torch.sqrt(torch.sum(M>0))).detach()
+                    misVal += loss.detach()
+
+
+
+                print("%2d       %10.3E   %10.3E" % (j, misVal/nVal, AQdis/nVal))
+                print('===============================================')
+
     if aloss < alossBest:
         alossBest = aloss
         bestModel = model
-
-    # Validation on 0-th data
-    if False:
-        with torch.no_grad():
-            misVal  = 0
-            AQdis   = 0
-            nVal = len(STesting)
-            for jj in range(nVal):
-
-                # Get the data
-                nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(STesting, AindTesting, YobsTesting,
-                                                                                    MSKTesting, jj, device=device)
-                # Organize the node data
-                nNodes = Ds.shape[0]
-                I = IJ[:, 0]
-                J = IJ[:, 1]
-                G = GO.graph(I, J, nNodes)
-
-                xn = nodeProperties
-                xe = edgeProperties
-                M = torch.ger(M.squeeze(), M.squeeze())
-
-                xnOut, xeOut = model(xn, xe, G)
-                xnOut = utils.distConstraint(xnOut, dc=0.379)
-
-                Dout = utils.getDistMat(xnOut)
-                Dtrue = utils.getDistMat(Coords)
-                AQdis += torch.norm(M * (Dout - Dtrue)) / torch.sum(M > 0)
-
-                dm = Dtrue.max()
-                Dout = torch.exp(-Dout ** 2 / (dm * sig) ** 2)
-                Dtrue = torch.exp(-Dtrue ** 2 / (dm * sig) ** 2)
-
-                loss = torch.norm(M * (Dout.detach() - Dtrue)) ** 2 / torch.norm(M * Dtrue) ** 2
-
-                misVal += loss.detach()
-
-
-
-        print("%2d       %10.3E   %10.3E" % (j, misVal / nVal, AQdis / nVal))
-        print('===============================================')
-
 

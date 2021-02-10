@@ -166,25 +166,10 @@ class dense_graph(nn.Module):
         return L
 
 
-# Test dense stuff
-#nnodes = 512
-#nf     = 256
-#G = dense_graph(nnodes)
-#w = torch.rand(1,1,nnodes)
-#w = torch.rand(nf,nnodes,nnodes)
 
-#x = torch.randn(1,nf,nnodes)
-#g = G.nodeGrad(x,w)
-#v = torch.randn(1,nf,nnodes,nnodes)
-#cp1 = torch.sum(g*v)
-#q = G.edgeDiv(v,w)
-#cp2 = torch.sum(x*q)
 
-#Lx = G.edgeDiv(G.nodeGrad(x,w),w)
 
-#print(cp1,cp2)
 
-#a = G.edgeAve(v,w)
 
 ###### Testing stuff
 #tests = 1

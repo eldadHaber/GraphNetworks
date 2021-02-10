@@ -28,6 +28,69 @@ def tv_norm(X, eps=1e-3):
     X = X/torch.sqrt(torch.sum(X**2,dim=1,keepdim=True) + eps)
     return X
 
+class graphNetwork(nn.Module):
+
+    def __init__(self, nNin, nEin, nNopen, nEopen, nEhid, nNclose, nEclose,nlayer,h=0.1):
+        super(graphNetwork, self).__init__()
+
+        self.h       = h
+        stdv  = 1e-2
+        stdvp = 1e-3
+        self.KNopen = nn.Parameter(torch.randn(nNopen, nNin)*stdv)
+        self.KEopen = nn.Parameter(torch.randn(nEopen, nEin) * stdv)
+
+        self.KNclose = nn.Parameter(torch.randn(nNclose,nNopen)*stdv)
+        self.KEclose = nn.Parameter(torch.randn(nEclose, nEopen) * stdv)
+
+        NEfeatures =  2*nNopen + nEopen
+        self.KE1 = nn.Parameter(torch.rand(nlayer, nEhid, NEfeatures) * stdvp)
+        self.KE2 = nn.Parameter(torch.rand(nlayer, nEopen, 2 * nEopen) * stdvp)
+        Nnfeatures = 2*nEhid + nEopen
+        self.KN  = nn.Parameter(torch.rand(nlayer,nEopen, Nnfeatures)*stdvp)
+
+    def forward(self,xn, xe, Kein, Keout, Knout, w=True):
+
+        # Opening layer
+        # xn = [B, C, N]
+        # xe = [B, C, N, N]
+        xn = F.conv1d(xn, self.KNopen.unsqueeze(-1))
+        xe = F.conv2d(xe, self.KEopen.unsqueeze(-1).unsqueeze(-1))
+
+        nlayers = self.KE.shape[0]
+
+        for i in range(nlayers):
+
+            Kei1 = self.KE1[i]
+            Kei2 = self.KE2[i]
+            Kni  = self.KN[i]
+
+            # Move from node to the edge space
+            gradX =  self.nodeGrad(xn, w)
+            intX  =  self.nodeAve(xn, w)
+            xec    = torch.cat([gradX, intX, xe], dim=1)
+
+            # 1D convs on the edge space and nonlinearity
+            xec    = F.conv2d(xec, Kei1.unsqueeze(-1).unsqueeze(-1))
+            xec    = tv_norm(xec)
+            xec    = torch.relu(xec)
+
+            # back to the node space
+            divXe  = self.edgeDiv(xec, w)
+            intXe  = self.edgeAve(xec, w)
+            xnc    = torch.cat([divXe, intXe, xn], dim=1)
+
+            # Edge and node updates
+            xe    = xe + F.conv2d(xec, Kei2.unsqueeze(-1).unsqueeze(-1))
+            xn    = xn + F.conv1d(xnc, Kni.unsqueeze(-1))
+
+        return xn, xe
+
+
+#######
+#
+#  Varlet Network
+#
+######
 class verletNetworks(nn.Module):
     def __init__(self, nNIn, nEin,nopenN, nopenE, ncloseN, ncloseE,nlayer,h=0.1):
         super(verletNetworks, self).__init__()
