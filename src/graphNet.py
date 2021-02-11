@@ -44,9 +44,9 @@ class graphNetwork(nn.Module):
 
         NEfeatures =  2*nNopen + nEopen
         self.KE1 = nn.Parameter(torch.rand(nlayer, nEhid, NEfeatures) * stdvp)
-        self.KE2 = nn.Parameter(torch.rand(nlayer, nEopen, 2 * nEopen) * stdvp)
-        Nnfeatures = 2*nEhid + nEopen
-        self.KN  = nn.Parameter(torch.rand(nlayer,nEopen, Nnfeatures)*stdvp)
+        self.KE2 = nn.Parameter(torch.rand(nlayer, nEopen, nEhid) * stdvp)
+        Nnfeatures = 2*nEhid + nNopen
+        self.KN  = nn.Parameter(torch.rand(nlayer,nNopen, Nnfeatures)*stdvp)
 
     def forward(self,xn, xe, Graph, w=True):
 
@@ -56,7 +56,7 @@ class graphNetwork(nn.Module):
         xn = F.conv1d(xn, self.KNopen.unsqueeze(-1))
         xe = F.conv2d(xe, self.KEopen.unsqueeze(-1).unsqueeze(-1))
 
-        nlayers = self.KE.shape[0]
+        nlayers = self.KE1.shape[0]
 
         for i in range(nlayers):
 
@@ -67,7 +67,7 @@ class graphNetwork(nn.Module):
             # Move from node to the edge space
             gradX =  Graph.nodeGrad(xn, w)
             intX  =  Graph.nodeAve(xn, w)
-            xec    = torch.cat([gradX, intX, xe], dim=1)
+            xec    = torch.cat([intX, xe, gradX], dim=1)
 
             # 1D convs on the edge space and nonlinearity
             xec    = F.conv2d(xec, Kei1.unsqueeze(-1).unsqueeze(-1))
@@ -77,11 +77,14 @@ class graphNetwork(nn.Module):
             # back to the node space
             divXe  = Graph.edgeDiv(xec, w)
             intXe  = Graph.edgeAve(xec, w)
-            xnc    = torch.cat([divXe, intXe, xn], dim=1)
+            xnc    = torch.cat([intXe, xn, divXe], dim=1)
 
             # Edge and node updates
-            xe    = xe + F.conv2d(xec, Kei2.unsqueeze(-1).unsqueeze(-1))
-            xn    = xn + F.conv1d(xnc, Kni.unsqueeze(-1))
+            xe    = xe + self.h*F.conv2d(xec, Kei2.unsqueeze(-1).unsqueeze(-1))
+            xn    = xn + self.h*F.conv1d(xnc, Kni.unsqueeze(-1))
+
+        xn = self.KNclose@xn
+        xe = conv2(xe, self.KEclose.unsqueeze(-1).unsqueeze(-1))
 
         return xn, xe
 
@@ -199,6 +202,25 @@ class verletNetworks(nn.Module):
         xe = self.KEopen.t()@xe
         return xn, xe #, XX, XE
 
+
+Test = True
+if Test:
+    nNin = 20
+    nEin = 3
+    nNopen = 32
+    nEopen = 16
+    nEhid  = 128
+    nNclose = 3
+    nEclose = 2
+    nlayer  = 18
+    model = graphNetwork(nNin, nEin, nNopen, nEopen, nEhid, nNclose, nEclose,nlayer)
+
+    L = 55
+    xn = torch.randn(1,nNin,L)
+    xe = torch.randn(1,nEin,L,L)
+    G = GO.dense_graph(L)
+
+    xnout, xeout = model(xn,xe,G)
 
 
 test = False
