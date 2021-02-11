@@ -95,7 +95,7 @@ for j in range(epochs):
 
         # Get the data
         nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
-                                                                            MSK, 0, device=device)
+                                                                            MSK, i, device=device)
 
         nNodes = Ds.shape[0]
         # G = GO.dense_graph(nNodes, Ds)
