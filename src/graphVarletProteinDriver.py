@@ -171,7 +171,7 @@ for j in range(epochs):
                     Dtrue = utils.getDistMat(Coords)
                     loss = F.mse_loss(M * Dout, M * Dtrue)
 
-                    AQdis += (torch.norm(M * Dout - M * Dtrue) / torch.sqrt(torch.sum(M > 0))).detach()
+                    AQdis += (torch.norm(M * Dout - M * Dtrue) / torch.sqrt(torch.sum(M > 0, dtype=torch.float32))).detach()
                     misVal += loss.detach()
 
                 print("%2d       %10.3E   %10.3E" % (j, misVal / nVal, AQdis / nVal))
