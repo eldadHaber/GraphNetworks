@@ -5,12 +5,12 @@ import re
 import os
 import torch
 import matplotlib.pyplot as plt
-#import torchvision.transforms as transforms
-#import os.path as osp
-#from torch.utils.data import Dataset
-#from os import listdir
-#from os.path import isfile, join
-#from Bio.PDB import PDBParser
+# import torchvision.transforms as transforms
+# import os.path as osp
+# from torch.utils.data import Dataset
+# from os import listdir
+# from os.path import isfile, join
+# from Bio.PDB import PDBParser
 from src.dataloader_utils import AA_DICT, MASK_DICT, DSSP_DICT, NUM_DIMENSIONS, AA_PAD_VALUE, MASK_PAD_VALUE, \
     DSSP_PAD_VALUE, SeqFlip, PSSM_PAD_VALUE, ENTROPY_PAD_VALUE, COORDS_PAD_VALUE, ListToNumpy
 
@@ -23,6 +23,7 @@ def separate_coords(full_coords, pos):  # pos can be either 0(n_term), 1(calpha)
             res.append([full_coords[j][i] for j in range(3)])
 
     return res
+
 
 class switch(object):
     """Switch statement for Python, based on recipe from Python Cookbook."""
@@ -53,6 +54,7 @@ def letter_to_num(string, dict_):
     num = [int(i) for i in num_string.split()]
     return num
 
+
 def flip_multidimensional_list(list_in):  # pos can be either 0(n_term), 1(calpha), 2(cterm)
     list_out = []
     ld = len(list_in)
@@ -64,6 +66,7 @@ def flip_multidimensional_list(list_in):  # pos can be either 0(n_term), 1(calph
 class list2np(object):
     def __init__(self):
         pass
+
     def __call__(self, *args):
         args_array = ()
         for arg in args:
@@ -84,7 +87,6 @@ def read_record(file_, num_evo_entries):
     dssp = []
     coord = []
     mask = []
-
 
     while True:
         next_line = file_.readline()
@@ -108,7 +110,8 @@ def read_record(file_, num_evo_entries):
             elif case('[MASK]' + '\n'):
                 mask.append(letter_to_num(file_.readline()[:-1], MASK_DICT))
             elif case(''):
-                return id,seq,pssm,entropy,dssp,coord,mask
+                return id, seq, pssm, entropy, dssp, coord, mask
+
 
 def parse_pnet(file):
     with open(file, 'r') as f:
@@ -117,76 +120,78 @@ def parse_pnet(file):
         r2 = []
         r3 = []
         pssm2 = []
-        for i in range(len(pssm)): #We transform each of these, since they are inconveniently stored
+        for i in range(len(pssm)):  # We transform each of these, since they are inconveniently stored
             pssm2.append(flip_multidimensional_list(pssm[i]))
             r1.append(separate_coords(coords[i], 0))
             r2.append(separate_coords(coords[i], 1))
             r3.append(separate_coords(coords[i], 2))
 
-    return id, seq, pssm2, entropy, dssp, r1,r2,r3, mask
+    return id, seq, pssm2, entropy, dssp, r1, r2, r3, mask
+
 
 ################# Processing the data to maps
 
-def ang2plain(v1,v2,v3,v4):
-    nA = torch.cross(v1,v2)
-    nA = nA/torch.norm(nA)
-    nB = torch.cross(v3,v4)
-    nB = nB/torch.norm(nB)
+def ang2plain(v1, v2, v3, v4):
+    nA = torch.cross(v1, v2)
+    nA = nA / torch.norm(nA)
+    nB = torch.cross(v3, v4)
+    nB = nB / torch.norm(nB)
 
-    cosPsi = torch.dot(nA,nB)
-    #Psi    = torch.acos(cosPsi)
+    cosPsi = torch.dot(nA, nB)
+    # Psi    = torch.acos(cosPsi)
     return cosPsi
 
 
-def crossProdMat(V1,V2):
+def crossProdMat(V1, V2):
     Vcp = torch.zeros(V1.shape)
-    Vcp[0,:,:] =  V1[1,:,:]*V2[2,:,:] - V1[2,:,:]*V2[1,:,:]
-    Vcp[1,:,:] = -V1[0,:,:]*V2[2,:,:] + V1[2,:,:]*V2[0,:,:]
-    Vcp[2,:,:] =  V1[0,:,:]*V2[1,:,:] - V1[1,:,:]*V2[0,:,:]
+    Vcp[0, :, :] = V1[1, :, :] * V2[2, :, :] - V1[2, :, :] * V2[1, :, :]
+    Vcp[1, :, :] = -V1[0, :, :] * V2[2, :, :] + V1[2, :, :] * V2[0, :, :]
+    Vcp[2, :, :] = V1[0, :, :] * V2[1, :, :] - V1[1, :, :] * V2[0, :, :]
     return Vcp
 
-def dotProdMat(V1,V2):
-    Vdp = torch.sum(V1*V2,dim=0)
+
+def dotProdMat(V1, V2):
+    Vdp = torch.sum(V1 * V2, dim=0)
     return Vdp
 
-def ang2plainMat(v1,v2,v3,v4):
-    nA = crossProdMat(v1,v2)
-    nB = crossProdMat(v3, v4)
-    nA = nA/(torch.sqrt(torch.sum(nA**2,axis=0)).unsqueeze(0))
-    nB = nB/(torch.sqrt(torch.sum(nB**2,axis=0)).unsqueeze(0))
 
-    cosPsi = torch.sum(nA*nB,axis=0)
-    Psi    = torch.acos(cosPsi)
+def ang2plainMat(v1, v2, v3, v4):
+    nA = crossProdMat(v1, v2)
+    nB = crossProdMat(v3, v4)
+    nA = nA / (torch.sqrt(torch.sum(nA ** 2, axis=0)).unsqueeze(0))
+    nB = nB / (torch.sqrt(torch.sum(nB ** 2, axis=0)).unsqueeze(0))
+
+    cosPsi = torch.sum(nA * nB, axis=0)
+    Psi = torch.acos(cosPsi)
     indnan = torch.isnan(Psi)
     Psi[indnan] = 0
     return Psi
 
 
 def convertCoordToDistMaps(rN, rCa, rCb, mask=None):
-
     # Central coordinate
-    #rM = (rN + rCa + rCb)/3
+    # rM = (rN + rCa + rCb)/3
     M = mask.unsqueeze(1) @ mask.unsqueeze(0)
     # Get Daa
-    D = torch.sum(rCa**2, dim=1).unsqueeze(1) + torch.sum(rCa**2, dim=1).unsqueeze(0) - 2*(rCa@rCa.t())
+    D = torch.sum(rCa ** 2, dim=1).unsqueeze(1) + torch.sum(rCa ** 2, dim=1).unsqueeze(0) - 2 * (rCa @ rCa.t())
     Daa = torch.sqrt(torch.relu(M * D))
 
     # Get Dab
-    D = torch.sum(rCa**2, dim=1).unsqueeze(1) + torch.sum(rCb**2, dim=1).unsqueeze(0) - 2*(rCa@rCb.t())
-    Dab = torch.sqrt(torch.relu(M*D))
+    D = torch.sum(rCa ** 2, dim=1).unsqueeze(1) + torch.sum(rCb ** 2, dim=1).unsqueeze(0) - 2 * (rCa @ rCb.t())
+    Dab = torch.sqrt(torch.relu(M * D))
 
     # Get DaN
-    D = torch.sum(rCa**2, dim=1).unsqueeze(1) + torch.sum(rN**2, dim=1).unsqueeze(0) - 2 * (rCa@rN.t())
-    DaN = torch.sqrt(torch.relu(M*D))
+    D = torch.sum(rCa ** 2, dim=1).unsqueeze(1) + torch.sum(rN ** 2, dim=1).unsqueeze(0) - 2 * (rCa @ rN.t())
+    DaN = torch.sqrt(torch.relu(M * D))
 
     # Get DbN
     D = torch.sum(rCb ** 2, dim=1).unsqueeze(1) + torch.sum(rN ** 2, dim=1).unsqueeze(0) - 2 * (rCb @ rN.t())
-    DbN = torch.sqrt(torch.relu(M*D))
+    DbN = torch.sqrt(torch.relu(M * D))
 
     return Daa, Dab, DaN, DbN, M, rCa
 
-def torsionAngleIJ(r1,r2,r3,r4,M=1.0):
 
+def torsionAngleIJ(r1, r2, r3, r4, M=1.0):
     pi = 3.1415926535
     a = r2 - r1
     b = r3 - r2
@@ -195,11 +200,11 @@ def torsionAngleIJ(r1,r2,r3,r4,M=1.0):
     normb = torch.norm(b)
     normc = torch.norm(c)
     if norma != 0:
-        a = a/norma
+        a = a / norma
     if normb != 0:
-        b = b/normb
+        b = b / normb
     if normc != 0:
-        c = c/normc
+        c = c / normc
 
     x = torch.dot(b, torch.cross(torch.cross(c, b), torch.cross(a, b)))
     y = torch.norm(b) * torch.dot(torch.cross(a, b), torch.cross(c, b))
@@ -209,39 +214,38 @@ def torsionAngleIJ(r1,r2,r3,r4,M=1.0):
 
 
 def convertCoordToAngles(rN, rCa, rCb, mask=1.0):
-    #OMEGA = torsionAngle(rCa, rCb, rCb, rCa) # Omega: Ca, Cb, Cb, Ca
-    #THETA = torsionAngle(rN, rCa, rCb, rCb) # N, Ca, Cb, Cb
-    #PHI   = torsionAngle(rCb, rCb, rCa, rN) # Cb, Cb, Ca, N
+    # OMEGA = torsionAngle(rCa, rCb, rCb, rCa) # Omega: Ca, Cb, Cb, Ca
+    # THETA = torsionAngle(rN, rCa, rCb, rCb) # N, Ca, Cb, Cb
+    # PHI   = torsionAngle(rCb, rCb, rCa, rN) # Cb, Cb, Ca, N
 
     n = rN.shape[0]
-    OMEGA = torch.zeros(n,n,dtype=rN.dtype)
-    THETA = torch.zeros(n,n,dtype=rN.dtype)
-    PHI = torch.zeros(n,n,dtype=rN.dtype)
+    OMEGA = torch.zeros(n, n, dtype=rN.dtype)
+    THETA = torch.zeros(n, n, dtype=rN.dtype)
+    PHI = torch.zeros(n, n, dtype=rN.dtype)
     for i in range(n):
         for j in range(n):
-            p1 = rCa[i,:]
-            p2 = rCb[i,:]
-            p3 = rCb[j,:]
-            p4 = rCa[j,:]
-            OMEGA[i,j] = torsionAngleIJ(p1,p2,p3,p4)
+            p1 = rCa[i, :]
+            p2 = rCb[i, :]
+            p3 = rCb[j, :]
+            p4 = rCa[j, :]
+            OMEGA[i, j] = torsionAngleIJ(p1, p2, p3, p4)
 
-            p1 = rN[i,:]
-            p2 = rCa[i,:]
+            p1 = rN[i, :]
+            p2 = rCa[i, :]
             p3 = rCb[i, :]
             p4 = rCb[j, :]
             THETA[i, j] = torsionAngleIJ(p1, p2, p3, p4)
 
-            p1 = rCb[i,:]
-            p2 = rCb[j,:]
+            p1 = rCb[i, :]
+            p2 = rCb[j, :]
             p3 = rCa[j, :]
             p4 = rN[j, :]
             PHI[i, j] = torsionAngleIJ(p1, p2, p3, p4)
 
+    return mask * OMEGA, mask * THETA, mask * PHI
 
-    return mask*OMEGA, mask*THETA, mask*PHI
 
 def interpolateRes(Z, M):
-
     M = torch.tensor(M)
     Z = torch.tensor(Z, dtype=torch.float64)
     n = M.shape[0]
@@ -251,42 +255,43 @@ def interpolateRes(Z, M):
     y = Z
     y = y[M != 0, :]
 
-    f = interpolate.interp1d(x.numpy(), y.numpy(), kind='linear', axis=0, copy=True, bounds_error=False, fill_value="extrapolate")
+    f = interpolate.interp1d(x.numpy(), y.numpy(), kind='linear', axis=0, copy=True, bounds_error=False,
+                             fill_value="extrapolate")
     ys = f(xs)
-    ys  = torch.tensor(ys,dtype=torch.float64)
-    ii  = torch.isnan(ys[:,0])
-    msk = 1 - 1*ii
-    Z = ys #torch.tensor(ys,dtype=torch.float64)
+    ys = torch.tensor(ys, dtype=torch.float64)
+    ii = torch.isnan(ys[:, 0])
+    msk = 1 - 1 * ii
+    Z = ys  # torch.tensor(ys,dtype=torch.float64)
     return Z, msk
+
 
 # Use the codes to process the data and get X and Y
 def getProteinData(seq, pssm2, entropy, RN, RCa, RCb, mask, idx, ncourse):
-
     L2np = list2np()
 
     Sh, S, E, rN, rCa, rCb, msk = L2np(seq[idx], pssm2[idx], entropy[idx],
                                        RN[idx], RCa[idx], RCb[idx], mask[idx])
 
-    S   = torch.tensor(S)
-    Sh  = torch.tensor(Sh)
-    E   = torch.tensor(E)
+    S = torch.tensor(S)
+    Sh = torch.tensor(Sh)
+    E = torch.tensor(E)
 
     nc = ncourse
     kp = S.shape[0]
-    k  = (2**nc)*(kp//(2**nc) + 1)
-    X  = torch.zeros(20,20,k,k)
+    k = (2 ** nc) * (kp // (2 ** nc) + 1)
+    X = torch.zeros(20, 20, k, k)
     for i in range(20):
         for j in range(20):
-            X[i,j, :kp,:kp] = S[:,i].unsqueeze(1)@S[:,j].unsqueeze(1).t()
-    X = X.reshape((400,k,k))
-    rN, m  = interpolateRes(rN,msk) #torch.tensor(rN)
-    rCa, m = interpolateRes(rCa,msk) #torch.tensor(rCa)
-    rCb, m = interpolateRes(rCb,msk) #torch.tensor(rCb)
+            X[i, j, :kp, :kp] = S[:, i].unsqueeze(1) @ S[:, j].unsqueeze(1).t()
+    X = X.reshape((400, k, k))
+    rN, m = interpolateRes(rN, msk)  # torch.tensor(rN)
+    rCa, m = interpolateRes(rCa, msk)  # torch.tensor(rCa)
+    rCb, m = interpolateRes(rCb, msk)  # torch.tensor(rCb)
     msk = torch.tensor(m)
-    #msk[:] = True
+    # msk[:] = True
 
     # Define model and data Y
-    #D, OMEGA, PHI, THETA, M = convertCoordToDistAnglesVec(rN,rCa,rCb,mask=msk)
+    # D, OMEGA, PHI, THETA, M = convertCoordToDistAnglesVec(rN,rCa,rCb,mask=msk)
     Dmm, Dma, Dmb, DmN, M, rM = convertCoordToDistMaps(rN, rCa, rCb, mask=msk)
 
     Yobs = torch.zeros(4, k, k)
@@ -305,59 +310,58 @@ def getProteinData(seq, pssm2, entropy, RN, RCa, RCb, mask, idx, ncourse):
 
 # Use the codes to process the data and get X and Y
 def getProteinDataLinear(seq, pssm2, entropy, RN, RCa, RCb, mask, idx, ncourse, inter=True):
-
     L2np = list2np()
 
     Sh, S, E, rN, rCa, rCb, msk = L2np(seq[idx], pssm2[idx], entropy[idx],
                                        RN[idx], RCa[idx], RCb[idx], mask[idx])
 
-    S   = torch.tensor(S)
-    Sh  = torch.tensor(Sh)
-    E   = torch.tensor(E)
+    S = torch.tensor(S)
+    Sh = torch.tensor(Sh)
+    E = torch.tensor(E)
 
     nc = ncourse
     kp = S.shape[0]
-    k  = (2**nc)*(kp//(2**nc) + 1)
-    X  = torch.zeros(21,k)
-    X[:-1,:kp] = S.t()
-    X[-1,:kp] = E
+    k = (2 ** nc) * (kp // (2 ** nc) + 1)
+    X = torch.zeros(21, k)
+    X[:-1, :kp] = S.t()
+    X[-1, :kp] = E
     X = X.unsqueeze(0)
 
     if inter:
-        rN,   m  = interpolateRes(rN,msk) #torch.tensor(rN)
-        rCa,  m = interpolateRes(rCa,msk) #torch.tensor(rCa)
-        rCb,  m = interpolateRes(rCb,msk) #torch.tensor(rCb)
+        rN, m = interpolateRes(rN, msk)  # torch.tensor(rN)
+        rCa, m = interpolateRes(rCa, msk)  # torch.tensor(rCa)
+        rCb, m = interpolateRes(rCb, msk)  # torch.tensor(rCb)
     else:
-        m   = torch.tensor(msk)
-        rN  = torch.tensor(rN)
+        m = torch.tensor(msk)
+        rN = torch.tensor(rN)
         rCa = torch.tensor(rCa)
         rCb = torch.tensor(rCb)
 
-    Yobs = torch.zeros(1,3,3,k)
-    Yobs[0,0,:,:kp] = rN.t()
-    Yobs[0,1,:,:kp] = rCa.t()
-    Yobs[0,2,:,:kp] = rCb.t()
+    Yobs = torch.zeros(1, 3, 3, k)
+    Yobs[0, 0, :, :kp] = rN.t()
+    Yobs[0, 1, :, :kp] = rCa.t()
+    Yobs[0, 2, :, :kp] = rCb.t()
 
     msk = torch.zeros(k)
     msk[:kp] = m
     return X, Yobs, msk, S
 
 
-def plotProteinData(Y,j):
-
+def plotProteinData(Y, j):
     plt.figure(j)
-    plt.subplot(2,2,1)
-    plt.imshow(Y[0,0,:,:])
+    plt.subplot(2, 2, 1)
+    plt.imshow(Y[0, 0, :, :])
     plt.colorbar()
-    plt.subplot(2,2,2)
-    plt.imshow(Y[0,1,:,:])
+    plt.subplot(2, 2, 2)
+    plt.imshow(Y[0, 1, :, :])
     plt.colorbar()
-    plt.subplot(2,2,3)
-    plt.imshow(Y[0,2,:,:])
+    plt.subplot(2, 2, 3)
+    plt.imshow(Y[0, 2, :, :])
     plt.colorbar()
-    plt.subplot(2,2,4)
-    plt.imshow(Y[0,3,:,:])
+    plt.subplot(2, 2, 4)
+    plt.imshow(Y[0, 3, :, :])
     plt.colorbar()
+
 
 def convertCoordToAnglesVec(rN, rCa, rCb, mask=1.0):
     # Vectorized operations to compute angles
@@ -367,25 +371,25 @@ def convertCoordToAnglesVec(rN, rCa, rCb, mask=1.0):
 
     nat = rCa.shape[0]
     # Phi: Cb, Cb, Ca, N
-    V1 = torch.zeros(3,nat,  nat, dtype=rN.dtype)
+    V1 = torch.zeros(3, nat, nat, dtype=rN.dtype)
     V2 = torch.zeros(3, nat, nat, dtype=rN.dtype)
     V3 = torch.zeros(3, nat, nat, dtype=rN.dtype)
-    V1[0,:,:] = rCb[:, 0].unsqueeze(1) - rCb[:, 0].unsqueeze(0)
-    V1[1,:,:] = rCb[:, 1].unsqueeze(1) - rCb[:, 1].unsqueeze(0)
-    V1[2,:,:] = rCb[:, 2].unsqueeze(1) - rCb[:, 2].unsqueeze(0)
-    V2[0,:,:] = rCb[:, 0].unsqueeze(1) - rCa[:, 0].unsqueeze(1).repeat(1,nat)
-    V2[1,:,:] = rCb[:, 1].unsqueeze(1) - rCa[:, 1].unsqueeze(1).repeat(1,nat)
-    V2[2,:,:] = rCb[:, 2].unsqueeze(1) - rCa[:, 2].unsqueeze(1).repeat(1,nat)
-    V3[0,:,:] = rCa[:, 0].unsqueeze(1) - rN[:, 0].unsqueeze(1).repeat(1,nat)
-    V3[1,:,:] = rCa[:, 1].unsqueeze(1) - rN[:, 1].unsqueeze(1).repeat(1,nat)
-    V3[2,:,:] = rCa[:, 2].unsqueeze(1) - rN[:, 2].unsqueeze(1).repeat(1,nat)
+    V1[0, :, :] = rCb[:, 0].unsqueeze(1) - rCb[:, 0].unsqueeze(0)
+    V1[1, :, :] = rCb[:, 1].unsqueeze(1) - rCb[:, 1].unsqueeze(0)
+    V1[2, :, :] = rCb[:, 2].unsqueeze(1) - rCb[:, 2].unsqueeze(0)
+    V2[0, :, :] = rCb[:, 0].unsqueeze(1) - rCa[:, 0].unsqueeze(1).repeat(1, nat)
+    V2[1, :, :] = rCb[:, 1].unsqueeze(1) - rCa[:, 1].unsqueeze(1).repeat(1, nat)
+    V2[2, :, :] = rCb[:, 2].unsqueeze(1) - rCa[:, 2].unsqueeze(1).repeat(1, nat)
+    V3[0, :, :] = rCa[:, 0].unsqueeze(1) - rN[:, 0].unsqueeze(1).repeat(1, nat)
+    V3[1, :, :] = rCa[:, 1].unsqueeze(1) - rN[:, 1].unsqueeze(1).repeat(1, nat)
+    V3[2, :, :] = rCa[:, 2].unsqueeze(1) - rN[:, 2].unsqueeze(1).repeat(1, nat)
     # Normalize them
-    V1n = torch.sqrt(torch.sum(V1**2,dim=0) )
-    V1 = V1/V1n.unsqueeze(0)
-    V2n = torch.sqrt(torch.sum(V2**2,dim=0) )
-    V2 = V2/V2n.unsqueeze(0)
-    V3n = torch.sqrt(torch.sum(V3**2,dim=0) )
-    V3 = V3/V3n.unsqueeze(0)
+    V1n = torch.sqrt(torch.sum(V1 ** 2, dim=0))
+    V1 = V1 / V1n.unsqueeze(0)
+    V2n = torch.sqrt(torch.sum(V2 ** 2, dim=0))
+    V2 = V2 / V2n.unsqueeze(0)
+    V3n = torch.sqrt(torch.sum(V3 ** 2, dim=0))
+    V3 = V3 / V3n.unsqueeze(0)
     PHI = mask * ang2plainMat(V1, V2, V2, V3)
     indnan = torch.isnan(PHI)
     PHI[indnan] = 0.0
@@ -396,19 +400,19 @@ def convertCoordToAnglesVec(rN, rCa, rCb, mask=1.0):
     V2 = torch.zeros(3, nat, nat)
     V3 = torch.zeros(3, nat, nat)
     # Ca1 - Cb1
-    V1[0,:,:] = (rCa[:,0].unsqueeze(1) - rCb[:,0].unsqueeze(1)).repeat((1,nat))
-    V1[1,:,:] = (rCa[:,1].unsqueeze(1) - rCb[:,1].unsqueeze(1)).repeat((1, nat))
-    V1[2,:,:] = (rCa[:,2].unsqueeze(1) - rCb[:,2].unsqueeze(1)).repeat((1, nat))
+    V1[0, :, :] = (rCa[:, 0].unsqueeze(1) - rCb[:, 0].unsqueeze(1)).repeat((1, nat))
+    V1[1, :, :] = (rCa[:, 1].unsqueeze(1) - rCb[:, 1].unsqueeze(1)).repeat((1, nat))
+    V1[2, :, :] = (rCa[:, 2].unsqueeze(1) - rCb[:, 2].unsqueeze(1)).repeat((1, nat))
     # Cb1 - Cb2
-    V2[0,:,:] = rCb[:,0].unsqueeze(1) - rCb[:,0].unsqueeze(1).t()
-    V2[1,:,:] = rCb[:,1].unsqueeze(1) - rCb[:,1].unsqueeze(1).t()
-    V2[2,:,:] = rCb[:,2].unsqueeze(1) - rCb[:,2].unsqueeze(1).t()
+    V2[0, :, :] = rCb[:, 0].unsqueeze(1) - rCb[:, 0].unsqueeze(1).t()
+    V2[1, :, :] = rCb[:, 1].unsqueeze(1) - rCb[:, 1].unsqueeze(1).t()
+    V2[2, :, :] = rCb[:, 2].unsqueeze(1) - rCb[:, 2].unsqueeze(1).t()
     # Cb2 - Ca2
-    V3[0,:,:] = (rCb[:,0].unsqueeze(0) - rCa[:,0].unsqueeze(0)).repeat((nat,1))
-    V3[1,:,:] = (rCb[:,1].unsqueeze(0) - rCa[:,1].unsqueeze(0)).repeat((nat,1))
-    V3[2,:,:] = (rCb[:,2].unsqueeze(0) - rCa[:,2].unsqueeze(0)).repeat((nat,1))
+    V3[0, :, :] = (rCb[:, 0].unsqueeze(0) - rCa[:, 0].unsqueeze(0)).repeat((nat, 1))
+    V3[1, :, :] = (rCb[:, 1].unsqueeze(0) - rCa[:, 1].unsqueeze(0)).repeat((nat, 1))
+    V3[2, :, :] = (rCb[:, 2].unsqueeze(0) - rCa[:, 2].unsqueeze(0)).repeat((nat, 1))
 
-    OMEGA     = mask*ang2plainMat(V1, V2, V2, V3)
+    OMEGA = mask * ang2plainMat(V1, V2, V2, V3)
     indnan = torch.isnan(OMEGA)
     OMEGA[indnan] = 0.0
 
@@ -417,19 +421,19 @@ def convertCoordToAnglesVec(rN, rCa, rCb, mask=1.0):
     V2 = torch.zeros(3, nat, nat)
     V3 = torch.zeros(3, nat, nat)
     # N - Ca
-    V1[0,:,:] = (rN[:,0].unsqueeze(1) - rCa[:,0].unsqueeze(1)).repeat((1,nat))
-    V1[0,:,:] = (rN[:,1].unsqueeze(1) - rCa[:,1].unsqueeze(1)).repeat((1, nat))
-    V1[2,:,:] = (rN[:,2].unsqueeze(1) - rCa[:,2].unsqueeze(1)).repeat((1, nat))
+    V1[0, :, :] = (rN[:, 0].unsqueeze(1) - rCa[:, 0].unsqueeze(1)).repeat((1, nat))
+    V1[0, :, :] = (rN[:, 1].unsqueeze(1) - rCa[:, 1].unsqueeze(1)).repeat((1, nat))
+    V1[2, :, :] = (rN[:, 2].unsqueeze(1) - rCa[:, 2].unsqueeze(1)).repeat((1, nat))
     # Ca - Cb # TODO - repeated computation
-    V2[0,:,:] = (rCa[:,0].unsqueeze(1) - rCb[:,0].unsqueeze(1)).repeat((1,nat))
-    V2[1,:,:] = (rCa[:,1].unsqueeze(1) - rCb[:,1].unsqueeze(1)).repeat((1, nat))
-    V2[2,:,:] = (rCa[:,2].unsqueeze(1) - rCb[:,2].unsqueeze(1)).repeat((1, nat))
+    V2[0, :, :] = (rCa[:, 0].unsqueeze(1) - rCb[:, 0].unsqueeze(1)).repeat((1, nat))
+    V2[1, :, :] = (rCa[:, 1].unsqueeze(1) - rCb[:, 1].unsqueeze(1)).repeat((1, nat))
+    V2[2, :, :] = (rCa[:, 2].unsqueeze(1) - rCb[:, 2].unsqueeze(1)).repeat((1, nat))
     # Cb1 - Cb2 # TODO - repeated computation
-    V3[0,:,:] = rCb[:,0].unsqueeze(1) - rCb[:,0].unsqueeze(1).t()
-    V3[1,:,:] = rCb[:,1].unsqueeze(1) - rCb[:,1].unsqueeze(1).t()
-    V3[2,:,:] = rCb[:,2].unsqueeze(1) - rCb[:,2].unsqueeze(1).t()
+    V3[0, :, :] = rCb[:, 0].unsqueeze(1) - rCb[:, 0].unsqueeze(1).t()
+    V3[1, :, :] = rCb[:, 1].unsqueeze(1) - rCb[:, 1].unsqueeze(1).t()
+    V3[2, :, :] = rCb[:, 2].unsqueeze(1) - rCb[:, 2].unsqueeze(1).t()
 
-    THETA = mask*ang2plainMat(V1, V2, V2, V3)
+    THETA = mask * ang2plainMat(V1, V2, V2, V3)
     indnan = torch.isnan(THETA)
     THETA[indnan] = 0.0
 
