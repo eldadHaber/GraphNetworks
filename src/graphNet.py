@@ -203,7 +203,7 @@ class verletNetworks(nn.Module):
         return xn, xe #, XX, XE
 
 
-Test = True
+Test = False
 if Test:
     nNin = 20
     nEin = 3
@@ -216,8 +216,10 @@ if Test:
     model = graphNetwork(nNin, nEin, nNopen, nEopen, nEhid, nNclose, nEclose,nlayer)
 
     L = 55
-    xn = torch.randn(1,nNin,L)
-    xe = torch.randn(1,nEin,L,L)
+    xn = torch.zeros(1,nNin,L)
+    xn[0,:,23] = 1
+    xe = torch.ones(1,nEin,L,L)
+
     G = GO.dense_graph(L)
 
     xnout, xeout = model(xn,xe,G)
