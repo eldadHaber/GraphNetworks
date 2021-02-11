@@ -81,7 +81,7 @@ optimizer = optim.Adam([{'params': model.KNopen, 'lr': lrO},
                         {'params': model.KN, 'lr': lrN}])
 
 alossBest = 1e6
-epochs = 400
+epochs = 1000
 
 ndata = 2  # n_data_total
 bestModel = model
