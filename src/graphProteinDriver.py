@@ -42,9 +42,9 @@ nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yob
 # Setup the network and its parameters
 nNin    = 40
 nEin    = 1
-nNopen  = 128
-nEopen  = 3
-nEhid   = 256
+nNopen  = 512
+nEopen  = 16
+nEhid   = 32
 nNclose = 3
 nEclose = 1
 nlayer = 6
@@ -58,22 +58,24 @@ print('Number of parameters ', total_params)
 
 #### Start Training ####
 
-lrO = 1e-2
-lrC = 1e-2
+lrO = 1e-3
+lrC = 1e-3
 lrN = 1e-2
-lrE = 1e-2
+lrE1 = 1e-2
+lrE2 = 1e-1
+
 
 optimizer = optim.Adam([{'params': model.KNopen, 'lr': lrO},
                         {'params': model.KNclose, 'lr': lrC},
                         {'params': model.KEopen, 'lr': lrO},
                         {'params': model.KEclose, 'lr': lrC},
-                        {'params': model.KE1, 'lr': lrE},
-                        {'params': model.KE2, 'lr': lrE},
+                        {'params': model.KE1, 'lr': lrE1},
+                        {'params': model.KE2, 'lr': lrE2},
                         {'params': model.KN, 'lr': lrN}])
 
 
 alossBest = 1e6
-epochs    = 1
+epochs    = 400
 
 ndata = 2 #n_data_total
 bestModel = model
@@ -87,13 +89,16 @@ for j in range(epochs):
 
         # Get the data
         nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
-                                                                            MSK, 1, device=device)
+                                                                            MSK, 0, device=device)
 
         nNodes = Ds.shape[0]
-        G = GO.dense_graph(nNodes, Ds)
+        # G = GO.dense_graph(nNodes, Ds)
+        w = Ds[IJ[:, 0], IJ[:, 1]]
+        G = GO.graph(IJ[:, 0], IJ[:, 1], nNodes, w)
         # Organize the node data
         xn = nodeProperties
-        xe = Ds.unsqueeze(0).unsqueeze(0)  # edgeProperties
+        #xe = Ds.unsqueeze(0).unsqueeze(0)  # edgeProperties
+        xe = w.unsqueeze(0).unsqueeze(0)
 
         M = torch.ger(M.squeeze(), M.squeeze())
 
@@ -120,10 +125,11 @@ for j in range(epochs):
         nprnt = 1
         if (i + 1) % nprnt == 0:
             aloss = aloss / nprnt
+            alossAQ = alossAQ/nprnt
             print("%2d.%1d   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E" %
                   (j, i, aloss, alossAQ, gO, gN, gE1, gE2, gC))
             aloss = 0.0
-
+            alossAQ = 0.0
         # Validation
         nextval = 1e9
         if (i + 1) % nextval == 0:
@@ -136,14 +142,17 @@ for j in range(epochs):
                                                                                         MSK, 0, device=device)
 
                     nNodes = Ds.shape[0]
-                    G = GO.dense_graph(nNodes, Ds)
+                    # G = GO.dense_graph(nNodes, Ds)
+                    w = Ds[IJ[:, 0], IJ[:, 1]]
+                    G = GO.graph(IJ[:, 0], IJ[:, 1], nNodes, w)
                     # Organize the node data
                     xn = nodeProperties
-                    xe = Ds.unsqueeze(0).unsqueeze(0)  # edgeProperties
+                    # xe = Ds.unsqueeze(0).unsqueeze(0)  # edgeProperties
+                    xe = w.unsqueeze(0).unsqueeze(0)
 
                     M = torch.ger(M.squeeze(), M.squeeze())
 
-                    xnOut, xeOut = model(xn, xe, G)
+                    xnOut, xeOut = model(xn, xe, G, Ds)
 
                     Dout = utils.getDistMat(xnOut)
                     Dtrue = utils.getDistMat(Coords)

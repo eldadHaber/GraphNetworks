@@ -48,13 +48,20 @@ class graphNetwork(nn.Module):
         Nnfeatures = 2*nEhid + nNopen
         self.KN  = nn.Parameter(torch.rand(nlayer,nNopen, Nnfeatures)*stdvp)
 
-    def forward(self,xn, xe, Graph, w=True):
+    def edgeConv(self, xe, K):
+        if xe.dim() == 4:
+            xe = F.conv2d(xe, K.unsqueeze(-1).unsqueeze(-1))
+        elif xe.dim() == 3:
+            xe = F.conv1d(xe, K.unsqueeze(-1))
+        return xe
+
+    def forward(self,xn, xe, Graph):
 
         # Opening layer
         # xn = [B, C, N]
-        # xe = [B, C, N, N]
+        # xe = [B, C, N, N] or [B, C, N]
         xn = F.conv1d(xn, self.KNopen.unsqueeze(-1))
-        xe = F.conv2d(xe, self.KEopen.unsqueeze(-1).unsqueeze(-1))
+        xe = self.edgeConv(xe, self.KEopen)
 
         nlayers = self.KE1.shape[0]
 
@@ -65,26 +72,26 @@ class graphNetwork(nn.Module):
             Kni  = self.KN[i]
 
             # Move from node to the edge space
-            gradX =  Graph.nodeGrad(xn, w)
-            intX  =  Graph.nodeAve(xn, w)
+            gradX =  Graph.nodeGrad(xn)
+            intX  =  Graph.nodeAve(xn)
             xec    = torch.cat([intX, xe, gradX], dim=1)
 
             # 1D convs on the edge space and nonlinearity
-            xec    = F.conv2d(xec, Kei1.unsqueeze(-1).unsqueeze(-1))
+            xec    = self.edgeConv(xec, Kei1)
             xec    = tv_norm(xec)
             xec    = torch.relu(xec)
 
             # back to the node space
-            divXe  = Graph.edgeDiv(xec, w)
-            intXe  = Graph.edgeAve(xec, w)
+            divXe  = Graph.edgeDiv(xec)
+            intXe  = Graph.edgeAve(xec)
             xnc    = torch.cat([intXe, xn, divXe], dim=1)
 
             # Edge and node updates
-            xe    = xe + self.h*F.conv2d(xec, Kei2.unsqueeze(-1).unsqueeze(-1))
+            xe    = xe + self.h*self.edgeConv(xec, Kei2)
             xn    = xn + self.h*F.conv1d(xnc, Kni.unsqueeze(-1))
 
-        xn = self.KNclose@xn
-        xe = conv2(xe, self.KEclose.unsqueeze(-1).unsqueeze(-1))
+        xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
+        xe = self.edgeConv(xe, self.KEclose)
 
         return xn, xe
 
