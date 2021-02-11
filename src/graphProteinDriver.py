@@ -73,7 +73,7 @@ optimizer = optim.Adam([{'params': model.KNopen, 'lr': lrO},
 
 
 alossBest = 1e6
-epochs    = 500
+epochs    = 1
 
 ndata = 2 #n_data_total
 bestModel = model
@@ -108,7 +108,7 @@ for j in range(epochs):
         loss.backward()
 
         aloss   += loss.detach()
-        alossAQ += (torch.norm(M*Dout - M*Dtrue)/torch.sqrt(torch.sum(M>0)).detach())
+        alossAQ += (torch.norm(M*Dout - M*Dtrue)/torch.sqrt(torch.sum(M)).detach())
         gN  = model.KN.grad.norm().item()
         gE1 = model.KE1.grad.norm().item()
         gE2 = model.KE2.grad.norm().item()
@@ -149,7 +149,7 @@ for j in range(epochs):
                     Dtrue = utils.getDistMat(Coords)
                     loss = F.mse_loss(M * Dout, M * Dtrue)
 
-                    AQdis  += (torch.norm(M * Dout - M * Dtrue) / torch.sqrt(torch.sum(M>0))).detach()
+                    AQdis  += (torch.norm(M * Dout - M * Dtrue) / torch.sqrt(torch.sum(M))).detach()
                     misVal += loss.detach()
 
 

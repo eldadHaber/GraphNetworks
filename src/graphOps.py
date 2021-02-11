@@ -142,8 +142,8 @@ class dense_graph(nn.Module):
         if w:
             w = self.W
         g = w*g
-        x1 = g.sum(dim=2,keepdim=True).squeeze(0)
-        x2 = g.sum(dim=3,keepdim=True).squeeze(0)
+        x1 = g.mean(dim=2,keepdim=True).squeeze(0)
+        x2 = g.mean(dim=3,keepdim=True).squeeze(0)
         x2 = x2.transpose(1, 2)
         if method=='max':
             x = torch.max(x1,x2)
