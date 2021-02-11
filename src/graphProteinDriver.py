@@ -67,6 +67,11 @@ lrN = 1e-2
 lrE1 = 1e-2
 lrE2 = 1e-1
 
+lrO = 1e-3
+lrC = 1e-3
+lrN = 1e-3
+lrE1 = 1e-3
+lrE2 = 1e-3
 optimizer = optim.Adam([{'params': model.KNopen, 'lr': lrO},
                         {'params': model.KNclose, 'lr': lrC},
                         {'params': model.KEopen, 'lr': lrO},
@@ -137,7 +142,7 @@ for j in range(epochs):
             with torch.no_grad():
                 misVal = 0
                 AQdis = 0
-                nVal = len(STesting)
+                nVal = len(STest)
                 for jj in range(nVal):
                     nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
                                                                                         MSK, 0, device=device)
