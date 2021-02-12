@@ -47,7 +47,7 @@ def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
     #Ds[Ds > 0] = 1
     Ds[indices] = 1
     IJ = torch.nonzero(Ds)
-
+    print("IJ shape:", IJ.shape)
     # Organize the edge data
     nEdges = IJ.shape[0]
     xe = torch.zeros(1, 1, nEdges, device=device)
