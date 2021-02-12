@@ -7,7 +7,6 @@ import math
 from src import utils
 
 
-
 def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
     scale = 1e-2
     PSSM = S[i].t()
@@ -51,18 +50,16 @@ def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
     nEdges = IJ.shape[0]
     xe = torch.zeros(1, 1, nEdges, device=device)
     for i in range(nEdges):
-        if IJ[i,0] + 1 == IJ[i,1]:
+        if IJ[i, 0] + 1 == IJ[i, 1]:
             xe[:, :, i] = 1
-        if IJ[i,0] - 1 == IJ[i,1]:
+        if IJ[i, 0] - 1 == IJ[i, 1]:
             xe[:, :, i] = 1
 
-    Seq    = Seq.to(device=device, non_blocking=True)
+    Seq = Seq.to(device=device, non_blocking=True)
     Coords = Coords.to(device=device, non_blocking=True)
-    M      = M.to(device=device, non_blocking=True)
-    IJ     = IJ.to(device=device, non_blocking=True)
-    xe     = xe.to(device=device, non_blocking=True)
-    Ds      = Ds.to(device=device, non_blocking=True)
+    M = M.to(device=device, non_blocking=True)
+    IJ = IJ.to(device=device, non_blocking=True)
+    xe = xe.to(device=device, non_blocking=True)
+    Ds = Ds.to(device=device, non_blocking=True)
 
     return Seq.unsqueeze(0), Coords.unsqueeze(0), M.unsqueeze(0).unsqueeze(0), IJ, xe, D
-
-
