@@ -46,11 +46,11 @@ n_data_total = len(S)
 nNin = 40
 nEin = 1
 nNopen = 512
-nEopen = 256
-nEhid = 256
+nEopen = 512
+nEhid = 512
 nNclose = 3
 nEclose = 1
-nlayer = 6
+nlayer = 3
 
 model = GN.graphNetwork(nNin, nEin, nNopen, nEopen, nEhid, nNclose, nEclose, nlayer, h=.1)
 model.to(device)
@@ -60,11 +60,11 @@ print('Number of parameters ', total_params)
 
 #### Start Training ####
 
-lrO = 1e-3
-lrC = 1e-5
-lrN = 1e-3
-lrE1 = 1e-2
-lrE2 = 1e-2
+lrO = 1e-4
+lrC = 1e-4
+lrN = 1e-4
+lrE1 = 1e-4
+lrE2 = 1e-4
 
 # lrO = 1e-3
 # lrC = 1e-3
