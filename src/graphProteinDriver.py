@@ -10,6 +10,7 @@ from src import graphOps as GO
 from src import processContacts as prc
 from src import utils
 from src import graphNet as GN
+import torch.autograd.profiler as profiler
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
@@ -55,6 +56,9 @@ nlayer = 6
 
 model = GN.graphNetwork(nNin, nEin, nNopen, nEopen, nEhid, nNclose, nEclose, nlayer, h=.1)
 model.to(device)
+
+
+
 
 total_params = sum(p.numel() for p in model.parameters())
 print('Number of parameters ', total_params)
@@ -110,6 +114,10 @@ for j in range(epochs):
 
         optimizer.zero_grad()
 
+        ## Profiler:
+        with profiler.profile(record_shapes=True) as prof:
+            with profiler.record_function("model_inference"):
+                xnOut, xeOut = model(xn, xe, G)
         xnOut, xeOut = model(xn, xe, G)
         # xnOut = utils.distConstraint(xnOut, dc=3.79)
         Dout = utils.getDistMat(xnOut)
