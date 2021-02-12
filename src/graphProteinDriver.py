@@ -118,6 +118,8 @@ for j in range(epochs):
         with profiler.profile(record_shapes=True) as prof:
             with profiler.record_function("model_inference"):
                 xnOut, xeOut = model(xn, xe, G)
+        print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=10))
+
         xnOut, xeOut = model(xn, xe, G)
         # xnOut = utils.distConstraint(xnOut, dc=3.79)
         Dout = utils.getDistMat(xnOut)
