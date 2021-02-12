@@ -65,7 +65,7 @@ class graph(nn.Module):
         x2.index_add_(2, self.jInd, self.W*g)
         if method=='max':
             x = torch.max(x1,x2)
-        else:
+        elif method=='ave':
             x = (x1 + x2)/2
         return x
 

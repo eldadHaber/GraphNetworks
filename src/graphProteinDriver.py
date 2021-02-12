@@ -44,7 +44,7 @@ nNin    = 40
 nEin    = 1
 nNopen  = 64
 nEopen  = 16
-nEhid   = 2*nNopen + nEopen
+nEhid   = (2*nNopen + nEopen)*2
 nNclose = 3
 nEclose = 1
 nlayer = 18
@@ -60,7 +60,7 @@ print('Number of parameters ', total_params)
 #### Start Training ####
 
 lrO = 1e-3
-lrC = 1e-3
+lrC = 1e-4
 lrN = 1e-3
 lrE1 = 1e-3
 lrE2 = 1e-3
@@ -79,7 +79,7 @@ optimizer = optim.Adam([{'params': model.KNopen, 'lr': lrO},
 alossBest = 1e6
 epochs    = 300
 
-ndata = 2 #n_data_total
+ndata = 100 #n_data_total
 bestModel = model
 hist = torch.zeros(epochs)
 
@@ -91,48 +91,46 @@ for j in range(epochs):
 
         # Get the data
         nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
-                                                                            MSK, 1, device=device)
+                                                                            MSK, i, device=device)
 
         nNodes = Ds.shape[0]
-        if dense:
-            G = GO.dense_graph(nNodes, Ds)
-            xe = Ds.unsqueeze(0).unsqueeze(0)  # edgeProperties
-        else:
-            w = Ds[IJ[:, 0], IJ[:, 1]]
-            G = GO.graph(IJ[:, 0], IJ[:, 1], nNodes, w)
-            xe = w.unsqueeze(0).unsqueeze(0)  # edgeProperties
+        if nNodes < 500:
+            if dense:
+                G = GO.dense_graph(nNodes, Ds)
+                xe = Ds.unsqueeze(0).unsqueeze(0)  # edgeProperties
+            else:
+                w = Ds[IJ[:, 0], IJ[:, 1]]
+                G = GO.graph(IJ[:, 0], IJ[:, 1], nNodes, w)
+                xe = w.unsqueeze(0).unsqueeze(0)  # edgeProperties
 
-        xn = nodeProperties
+            xn = nodeProperties
 
-        M = torch.ger(M.squeeze(), M.squeeze())
+            M = torch.ger(M.squeeze(), M.squeeze())
 
-        optimizer.zero_grad()
+            optimizer.zero_grad()
 
-        xnOut, xeOut = model(xn, xe, G)
-        Dout = utils.getDistMat(xnOut)
-        Dtrue = utils.getDistMat(Coords)
+            xnOut, xeOut = model(xn, xe, G)
+            loss = utils.dRMSD(xnOut, Coords, M)
+            loss.backward()
 
-        loss = F.mse_loss(M*Dout, M*Dtrue)
-        loss.backward()
+            aloss   += loss.detach()
+            alossAQ += torch.sqrt(loss)
+            gN  = model.KN.grad.norm().item()
+            gE1 = model.KE1.grad.norm().item()
+            gE2 = model.KE2.grad.norm().item()
+            gO = model.KNopen.grad.norm().item()
+            gC = model.KNclose.grad.norm().item()
 
-        aloss   += loss.detach()
-        alossAQ += (torch.norm(M*Dout - M*Dtrue)/torch.sqrt(torch.sum(M)).detach())
-        gN  = model.KN.grad.norm().item()
-        gE1 = model.KE1.grad.norm().item()
-        gE2 = model.KE2.grad.norm().item()
-        gO = model.KNopen.grad.norm().item()
-        gC = model.KNclose.grad.norm().item()
-
-        optimizer.step()
-        # scheduler.step()
-        nprnt = 1
-        if (i + 1) % nprnt == 0:
-            aloss = aloss / nprnt
-            alossAQ = alossAQ/nprnt
-            print("%2d.%1d   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E" %
-                  (j, i, aloss, alossAQ, gO, gN, gE1, gE2, gC))
-            aloss = 0.0
-            alossAQ = 0.0
+            optimizer.step()
+            # scheduler.step()
+            nprnt = 1
+            if (i + 1) % nprnt == 0:
+                aloss = aloss / nprnt
+                alossAQ = alossAQ/nprnt
+                print("%2d.%1d   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E" %
+                      (j, i, aloss, alossAQ, gO, gN, gE1, gE2, gC))
+                aloss = 0.0
+                alossAQ = 0.0
         # Validation
         nextval = 1e9
         if (i + 1) % nextval == 0:
@@ -158,11 +156,11 @@ for j in range(epochs):
 
                     xnOut, xeOut = model(xn, xe, G, Ds)
 
-                    Dout = utils.getDistMat(xnOut)
-                    Dtrue = utils.getDistMat(Coords)
-                    loss = F.mse_loss(M * Dout, M * Dtrue)
-
-                    AQdis  += (torch.norm(M * Dout - M * Dtrue) / torch.sqrt(torch.sum(M))).detach()
+                    #Dout = utils.getDistMat(xnOut)
+                    #Dtrue = utils.getDistMat(Coords)
+                    #loss = F.mse_loss(M * Dout, M * Dtrue)
+                    loss = utils.dRMSD(xnOut, Coords, M)
+                    AQdis  += torch.sqrt(loss)
                     misVal += loss.detach()
 
 

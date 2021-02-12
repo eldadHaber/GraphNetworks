@@ -166,3 +166,38 @@ def kl_div(p, q, weight=False):
     r = r/r.sum()
     KLD = torch.diag(1-r)@KLD
     return KLD.sum()/KLD.shape[1]
+
+def dMat(X):
+    XX = X.t() @ X
+    d = torch.diag(XX).unsqueeze(1)
+    D = d + d.t() - 2 * XX
+    D = torch.sqrt(torch.relu(D))
+    return D
+
+def dRMSD(X,Xobs, M):
+
+    X    = torch.squeeze(X)
+    Xobs = torch.squeeze(Xobs)
+    M    = torch.squeeze(M)
+
+    # Compute distance matrices
+    D    = dMat(X)
+    Dobs = dMat(Xobs)
+
+
+    # Filter non-physical ones
+    n = X.shape[-1]
+    Xl = torch.zeros(3,n,device=X.device)
+    Xl[0,:] = 3.8*torch.arange(0,n)
+    Dl = dMat(Xl)
+
+    ML = (M*Dl  - M*Dobs)>0
+
+    #MS = Dobs < 100*3.8
+    M  = M > 0
+    M  = (M&ML)*1.0
+    R  = torch.triu(D-Dobs,2)
+    M  = torch.triu(M,2)
+    loss = torch.norm(M*R)**2/torch.sum(M)
+
+    return loss
