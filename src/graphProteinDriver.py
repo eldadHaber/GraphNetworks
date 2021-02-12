@@ -96,7 +96,7 @@ for j in range(epochs):
         nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
                                                                             MSK, i, device=device)
         print(nodeProperties.shape)
-        if nodeProperties.shape[1] > 750
+        if nodeProperties.shape[1] > 750:
             continue
         nNodes = Ds.shape[0]
         # G = GO.dense_graph(nNodes, Ds)
