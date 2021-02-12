@@ -43,7 +43,9 @@ def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
     D = D / D.std()
     D = torch.exp(-D)
     Ds = F.softshrink(D, 0.92)
-    Ds[Ds > 0] = 1
+    vals, indices = torch.topk(Ds, k=20)
+    #Ds[Ds > 0] = 1
+    Ds[indices] = 1
     IJ = torch.nonzero(Ds)
 
     # Organize the edge data
