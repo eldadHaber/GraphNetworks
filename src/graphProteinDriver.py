@@ -95,7 +95,6 @@ for j in range(epochs):
         # Get the data
         nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
                                                                             MSK, i, device=device)
-        print(nodeProperties.shape)
         if nodeProperties.shape[2] > 700:
             continue
         nNodes = Ds.shape[0]
@@ -135,7 +134,7 @@ for j in range(epochs):
 
         optimizer.step()
         # scheduler.step()
-        nprnt = 1
+        nprnt = 100
         if (i + 1) % nprnt == 0:
             aloss = aloss / nprnt
             alossAQ = alossAQ / nprnt
