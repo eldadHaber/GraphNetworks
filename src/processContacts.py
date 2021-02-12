@@ -47,6 +47,7 @@ def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
     vals, indices = torch.topk(Ds, k=20, dim=0)
     #Ds[Ds > 0] = 1
     Ds[indices] = 1
+    print("indices shape:", indices.shape)
     IJ = torch.nonzero(Ds)
     print("IJ shape:", IJ.shape)
     # Organize the edge data
