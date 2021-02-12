@@ -81,7 +81,7 @@ class graphNetwork(nn.Module):
             gradX = Graph.nodeGrad(xn)
             intX = Graph.nodeAve(xn)
             xec = torch.cat([intX, xe, gradX], dim=1)
-            print("xec shape:", xec.shape)
+            #print("xec shape:", xec.shape)
             # 1D convs on the edge space and nonlinearity
             xec = self.edgeConv(xec, Kei1)
             xec = tv_norm(xec)
@@ -91,7 +91,7 @@ class graphNetwork(nn.Module):
             divXe = Graph.edgeDiv(xec)
             intXe = Graph.edgeAve(xec)
             xnc = torch.cat([intXe, xn, divXe], dim=1)
-            print("xnc shape:", xnc.shape)
+            #print("xnc shape:", xnc.shape)
 
             # Edge and node updates
             xe = xe + self.h * self.edgeConv(xec, Kei2)
