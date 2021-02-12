@@ -43,15 +43,15 @@ def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
     D = D / D.std()
     D = torch.exp(-D)
     Ds = F.softshrink(D, 0.92)
-    print("Ds shape:", Ds.shape)
+    #print("Ds shape:", Ds.shape)
     vals, indices = torch.topk(Ds, k=20, dim=1)
     #Ds[Ds > 0] = 1
     Ds[:] = 0
     Ds[indices] = 1
-    print("indices shape:", indices.shape)
+    #print("indices shape:", indices.shape)
     IJ = torch.nonzero(Ds)
     IJ = indices
-    print("IJ shape:", IJ.shape)
+    #print("IJ shape:", IJ.shape)
     # Organize the edge data
     nEdges = IJ.shape[0]
     xe = torch.zeros(1, 1, nEdges, device=device)
