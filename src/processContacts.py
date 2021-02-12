@@ -43,7 +43,7 @@ def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
     D = D / D.std()
     D = torch.exp(-D)
     Ds = F.softshrink(D, 0.92)
-    vals, indices = torch.topk(Ds, k=20)
+    vals, indices = torch.topk(Ds, k=20, dim=0)
     #Ds[Ds > 0] = 1
     Ds[indices] = 1
     IJ = torch.nonzero(Ds)
