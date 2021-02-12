@@ -50,7 +50,7 @@ nEopen = 512
 nEhid = 512
 nNclose = 3
 nEclose = 1
-nlayer = 3
+nlayer = 18
 
 model = GN.graphNetwork(nNin, nEin, nNopen, nEopen, nEhid, nNclose, nEclose, nlayer, h=.1)
 model.to(device)
