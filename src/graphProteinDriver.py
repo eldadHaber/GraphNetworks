@@ -115,7 +115,7 @@ for j in range(epochs):
         optimizer.zero_grad()
 
         ## Profiler:
-        with profiler.profile(record_shapes=True) as prof:
+        with profiler.profile(record_shapes=True, use_cuda=True) as prof:
             with profiler.record_function("model_inference"):
                 xnOut, xeOut = model(xn, xe, G)
         print(prof.key_averages())
