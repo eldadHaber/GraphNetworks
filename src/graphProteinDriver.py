@@ -42,14 +42,15 @@ nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yob
 # Setup the network and its parameters
 nNin    = 40
 nEin    = 1
-nNopen  = 512
+nNopen  = 64
 nEopen  = 16
-nEhid   = 32
+nEhid   = 2*nNopen + nEopen
 nNclose = 3
 nEclose = 1
-nlayer = 6
+nlayer = 18
 
-model = GN.graphNetwork(nNin, nEin, nNopen, nEopen, nEhid, nNclose, nEclose,nlayer, h=.1)
+dense = False
+model = GN.graphNetwork(nNin, nEin, nNopen, nEopen, nEhid, nNclose, nEclose,nlayer, h=.1, dense=dense)
 model.to(device)
 
 total_params = sum(p.numel() for p in model.parameters())
@@ -60,9 +61,9 @@ print('Number of parameters ', total_params)
 
 lrO = 1e-3
 lrC = 1e-3
-lrN = 1e-2
-lrE1 = 1e-2
-lrE2 = 1e-1
+lrN = 1e-3
+lrE1 = 1e-3
+lrE2 = 1e-3
 
 
 optimizer = optim.Adam([{'params': model.KNopen, 'lr': lrO},
@@ -71,11 +72,12 @@ optimizer = optim.Adam([{'params': model.KNopen, 'lr': lrO},
                         {'params': model.KEclose, 'lr': lrC},
                         {'params': model.KE1, 'lr': lrE1},
                         {'params': model.KE2, 'lr': lrE2},
+                        {'params': model.KE3, 'lr': lrE2},
                         {'params': model.KN, 'lr': lrN}])
 
 
 alossBest = 1e6
-epochs    = 400
+epochs    = 300
 
 ndata = 2 #n_data_total
 bestModel = model
@@ -89,23 +91,24 @@ for j in range(epochs):
 
         # Get the data
         nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
-                                                                            MSK, 0, device=device)
+                                                                            MSK, 1, device=device)
 
         nNodes = Ds.shape[0]
-        # G = GO.dense_graph(nNodes, Ds)
-        w = Ds[IJ[:, 0], IJ[:, 1]]
-        G = GO.graph(IJ[:, 0], IJ[:, 1], nNodes, w)
-        # Organize the node data
+        if dense:
+            G = GO.dense_graph(nNodes, Ds)
+            xe = Ds.unsqueeze(0).unsqueeze(0)  # edgeProperties
+        else:
+            w = Ds[IJ[:, 0], IJ[:, 1]]
+            G = GO.graph(IJ[:, 0], IJ[:, 1], nNodes, w)
+            xe = w.unsqueeze(0).unsqueeze(0)  # edgeProperties
+
         xn = nodeProperties
-        #xe = Ds.unsqueeze(0).unsqueeze(0)  # edgeProperties
-        xe = w.unsqueeze(0).unsqueeze(0)
 
         M = torch.ger(M.squeeze(), M.squeeze())
 
         optimizer.zero_grad()
 
         xnOut, xeOut = model(xn, xe, G)
-        # xnOut = utils.distConstraint(xnOut, dc=3.79)
         Dout = utils.getDistMat(xnOut)
         Dtrue = utils.getDistMat(Coords)
 
@@ -142,13 +145,14 @@ for j in range(epochs):
                                                                                         MSK, 0, device=device)
 
                     nNodes = Ds.shape[0]
-                    # G = GO.dense_graph(nNodes, Ds)
-                    w = Ds[IJ[:, 0], IJ[:, 1]]
-                    G = GO.graph(IJ[:, 0], IJ[:, 1], nNodes, w)
-                    # Organize the node data
+                    if dense:
+                        G = GO.dense_graph(nNodes, Ds)
+                        xe = Ds.unsqueeze(0).unsqueeze(0)  # edgeProperties
+                    else:
+                        w = Ds[IJ[:, 0], IJ[:, 1]]
+                        G = GO.graph(IJ[:, 0], IJ[:, 1], nNodes, w)
+                        xe = w.unsqueeze(0).unsqueeze(0)  # edgeProperties
                     xn = nodeProperties
-                    # xe = Ds.unsqueeze(0).unsqueeze(0)  # edgeProperties
-                    xe = w.unsqueeze(0).unsqueeze(0)
 
                     M = torch.ger(M.squeeze(), M.squeeze())
 
