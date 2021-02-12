@@ -61,7 +61,7 @@ print('Number of parameters ', total_params)
 #### Start Training ####
 
 lrO = 1e-3
-lrC = 1e-4
+lrC = 1e-5
 lrN = 1e-3
 lrE1 = 1e-2
 lrE2 = 1e-2
