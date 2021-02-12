@@ -42,8 +42,6 @@ STest = torch.load(base_path + caspver + '/PSSMTesting.pt')
 print('Number of data: ', len(S))
 n_data_total = len(S)
 
-nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs, MSK, 0, device=device)
-
 # Setup the network and its parameters
 nNin = 40
 nEin = 1
@@ -56,9 +54,6 @@ nlayer = 6
 
 model = GN.graphNetwork(nNin, nEin, nNopen, nEopen, nEhid, nNclose, nEclose, nlayer, h=.1)
 model.to(device)
-
-
-
 
 total_params = sum(p.numel() for p in model.parameters())
 print('Number of parameters ', total_params)
@@ -100,7 +95,9 @@ for j in range(epochs):
         # Get the data
         nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
                                                                             MSK, i, device=device)
-
+        print(nodeProperties.shape)
+        if nodeProperties.shape[1] > 750
+            continue
         nNodes = Ds.shape[0]
         # G = GO.dense_graph(nNodes, Ds)
         w = Ds[IJ[:, 0], IJ[:, 1]]
@@ -115,10 +112,10 @@ for j in range(epochs):
         optimizer.zero_grad()
 
         ## Profiler:
-        with profiler.profile(record_shapes=True, use_cuda=True, profile_memory=True) as prof:
-            with profiler.record_function("model_inference"):
-                xnOut, xeOut = model(xn, xe, G)
-        print(prof.key_averages())
+        # with profiler.profile(record_shapes=True, use_cuda=True, profile_memory=True) as prof:
+        #     with profiler.record_function("model_inference"):
+        #         xnOut, xeOut = model(xn, xe, G)
+        # print(prof.key_averages())
 
         xnOut, xeOut = model(xn, xe, G)
         # xnOut = utils.distConstraint(xnOut, dc=3.79)
