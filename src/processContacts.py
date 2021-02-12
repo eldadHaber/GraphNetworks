@@ -46,6 +46,7 @@ def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
     print("Ds shape:", Ds.shape)
     vals, indices = torch.topk(Ds, k=20, dim=1)
     #Ds[Ds > 0] = 1
+    Ds[:] = 0
     Ds[indices] = 1
     print("indices shape:", indices.shape)
     IJ = torch.nonzero(Ds)
