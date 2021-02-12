@@ -45,10 +45,8 @@ def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
     Ds = F.softshrink(D, 0.92)
     #print("Ds shape:", Ds.shape)
     vals, indices = torch.topk(Ds, k=20, dim=1)
-    #Ds[Ds > 0] = 1
-    Ds[:] = 0
-    Ds[indices] = 1
-    #print("indices shape:", indices.shape)
+    Ds[Ds > 0] = 1
+    
     IJ = torch.nonzero(Ds)
     IJ = indices
     #print("IJ shape:", IJ.shape)
