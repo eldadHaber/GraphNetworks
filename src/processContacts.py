@@ -50,6 +50,7 @@ def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
     Ds[indices] = 1
     print("indices shape:", indices.shape)
     IJ = torch.nonzero(Ds)
+    IJ = indices
     print("IJ shape:", IJ.shape)
     # Organize the edge data
     nEdges = IJ.shape[0]
