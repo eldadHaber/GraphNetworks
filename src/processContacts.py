@@ -44,11 +44,14 @@ def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
     D = torch.exp(-D)
     Ds = F.softshrink(D, 0.92)
     #print("Ds shape:", Ds.shape)
-    vals, indices = torch.topk(Ds, k=min(40, Ds.shape[0]), dim=1)
-    Ds[Ds > 0] = 1
+    nsparse = 16
+    vals, indices = torch.topk(Ds, k=min(nsparse, Ds.shape[0]), dim=1)
+    nd = D.shape[0]
+    I = torch.ger(torch.arange(nd), torch.ones(nsparse, dtype=torch.long))
+    I = I.view(-1)
+    J = indices.view(-1).type(torch.LongTensor)
+    IJ = torch.stack([I, J], dim=1)
 
-    IJ = torch.nonzero(Ds)
-    IJ = indices
     #print("IJ shape:", IJ.shape)
     # Organize the edge data
     nEdges = IJ.shape[0]
