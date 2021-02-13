@@ -6,10 +6,7 @@ import torch.optim as optim
 import numpy as np
 import matplotlib.pyplot as plt
 import math
-from src import graphOps as GO
-from src import processContacts as prc
-from src import utils
-from src import graphNet as GN
+
 import torch.autograd.profiler as profiler
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
@@ -18,12 +15,24 @@ caspver = "casp11"  # Change this to choose casp version
 
 if "s" in sys.argv:
     base_path = '/home/eliasof/pFold/data/'
+    import graphOps as GO
+    import processContacts as prc
+    import utils
+    import graphNet as GN
 
 elif "e" in sys.argv:
     base_path = '/home/cluster/users/erant_group/pfold/'
+    from src import graphOps as GO
+    from src import processContacts as prc
+    from src import utils
+    from src import graphNet as GN
 
 else:
     base_path = '../../../data/'
+    from src import graphOps as GO
+    from src import processContacts as prc
+    from src import utils
+    from src import graphNet as GN
 
 # load training data
 Aind = torch.load(base_path + caspver + '/AminoAcidIdx.pt')
