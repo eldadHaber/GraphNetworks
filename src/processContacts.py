@@ -45,7 +45,8 @@ def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
     Ds = F.softshrink(D, 0.92)
     #print("Ds shape:", Ds.shape)
     nsparse = 16
-    vals, indices = torch.topk(Ds, k=min(nsparse, Ds.shape[0]), dim=1)
+    nsparse = min(nsparse, Ds.shape[0])
+    vals, indices = torch.topk(Ds, k=nsparse, dim=1)
     nd = D.shape[0]
     I = torch.ger(torch.arange(nd), torch.ones(nsparse, dtype=torch.long))
     I = I.view(-1)
