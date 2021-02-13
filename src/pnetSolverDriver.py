@@ -110,7 +110,7 @@ for j in range(epochs):
                                                                             MSK, j, device=device)
 
         nNodes = Ds.shape[0]
-        if nNodes < 500:
+        if nNodes < 700:
             w = Ds[IJ[:, 0], IJ[:, 1]]
             G = GO.graph(IJ[:, 0], IJ[:, 1], nNodes, w)
             xe = w.unsqueeze(0).unsqueeze(0)  # edgeProperties
