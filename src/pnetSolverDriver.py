@@ -11,7 +11,6 @@ from src import graphOps as GO
 from src import processContacts as prc
 from src import utils
 # from src import graphNet as GN
-from src import pnetArch as PNA
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
@@ -23,6 +22,8 @@ if "s" in sys.argv:
     import processContacts as prc
     import utils
     import graphNet as GN
+    import pnetArch as PNA
+
 
 elif "e" in sys.argv:
     base_path = '/home/cluster/users/erant_group/pfold/'
@@ -30,6 +31,8 @@ elif "e" in sys.argv:
     from src import processContacts as prc
     from src import utils
     from src import graphNet as GN
+    from src import pnetArch as PNA
+
 
 else:
     base_path = '../../../data/'
@@ -37,6 +40,7 @@ else:
     from src import processContacts as prc
     from src import utils
     from src import graphNet as GN
+    from src import pnetArch as PNA
 
 # load training data
 Aind = torch.load(base_path + caspver + '/AminoAcidIdx.pt')
