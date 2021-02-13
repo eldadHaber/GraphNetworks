@@ -45,9 +45,9 @@ n_data_total = len(S)
 # Setup the network and its parameters
 nNin = 40
 nEin = 1
-nNopen = 512
-nEopen = 256
-nEhid = 256
+nNopen = 256
+nEopen = 64
+nEhid = 64
 nNclose = 3
 nEclose = 1
 nlayer = 6
