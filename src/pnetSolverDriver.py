@@ -7,9 +7,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 
-from src import graphOps as GO
-from src import processContacts as prc
-from src import utils
+#from src import graphOps as GO
+#from src import processContacts as prc
+#from src import utils
 # from src import graphNet as GN
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
