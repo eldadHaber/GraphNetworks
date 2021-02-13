@@ -40,13 +40,13 @@ nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yob
 # Setup the network and its parameters
 nNin    = 40
 nEin    = 1
-nopen  = 64
+nopen  = 128
 nhid   = 128
 nNout = 3
 nEout = 1
 nlayer = 18
 
-model = GN.verletNetworks(nNin, nEin, nopen, nhid, nNout, nEout, nlayer, h=.1)
+model = GN.verletNetworks(nNin, nEin, nopen, nhid, nNout, nEout, nlayer, h=1)
 model.to(device)
 
 total_params = sum(p.numel() for p in model.parameters())
