@@ -45,7 +45,7 @@ n_data_total = len(S)
 # Setup the network and its parameters
 nNin = 40
 nEin = 1
-nNopen = 256
+nNopen = 128
 nEopen = 64
 nEhid = 64
 nNclose = 3
@@ -66,11 +66,11 @@ lrN = 1e-4
 lrE1 = 1e-4
 lrE2 = 1e-4
 
-# lrO = 1e-3
-# lrC = 1e-3
-# lrN = 1e-3
-# lrE1 = 1e-3
-# lrE2 = 1e-3
+lrO = 1e-3
+lrC = 1e-3
+lrN = 1e-3
+lrE1 = 1e-3
+lrE2 = 1e-3
 optimizer = optim.Adam([{'params': model.KNopen, 'lr': lrO},
                         {'params': model.KNclose, 'lr': lrC},
                         {'params': model.KEopen, 'lr': lrO},
