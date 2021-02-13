@@ -47,7 +47,7 @@ def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
     D = torch.exp(-D)
     Ds = F.softshrink(D, 0.92)
     #print("Ds shape:", Ds.shape)
-    nsparse = 10
+    nsparse = 20
     nsparse = min(nsparse, Ds.shape[0])
     vals, indices = torch.topk(Ds, k=nsparse, dim=1)
     nd = D.shape[0]
