@@ -6,11 +6,13 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 import torch.optim as optim
+
 ## r=1
 try:
     from src import graphOps as GO
 except:
     import graphOps as GO
+
 
 def conv2(X, Kernel):
     return F.conv2d(X, Kernel, padding=int((Kernel.shape[-1] - 1) / 2))
@@ -37,31 +39,60 @@ def tv_norm(X, eps=1e-3):
     return X
 
 
+def doubleLayer(x, K1, K2):
+    x = F.conv1d(x, K1.unsqueeze(-1))
+    x = F.layer_norm(x, x.shape)
+    x = torch.relu(x)
+    x = F.conv1d(x, K2.unsqueeze(-1))
+    return x
+
+
 class graphNetwork(nn.Module):
 
-    def __init__(self, nNin, nEin, nNopen, nEopen, nEhid, nNclose, nEclose, nlayer, h=0.1):
+    def __init__(self, nNin, nEin, nNopen, nEopen, nEhid, nNclose, nEclose, nlayer, h=0.1, dense=True):
         super(graphNetwork, self).__init__()
 
         self.h = h
         stdv = 1e-2
         stdvp = 1e-3
         self.KNopen = nn.Parameter(torch.randn(nNopen, nNin) * stdv)
-        self.KEopen = nn.Parameter(torch.randn(nEopen, nEin) * stdv)
+        if dense:
+            self.KEopen = nn.Parameter(torch.randn(nEopen, nEin, 9, 9) * stdv)
+        else:
+            self.KEopen = nn.Parameter(torch.randn(nEopen, nEin) * stdv)
 
         self.KNclose = nn.Parameter(torch.randn(nNclose, nNopen) * stdv)
-        self.KEclose = nn.Parameter(torch.randn(nEclose, nEopen) * stdv)
+        if dense:
+            self.KEclose = nn.Parameter(torch.randn(nEclose, nEopen, 9, 9) * stdv)
+        else:
+            self.KEclose = nn.Parameter(torch.randn(nEclose, nEopen) * stdv)
 
         NEfeatures = 2 * nNopen + nEopen
-        self.KE1 = nn.Parameter(torch.rand(nlayer, nEhid, NEfeatures) * stdvp)
-        self.KE2 = nn.Parameter(torch.rand(nlayer, nEopen, nEhid) * stdvp)
+        # NEfeatures =  2*nNopen
+        if dense:
+            self.KE1 = nn.Parameter(torch.rand(nlayer, nEhid, NEfeatures, 9, 9) * stdvp)
+            self.KE2 = nn.Parameter(torch.rand(nlayer, nEhid, nEhid, 9, 9) * stdvp)
+            self.KE3 = nn.Parameter(torch.rand(nlayer, nEopen, nEhid, 9, 9) * stdvp)
+        else:
+            self.KE1 = nn.Parameter(torch.rand(nlayer, nEhid, NEfeatures) * stdvp)
+            self.KE2 = nn.Parameter(torch.rand(nlayer, nEhid, nEhid) * stdvp)
+            self.KE3 = nn.Parameter(torch.rand(nlayer, nEopen, nEhid) * stdvp)
+
         Nnfeatures = 2 * nEhid + nNopen
+        # Nnfeatures = 2*nEhid
         self.KN = nn.Parameter(torch.rand(nlayer, nNopen, Nnfeatures) * stdvp)
 
     def edgeConv(self, xe, K):
         if xe.dim() == 4:
-            xe = F.conv2d(xe, K.unsqueeze(-1).unsqueeze(-1))
+            if K.dim() == 2:
+                xe = F.conv2d(xe, K.unsqueeze(-1).unsqueeze(-1))
+            else:
+                xe = conv2(xe, K)
         elif xe.dim() == 3:
-            xe = F.conv1d(xe, K.unsqueeze(-1))
+            if K.dim() == 2:
+                xe = F.conv1d(xe, K.unsqueeze(-1))
+            else:
+                xe = conv1(xe, K)
         return xe
 
     def forward(self, xn, xe, Graph):
@@ -77,26 +108,32 @@ class graphNetwork(nn.Module):
         for i in range(nlayers):
             Kei1 = self.KE1[i]
             Kei2 = self.KE2[i]
+            Kei3 = self.KE3[i]
             Kni = self.KN[i]
 
             # Move from node to the edge space
             gradX = Graph.nodeGrad(xn)
             intX = Graph.nodeAve(xn)
             xec = torch.cat([intX, xe, gradX], dim=1)
-            #print("xec shape:", xec.shape)
+            # xec    = torch.cat([intX, gradX], dim=1)
+
             # 1D convs on the edge space and nonlinearity
             xec = self.edgeConv(xec, Kei1)
-            xec = tv_norm(xec)
+            xec = F.layer_norm(xec, xec.shape)  # xec    = tv_norm(xec)
+            xec = torch.relu(xec)
+            xec = self.edgeConv(xec, Kei2)
+            xec = F.layer_norm(xec, xec.shape)  # xec    = tv_norm(xec)
             xec = torch.relu(xec)
 
             # back to the node space
             divXe = Graph.edgeDiv(xec)
             intXe = Graph.edgeAve(xec)
             xnc = torch.cat([intXe, xn, divXe], dim=1)
-            #print("xnc shape:", xnc.shape)
 
             # Edge and node updates
-            xe = xe + self.h * self.edgeConv(xec, Kei2)
+            # xe(i+1) = xe(i) + f(xn(i))
+            # xn(i+1) = xn(i) + g(xe(i))
+            xe = xe + self.h * self.edgeConv(xec, Kei3)
             xn = xn + self.h * F.conv1d(xnc, Kni.unsqueeze(-1))
 
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
@@ -107,116 +144,64 @@ class graphNetwork(nn.Module):
 
 #######
 #
-#  Verlet Network
+#  Varlet Network
 #
 ######
+
 class verletNetworks(nn.Module):
-    def __init__(self, nNIn, nEin, nopenN, nopenE, ncloseN, ncloseE, nlayer, h=0.1):
+    def __init__(self, nNin, nEin, nopen, nhid, nNout, nEout, nlayer, h=0.1):
         super(verletNetworks, self).__init__()
-        KNopen, KEopen, KNclose, KEclose, KN, KE, KNa, KEa = \
-            self.init_weights(nNIn, nEin, nopenN, nopenE, ncloseN, ncloseE, nlayer)
-        self.KNopen = KNopen
-        self.KEopen = KEopen
-        self.KNclose = KNclose
-        self.KEclose = KEclose
-        self.KN = KN
-        self.KE = KE
-        self.KNa = KNa
-        self.KEa = KEa
+
+        stdv = 1e-3
+        self.KNopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
+        self.KEopen = nn.Parameter(torch.randn(nopen, nEin) * stdv)
+
+        self.KE1 = nn.Parameter(torch.randn(nlayer, nhid, 2 * nopen) * stdv)
+        self.KE2 = nn.Parameter(torch.randn(nlayer, nopen, nhid) * stdv)
+
+        self.KN1 = nn.Parameter(torch.randn(nlayer, nhid, 2 * nopen) * stdv)
+        self.KN2 = nn.Parameter(torch.randn(nlayer, nopen, nhid) * stdv)
+
+        self.KNclose = nn.Parameter(torch.randn(nNout, nopen) * stdv)
+        self.KEclose = nn.Parameter(torch.randn(nEout, nopen) * stdv)
 
         self.h = h
-
-    def init_weights(self, nNIn, nEIn, nopenN, nopenE, ncloseN, ncloseE, nlayer):
-
-        stdv = 1e-2
-        stdvp = 1e-3
-        KNopen = nn.Parameter(torch.randn(nopenN, nNIn) * stdv)
-        # KEopen = nn.Parameter(torch.randn(nopenE, nEIn)*stdv)
-        KEopen = nn.Parameter(torch.randn(2 * nopenE, nEIn) * stdv)
-
-        KNclose = nn.Parameter(torch.randn(ncloseN, nopenN) * stdv)
-        # KEclose = nn.Parameter(torch.randn(ncloseE,nopenE)*stdv)
-        KEclose = nn.Parameter(torch.randn(ncloseE, 2 * nopenE) * stdv)
-
-        KN = nn.Parameter(torch.rand(nlayer, nopenE, nopenN) * stdvp)
-        # KE  = nn.Parameter(torch.rand(nlayer,nopenN, nopenE)*stdvp)
-        KE = nn.Parameter(torch.rand(nlayer, nopenN, 2 * nopenE) * stdvp)
-
-        KNa = nn.Parameter(torch.rand(nlayer, nopenE, nopenN) * stdvp)
-        # KEa = nn.Parameter(torch.rand(nlayer, nopenN, nopenE)*stdvp)
-        KEa = nn.Parameter(torch.rand(nlayer, nopenN, 2 * nopenE) * stdvp)
-
-        return KNopen, KEopen, KNclose, KEclose, KN, KE, KNa, KEa
 
     def forward(self, xn, xe, Graph):
         # xn - node feature
         # xe - edge features
 
-        nL = self.KN.shape[0]
+        nL = self.KN1.shape[0]
 
-        xn = self.KNopen @ xn
-        xe = conv2(xe, self.KEopen.unsqueeze(2).unsqueeze(2))
-        # xe = self.KEopen @ xe
+        xn = F.conv1d(xn, self.KNopen.unsqueeze(-1))
+        xe = F.conv1d(xe, self.KEopen.unsqueeze(-1))
 
         for i in range(nL):
-            Kni = self.KN[i]
-            Kna = self.KNa[i]
-            Kei = self.KE[i]
-            Kea = self.KEa[i]
+            Kni1 = self.KN1[i]
+            Kni2 = self.KN2[i]
+            Kei1 = self.KE1[i]
+            Kei2 = self.KE2[i]
 
-            # w      = True #torch.ones(1) #torch.exp(-dsq/0.1) #1/(dsq+1e-3) #
             # Move to edges and compute flux
-            AiG = Graph.nodeGrad(Kni @ xn)
-            AiA = Graph.nodeAve(Kna @ xn)
+            AiG = Graph.nodeGrad(xn)
+            AiA = Graph.nodeAve(xn)
             Ai = torch.cat((AiG, AiA), dim=1)
-            Ai = tv_norm(Ai)
-            xe = xe + self.h * torch.relu(Ai)
+            Ai = doubleLayer(Ai, Kei1, Kei2)
+            xe = xe + self.h * Ai  # torch.relu(Ai)
 
             # Edge to node
-            BiD = Kei @ Graph.edgeDiv(xe)
-            BiA = Kea @ Graph.edgeAve(xe, method='mean')
-            Bi = BiD + BiA
+            BiD = Graph.edgeDiv(xe)
+            BiA = Graph.edgeAve(xe, method='ave')
+            Bi = torch.cat((BiD, BiA), dim=1)
+            Bi = doubleLayer(Bi, Kni1, Kni2)
 
             # Update
             xn = xn + self.h * Bi
 
-        xn = self.KNclose @ xn
-        xe = conv2(xe, self.KEclose.unsqueeze(2).unsqueeze(2))
-        # xe = self.KEclose @ xe
+        xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
+        xe = F.conv1d(xe, self.KEclose.unsqueeze(-1))
+
         return xn, xe
-
-    def backProp(self, xn, xe, Graph):
-        # xn - node feature
-        # xe - edge features
-
-        nL = self.KN.shape[0]
-
-        xn = self.KNclose.t() @ xn
-        # xe = self.KEclose.t()@xe
-        xe = conv2(xe, self.KEclose.t().unsqueeze(2).unsqueeze(2))
-
-        for i in reversed(range(nL)):
-            Kni = self.KN[i]
-            Kei = self.KE[i]
-
-            w = torch.ones(1)
-            # Move to edges and compute flux
-            Ai = Graph.nodeGrad(Kni @ xn, w)
-            Ai = tv_norm(Ai)
-            xe = xe - self.h * torch.relu(Ai)
-
-            # Edge to node
-            Bi = Kei @ self.Graph.edgeDiv(xe, w)
-            Bi = tv_norm(Bi)
-            Bi = torch.relu(Bi)
-
-            # Update
-            xn = xn + self.h * Bi
-
-            # XX.append(self.KNclose@xn)
-        xn = self.KNopen.t() @ xn
-        xe = self.KEopen.t() @ xe
-        return xn, xe  # , XX, XE
 
 
 Test = False
