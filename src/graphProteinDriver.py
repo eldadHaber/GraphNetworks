@@ -151,7 +151,7 @@ for j in range(epochs):
             aloss = aloss / nprnt
             alossAQ = alossAQ / nprnt
             print("%2d.%1d   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E" %
-                  (j, i, aloss, alossAQ, gO, gN, gE1, gE2, gC))
+                  (j, i, aloss, alossAQ, gO, gN, gE1, gE2, gC), flush=True)
             aloss = 0.0
             alossAQ = 0.0
         # Validation
