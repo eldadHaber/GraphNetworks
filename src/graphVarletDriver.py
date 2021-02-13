@@ -10,8 +10,7 @@ import math
 from src import graphOps as GO
 from src import processContacts as prc
 from src import utils
-#from src import graphNet as GN
-from src import pnetArch as PNA
+from src import graphNet as GN
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
@@ -38,46 +37,45 @@ n_data_total = len(S)
 
 nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs, MSK, 0, device=device)
 
-
-
 # Setup the network and its parameters
 nNin    = 40
 nEin    = 1
-nEhid   = 128
-nNclose = 3
-nEclose = 1
-nlayer = 6
+nopen  = 64
+nhid   = 128
+nNout = 3
+nEout = 1
+nlayer = 18
 
-model = PNA.gNet(nNin, nEin, nEhid, nNclose, nlayer)
+model = GN.verletNetworks(nNin, nEin, nopen, nhid, nNout, nEout, nlayer, h=.1)
 model.to(device)
 
 total_params = sum(p.numel() for p in model.parameters())
 print('Number of parameters ', total_params)
 
+
 #### Start Training ####
 
-lrO  = 5e-3
-lrC  = 5e-3
-lrN  = 5e-3
-lrE1 = 5e-3
-lrE2 = 5e-3
+lrO = 1e-3
+lrC = 1e-4
+lrN = 1e-3
+lrE1 = 1e-3
+lrE2 = 1e-3
 
 
-optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO},
-                        {'params': model.K2Nopen, 'lr': lrC},
-                        {'params': model.K1Eopen, 'lr': lrO},
-                        {'params': model.K2Eopen, 'lr': lrC},
+optimizer = optim.Adam([{'params': model.KNopen, 'lr': lrO},
+                        {'params': model.KNclose, 'lr': lrC},
+                        {'params': model.KEopen, 'lr': lrO},
+                        {'params': model.KEclose, 'lr': lrC},
                         {'params': model.KE1, 'lr': lrE1},
                         {'params': model.KE2, 'lr': lrE2},
-                        {'params': model.KN1, 'lr': lrE1},
-                        {'params': model.KN2, 'lr': lrE2},
-                        {'params': model.KNout, 'lr': lrE2}])
+                        {'params': model.KN1, 'lr': lrE2},
+                        {'params': model.KN2, 'lr': lrN}])
 
 
 alossBest = 1e6
 epochs    = 300
 
-ndata = 2 #n_data_total
+ndata = 100 #n_data_total
 bestModel = model
 hist = torch.zeros(epochs)
 
@@ -89,12 +87,13 @@ for j in range(epochs):
 
         # Get the data
         nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
-                                                                            MSK, 0, device=device)
+                                                                            MSK, 1, device=device)
 
         nNodes = Ds.shape[0]
         if nNodes < 500:
             w = Ds[IJ[:, 0], IJ[:, 1]]
             G = GO.graph(IJ[:, 0], IJ[:, 1], nNodes, w)
+
             xe = w.unsqueeze(0).unsqueeze(0)  # edgeProperties
             xn = nodeProperties
 
@@ -108,11 +107,11 @@ for j in range(epochs):
 
             aloss   += loss.detach()
             alossAQ += torch.sqrt(loss)
-            gN  = model.K1Nopen.grad.norm().item()
+            gN  = model.KN1.grad.norm().item()
             gE1 = model.KE1.grad.norm().item()
             gE2 = model.KE2.grad.norm().item()
-            gO = model.K2Nopen.grad.norm().item()
-            gC = model.KNout.grad.norm().item()
+            gO = model.KNopen.grad.norm().item()
+            gC = model.KNclose.grad.norm().item()
 
             optimizer.step()
             # scheduler.step()
@@ -143,7 +142,8 @@ for j in range(epochs):
 
                     M = torch.ger(M.squeeze(), M.squeeze())
 
-                    xnOut, xeOut = model(xn, xe, G, Ds)
+                    xnOut, xeOut = model(xn, xe, G)
+
                     loss = utils.dRMSD(xnOut, Coords, M)
                     AQdis  += torch.sqrt(loss)
                     misVal += loss.detach()

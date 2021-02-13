@@ -6,25 +6,23 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 import torch.optim as optim
-## r=1
 from src import graphOps as GO
 
 
-def doubleLayer(x,K1, K2, ln=True, drop=True):
+def doubleLayer(x, K1, K2, drop=True):
 
     x = F.conv1d(x, K1.unsqueeze(-1))
+    x = F.layer_norm(x, x.shape)
     x = torch.relu(x)
     x = F.conv1d(x, K2.unsqueeze(-1))
-    if ln:
-        x = F.layer_norm(x, x.shape)
     if drop:
         x = F.dropout(x,p=0.2)
     return x
 
 class gNet(nn.Module):
-    def __init__(self, x_input_size, edj_input_size, hidden_size, output_size, nlayers):
+    def __init__(self, x_input_size, edj_input_size, hidden_size, output_size, nlayers,h=0.1):
         super().__init__()
-
+        self.h = h
         stdv = 1e-3
         self.K1Nopen = nn.Parameter(torch.randn(hidden_size, x_input_size)*stdv)
         self.K2Nopen = nn.Parameter(torch.randn(hidden_size, hidden_size) * stdv)
@@ -36,6 +34,9 @@ class gNet(nn.Module):
 
         self.KE1 = nn.Parameter(torch.randn(nlayers, 2*hidden_size, 3*hidden_size)*stdv)
         self.KE2 = nn.Parameter(torch.randn(nlayers, hidden_size, 2*hidden_size)*stdv)
+
+        self.KN1 = nn.Parameter(torch.randn(nlayers, 2*hidden_size, 3*hidden_size)*stdv)
+        self.KN2 = nn.Parameter(torch.randn(nlayers, hidden_size, 2*hidden_size)*stdv)
 
     def forward(self, xn, xe, Graph):
 
@@ -49,17 +50,18 @@ class gNet(nn.Module):
         nlayers = self.KE1.shape[0]
         for i in range(nlayers):
 
-            xec = torch.cat([xn[:,:,row], xn[:,:,col], xe], dim=1)
-            xec  = doubleLayer(xec, self.KE1[i], self.KE2[i],ln=False,drop=False)
-            xnc  = Graph.edgeAve(xec, method='ave')
-            xnc = F.layer_norm(xnc, xnc.shape)
-            xnc = F.dropout(xnc, p=0.2)
+            #xec = torch.cat([xn[:,:,row] + xn[:,:,col], xn[:,:,row] - xn[:,:,col], xe], dim=1)
+            xec = torch.cat([xn[:, :, row], xn[:, :, col], xe], dim=1)
+            xec  = doubleLayer(xec, self.KE1[i], self.KE2[i], drop=False)
 
-            xn   = xn + xnc
-            xe   = xe + xec
+            xnc  = torch.cat([Graph.edgeAve(xec, method='ave'),Graph.edgeDiv(xec),xn], dim=1)
+            xnc  = doubleLayer(xnc, self.KN1[i], self.KN2[i], drop=False)
 
-            xn    = F.relu(xn)
-            xe    = F.relu(xe)
+            xn   = xn + self.h*xnc
+            xe   = xe + self.h*xec
+
+            #xn    = F.relu(xn)
+            #xe    = F.relu(xe)
 
         xn = F.conv1d(xn, self.KNout.unsqueeze(-1))
 
