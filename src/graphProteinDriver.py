@@ -46,11 +46,11 @@ n_data_total = len(S)
 nNin = 40
 nEin = 1
 nNopen = 512
-nEopen = 512
-nEhid = 512
+nEopen = 256
+nEhid = 256
 nNclose = 3
 nEclose = 1
-nlayer = 18
+nlayer = 6
 
 model = GN.graphNetwork(nNin, nEin, nNopen, nEopen, nEhid, nNclose, nEclose, nlayer, h=.1)
 model.to(device)
