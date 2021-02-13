@@ -16,7 +16,10 @@ device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
 caspver = "casp11"  # Change this to choose casp version
 
-if "e" in sys.argv:
+if "s" in sys.argv:
+    base_path = '/home/eliasof/pFold/data/'
+
+elif "e" in sys.argv:
     base_path = '/home/cluster/users/erant_group/pfold/'
 
 else:
