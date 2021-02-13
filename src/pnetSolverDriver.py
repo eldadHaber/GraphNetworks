@@ -95,7 +95,7 @@ optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO},
 alossBest = 1e6
 epochs = 300
 
-ndata = 2  # n_data_total
+ndata = n_data_total
 bestModel = model
 hist = torch.zeros(epochs)
 
@@ -134,12 +134,12 @@ for j in range(epochs):
 
             optimizer.step()
             # scheduler.step()
-            nprnt = 1
+            nprnt = 100
             if (i + 1) % nprnt == 0:
                 aloss = aloss / nprnt
                 alossAQ = alossAQ / nprnt
                 print("%2d.%1d   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E" %
-                      (j, i, aloss, alossAQ, gO, gN, gE1, gE2, gC))
+                      (j, i, aloss, alossAQ, gO, gN, gE1, gE2, gC), flush=True)
                 aloss = 0.0
                 alossAQ = 0.0
         # Validation
@@ -148,7 +148,7 @@ for j in range(epochs):
             with torch.no_grad():
                 misVal = 0
                 AQdis = 0
-                nVal = len(STesting)
+                nVal = len(STest)
                 for jj in range(nVal):
                     nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
                                                                                         MSK, 0, device=device)
