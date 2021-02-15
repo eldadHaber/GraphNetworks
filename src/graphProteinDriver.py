@@ -42,15 +42,13 @@ nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yob
 # Setup the network and its parameters
 nNin    = 40
 nEin    = 1
-nNopen  = 64
-nEopen  = 16
-nEhid   = (2*nNopen + nEopen)*2
+nopen   = 5
+nhid    = 10
 nNclose = 3
-nEclose = 1
-nlayer = 18
+nlayer  = 6
 
-dense = False
-model = GN.graphNetwork(nNin, nEin, nNopen, nEopen, nEhid, nNclose, nEclose,nlayer, h=.1, dense=dense)
+dense = True
+model = GN.graphNetwork(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=dense)
 model.to(device)
 
 total_params = sum(p.numel() for p in model.parameters())
@@ -59,29 +57,31 @@ print('Number of parameters ', total_params)
 
 #### Start Training ####
 
-lrO = 1e-3
-lrC = 1e-4
-lrN = 1e-3
-lrE1 = 1e-3
-lrE2 = 1e-3
+lrO = 1e-1
+lrC = 1e-1
+lrN = 1e-1
+lrE1 = 1e-1
+lrE2 = 1e-1
 
 
-optimizer = optim.Adam([{'params': model.KNopen, 'lr': lrO},
-                        {'params': model.KNclose, 'lr': lrC},
-                        {'params': model.KEopen, 'lr': lrO},
-                        {'params': model.KEclose, 'lr': lrC},
+optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO},
+                        {'params': model.K2Nopen, 'lr': lrC},
+                        {'params': model.K1Eopen, 'lr': lrO},
+                        {'params': model.K2Eopen, 'lr': lrC},
                         {'params': model.KE1, 'lr': lrE1},
                         {'params': model.KE2, 'lr': lrE2},
-                        {'params': model.KE3, 'lr': lrE2},
-                        {'params': model.KN, 'lr': lrN}])
+                        {'params': model.KN1, 'lr': lrE1},
+                        {'params': model.KN2, 'lr': lrE2},
+                        {'params': model.KNclose, 'lr': lrE2}])
 
 
 alossBest = 1e6
-epochs    = 300
+epochs    = 100
 
 ndata = 100 #n_data_total
 bestModel = model
 hist = torch.zeros(epochs)
+batchSize = 16
 
 for j in range(epochs):
     # Prepare the data
@@ -106,29 +106,26 @@ for j in range(epochs):
             xn = nodeProperties
 
             M = torch.ger(M.squeeze(), M.squeeze())
-
             optimizer.zero_grad()
 
             xnOut, xeOut = model(xn, xe, G)
             loss = utils.dRMSD(xnOut, Coords, M)
+
             loss.backward()
+            #gN = model.KN1.grad.norm().item()
+            #print('norm of the gradient', gN)
+            optimizer.step()
 
             aloss   += loss.detach()
             alossAQ += torch.sqrt(loss)
-            gN  = model.KN.grad.norm().item()
-            gE1 = model.KE1.grad.norm().item()
-            gE2 = model.KE2.grad.norm().item()
-            gO = model.KNopen.grad.norm().item()
-            gC = model.KNclose.grad.norm().item()
 
-            optimizer.step()
+
             # scheduler.step()
-            nprnt = 1
-            if (i + 1) % nprnt == 0:
+            nprnt = 10
+            if i%nprnt == 0:
                 aloss = aloss / nprnt
                 alossAQ = alossAQ/nprnt
-                print("%2d.%1d   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E" %
-                      (j, i, aloss, alossAQ, gO, gN, gE1, gE2, gC))
+                print("%2d.%1d   %10.3E   %10.3E" % (j, i, aloss, alossAQ))
                 aloss = 0.0
                 alossAQ = 0.0
         # Validation
@@ -156,9 +153,6 @@ for j in range(epochs):
 
                     xnOut, xeOut = model(xn, xe, G, Ds)
 
-                    #Dout = utils.getDistMat(xnOut)
-                    #Dtrue = utils.getDistMat(Coords)
-                    #loss = F.mse_loss(M * Dout, M * Dtrue)
                     loss = utils.dRMSD(xnOut, Coords, M)
                     AQdis  += torch.sqrt(loss)
                     misVal += loss.detach()

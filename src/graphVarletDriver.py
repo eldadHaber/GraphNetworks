@@ -41,10 +41,10 @@ nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yob
 nNin    = 40
 nEin    = 1
 nopen  = 128
-nhid   = 128
+nhid   = 192
 nNout = 3
 nEout = 1
-nlayer = 18
+nlayer = 6
 
 model = GN.verletNetworks(nNin, nEin, nopen, nhid, nNout, nEout, nlayer, h=1)
 model.to(device)
@@ -55,11 +55,11 @@ print('Number of parameters ', total_params)
 
 #### Start Training ####
 
-lrO = 1e-3
+lrO = 1e-4
 lrC = 1e-4
-lrN = 1e-3
-lrE1 = 1e-3
-lrE2 = 1e-3
+lrN = 1e-4
+lrE1 = 1e-4
+lrE2 = 1e-4
 
 
 optimizer = optim.Adam([{'params': model.KNopen, 'lr': lrO},
@@ -73,12 +73,12 @@ optimizer = optim.Adam([{'params': model.KNopen, 'lr': lrO},
 
 
 alossBest = 1e6
-epochs    = 300
+epochs    = 100
 
 ndata = 100 #n_data_total
 bestModel = model
 hist = torch.zeros(epochs)
-
+batchSize = 32
 for j in range(epochs):
     # Prepare the data
     aloss = 0.0
@@ -87,7 +87,7 @@ for j in range(epochs):
 
         # Get the data
         nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
-                                                                            MSK, 1, device=device)
+                                                                            MSK, i, device=device)
 
         nNodes = Ds.shape[0]
         if nNodes < 500:
@@ -98,8 +98,8 @@ for j in range(epochs):
             xn = nodeProperties
 
             M = torch.ger(M.squeeze(), M.squeeze())
-
-            optimizer.zero_grad()
+            if i % batchSize == 0:
+                optimizer.zero_grad()
 
             xnOut, xeOut = model(xn, xe, G)
             loss = utils.dRMSD(xnOut, Coords, M)
@@ -107,16 +107,17 @@ for j in range(epochs):
 
             aloss   += loss.detach()
             alossAQ += torch.sqrt(loss)
-            gN  = model.KN1.grad.norm().item()
-            gE1 = model.KE1.grad.norm().item()
-            gE2 = model.KE2.grad.norm().item()
-            gO = model.KNopen.grad.norm().item()
-            gC = model.KNclose.grad.norm().item()
+            if i % batchSize == 0:
+                gN  = model.KN1.grad.norm().item()
+                gE1 = model.KE1.grad.norm().item()
+                gE2 = model.KE2.grad.norm().item()
+                gO = model.KNopen.grad.norm().item()
+                gC = model.KNclose.grad.norm().item()
 
-            optimizer.step()
+                optimizer.step()
             # scheduler.step()
-            nprnt = 1
-            if (i + 1) % nprnt == 0:
+            nprnt = batchSize
+            if i % nprnt == 0:
                 aloss = aloss / nprnt
                 alossAQ = alossAQ/nprnt
                 print("%2d.%1d   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E" %

@@ -41,7 +41,7 @@ def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
                    2 * Coords.t() @ Coords)
 
     D = D / D.std()
-    D = torch.exp(-D)
+    D = torch.exp(-2*D)
     Ds = F.softshrink(D, 0.92)
     #print("Ds shape:", Ds.shape)
     nsparse = 16
@@ -67,6 +67,6 @@ def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
     M = M.to(device=device, non_blocking=True)
     IJ = IJ.to(device=device, non_blocking=True)
     xe = xe.to(device=device, non_blocking=True)
-    Ds = Ds.to(device=device, non_blocking=True)
+    D = D.to(device=device, non_blocking=True)
 
     return Seq.unsqueeze(0), Coords.unsqueeze(0), M.unsqueeze(0).unsqueeze(0), IJ, xe, D

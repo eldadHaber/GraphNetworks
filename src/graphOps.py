@@ -6,7 +6,7 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 import torch.optim as optim
-
+import time
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
@@ -16,14 +16,18 @@ def tv_norm(X, eps=1e-3):
     return X
 
 
-def getConnectivity(X):
+def getConnectivity(X, nsparse=16):
+    X2 = torch.pow(X,2).sum(dim=1,keepdim=True)
+    D = X2 + X2.transpose(2,1) - 2*X.transpose(2,1)@X
+    D = torch.exp(torch.relu(D))
 
-    D = torch.pow(X,2).sum(dim=1,keepdim=True) + \
-        torch.pow(X,2).sum(dim=1,keepdim=True).transpose(2,1) - \
-        2*X.transpose(2,1)@X
-    D = torch.relu(D)
-    D = F.softshrink(D,D.mean())
-    IJ = torch.nonzero(D>1e-5)
+    vals, indices = torch.topk(D, k=min(nsparse, D.shape[0]), dim=1)
+    nd = D.shape[0]
+    I = torch.ger(torch.arange(nd), torch.ones(nsparse, dtype=torch.long))
+    I = I.view(-1)
+    J = indices.view(-1).type(torch.LongTensor)
+    IJ = torch.stack([I, J], dim=1)
+
     return IJ
 
 class graph(nn.Module):
@@ -138,7 +142,29 @@ class dense_graph(nn.Module):
         return L
 
 
+### Try to work in parallel
+test = False
+if test:
+    G = []; x = []
+    for i in range(1000):
+        n  = torch.randint(100, 400, (1,))
+        Gi = dense_graph(n)
+        xi = torch.rand(1,10,n)
+        G.append(Gi)
+        x.append(xi)
 
+    t1 = time.time()
+    tt = list(map(dense_graph.nodeGrad,G,x))
+    t2 = time.time()
+    print(t2-t1)
+
+    tt = []
+    t1 = time.time()
+    for i in range(len(G)):
+        ti = G[i].nodeGrad(x[i])
+        tt.append(ti)
+    t2 = time.time()
+    print(t2-t1)
 
 
 

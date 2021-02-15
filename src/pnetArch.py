@@ -44,9 +44,6 @@ class gNet(nn.Module):
         xn = doubleLayer(xn,self.K1Nopen,self.K2Nopen)
         xe = doubleLayer(xe,self.K1Eopen,self.K2Eopen)
 
-        row = Graph.iInd
-        col = Graph.iInd
-
         nlayers = self.KE1.shape[0]
         for i in range(nlayers):
 
