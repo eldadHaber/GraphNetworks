@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 
-from src import graphOps as GO
+from src import batchGraphOps as GO
 from src import processContacts as prc
 from src import utils
 from src import graphNet as GN
@@ -76,7 +76,7 @@ optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO},
 
 
 alossBest = 1e6
-epochs    = 100
+epochs    = 1
 
 ndata = 100 #n_data_total
 bestModel = model
@@ -91,7 +91,7 @@ for j in range(epochs):
 
         # Get the data
         nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
-                                                                            MSK, i, device=device)
+                                                                            MSK, 1, device=device)
 
         nNodes = Ds.shape[0]
         if nNodes < 500:
@@ -121,7 +121,7 @@ for j in range(epochs):
 
 
             # scheduler.step()
-            nprnt = 10
+            nprnt = 1
             if i%nprnt == 0:
                 aloss = aloss / nprnt
                 alossAQ = alossAQ/nprnt

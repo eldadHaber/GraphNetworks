@@ -8,7 +8,9 @@ from src import utils
 
 
 def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
+
     scale = 1e-2
+
     PSSM = S[i].t()
     n = PSSM.shape[1]
     M = MSK[i][:n]
@@ -20,9 +22,9 @@ def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
     X = torch.tensor(X)
 
     X = X - torch.mean(X, dim=1, keepdim=True)
-    U, Lam, V = torch.svd(X)
+    #U, Lam, V = torch.svd(X)
 
-    Coords = scale * torch.diag(Lam) @ V.t()
+    Coords = scale * X  #torch.diag(Lam) @ V.t()
     Coords = Coords.type('torch.FloatTensor')
 
     PSSM = PSSM.type(torch.float32)
@@ -70,3 +72,17 @@ def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
     D = D.to(device=device, non_blocking=True)
 
     return Seq.unsqueeze(0), Coords.unsqueeze(0), M.unsqueeze(0).unsqueeze(0), IJ, xe, D
+
+def getBatchData(S, Aind, Yobs, MSK, I, device='cpu'):
+
+    Seq, Coords, M, IJ, xe, D = getIterData(S, Aind, Yobs, MSK, I[0], device='cpu')
+    for i in range(1,len(I)):
+        Seqi, Coordi, Mi, IJi, xei, Di = getIterData(S, Aind, Yobs, MSK, I[i], device='cpu')
+        Seq    = torch.cat((Seq,Seqi))
+        Coords = torch.cat((Coords,Coordi))
+        M      = torch.cat((M,Mi))
+        IJ     = torch.cat((IJ,IJi))
+        xe     = torch.cat((xe, xei))
+        D      = torch.cat((D, Di))
+
+    return Seq, Coords, M, IJ, xe, D
