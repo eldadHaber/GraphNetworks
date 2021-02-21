@@ -44,45 +44,57 @@ def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
 
     D = D / D.std()
     D = torch.exp(-2*D)
-    Ds = F.softshrink(D, 0.92)
-    #print("Ds shape:", Ds.shape)
+
     nsparse = 16
-    vals, indices = torch.topk(Ds, k=min(nsparse, Ds.shape[0]), dim=1)
+    vals, indices = torch.topk(D, k=min(nsparse, D.shape[0]), dim=1)
     nd = D.shape[0]
     I = torch.ger(torch.arange(nd), torch.ones(nsparse, dtype=torch.long))
     I = I.view(-1)
     J = indices.view(-1).type(torch.LongTensor)
-    IJ = torch.stack([I, J], dim=1)
+    #IJ = torch.stack([I, J], dim=1)
 
     #print("IJ shape:", IJ.shape)
     # Organize the edge data
-    nEdges = IJ.shape[0]
+    nEdges = I.shape[0]
     xe = torch.zeros(1, 1, nEdges, device=device)
     for i in range(nEdges):
-        if IJ[i, 0] + 1 == IJ[i, 1]:
+        if I[i] + 1 == J[i]:
             xe[:, :, i] = 1
-        if IJ[i, 0] - 1 == IJ[i, 1]:
+        if I[i] - 1 == J[i]:
             xe[:, :, i] = 1
 
     Seq = Seq.to(device=device, non_blocking=True)
     Coords = Coords.to(device=device, non_blocking=True)
     M = M.to(device=device, non_blocking=True)
-    IJ = IJ.to(device=device, non_blocking=True)
+    I = I.to(device=device, non_blocking=True)
+    J = J.to(device=device, non_blocking=True)
     xe = xe.to(device=device, non_blocking=True)
     D = D.to(device=device, non_blocking=True)
 
-    return Seq.unsqueeze(0), Coords.unsqueeze(0), M.unsqueeze(0).unsqueeze(0), IJ, xe, D
+    return Seq.unsqueeze(0), Coords.unsqueeze(0), M.unsqueeze(0).unsqueeze(0), I, J, xe, D
 
-def getBatchData(S, Aind, Yobs, MSK, I, device='cpu'):
+def getBatchData(S, Aind, Yobs, MSK, IND, device='cpu'):
 
-    Seq, Coords, M, IJ, xe, D = getIterData(S, Aind, Yobs, MSK, I[0], device='cpu')
-    for i in range(1,len(I)):
-        Seqi, Coordi, Mi, IJi, xei, Di = getIterData(S, Aind, Yobs, MSK, I[i], device='cpu')
-        Seq    = torch.cat((Seq,Seqi))
-        Coords = torch.cat((Coords,Coordi))
-        M      = torch.cat((M,Mi))
-        IJ     = torch.cat((IJ,IJi))
-        xe     = torch.cat((xe, xei))
-        D      = torch.cat((D, Di))
-
-    return Seq, Coords, M, IJ, xe, D
+    Seq    = torch.tensor([])
+    Coords = torch.tensor([])
+    I      = torch.tensor([])
+    J      = torch.tensor([])
+    xe     = torch.tensor([])
+    w      = torch.tensor([])
+    M      = []
+    D      = []
+    nnodes = []
+    for i in range(len(IND)):
+        Seqi, Coordi, Mi, Ii, Ji, xei, Di = getIterData(S, Aind, Yobs, MSK, IND[i], device)
+        wi = Di[Ii,Ji]
+        if Di.shape[0] < 500:
+            Seq    = torch.cat((Seq,Seqi),dim=-1)
+            Coords = torch.cat((Coords,Coordi),dim=-1)
+            I      = torch.cat((I,Ii))
+            J      = torch.cat((J, Ji))
+            xe     = torch.cat((xe, xei),dim=-1)
+            w      = torch.cat((w, wi),dim=-1)
+            M.append([Mi])
+            D.append([Di])
+            nnodes.append([Di.shape[0]])
+    return Seq, Coords, M, I.long(), J.long(), xe, D, nnodes, w

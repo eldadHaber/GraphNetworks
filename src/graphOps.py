@@ -30,6 +30,28 @@ def getConnectivity(X, nsparse=16):
 
     return IJ
 
+def makeBatch(Ilist,Jlist,nnodesList, Wlist=[1.0]):
+
+    I = torch.tensor(Ilist[0])
+    J = torch.tensor(Jlist[0])
+    W = torch.tensor(Wlist[0])
+    nnodesList = torch.tensor(nnodesList,dtype=torch.long)
+    n = nnodesList[0]
+    for i in range(1,len(Ilist)):
+        Ii = torch.tensor(Ilist[i])
+        Ji = torch.tensor(Jlist[i])
+
+        I = torch.cat((I, n+Ii))
+        J = torch.cat((J, n+Ji))
+        ni = nnodesList[i].long()
+        n += ni
+        if len(Wlist)>1:
+            Wi = torch.tensor(Wlist[i])
+            W = torch.cat((W, Wi))
+
+    return I,J, nnodesList, W
+
+
 class graph(nn.Module):
 
     def __init__(self, iInd, jInd, nnodes, W=1.0):

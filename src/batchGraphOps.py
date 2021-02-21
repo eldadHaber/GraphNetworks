@@ -105,27 +105,29 @@ class graph(nn.Module):
 
 
 # test it
-I1 = torch.tensor([0,1,2,3,4,5])
-I2 = torch.tensor([0,1,2,3,4])
-J1 = torch.tensor([1,2,3,4,5,0])
-J2 = torch.tensor([1,2,3,4,0])
-Ilist = [I1,I2]
-Jlist = [J1,J2]
-nodeslist = [6,5]
-Wlist = [torch.rand(6),torch.rand(5)]
+Test = False
+if Test:
+    I1 = torch.tensor([0,1,2,3,4,5])
+    I2 = torch.tensor([0,1,2,3,4])
+    J1 = torch.tensor([1,2,3,4,5,0])
+    J2 = torch.tensor([1,2,3,4,0])
+    Ilist = [I1,I2]
+    Jlist = [J1,J2]
+    nodeslist = [6,5]
+    Wlist = [torch.rand(6),torch.rand(5)]
 
-G = graph(Ilist,Jlist,nodeslist, Wlist)
+    G = graph(Ilist,Jlist,nodeslist, Wlist)
 
-G1 = graph([I1],[J1],[nodeslist[0]], [Wlist[0]])
-G2 = graph([I2],[J2],[nodeslist[1]], [Wlist[1]])
+    G1 = graph([I1],[J1],[nodeslist[0]], [Wlist[0]])
+    G2 = graph([I2],[J2],[nodeslist[1]], [Wlist[1]])
 
 
-x = torch.randn(1,3,11)
-g  = G.nodeGrad(x)
-g1 = G1.nodeGrad(x[:,:,:6])
-g2 = G2.nodeGrad(x[:,:,6:])
-gg = torch.cat((g1,g2),dim=-1)
+    x = torch.randn(1,3,11)
+    g  = G.nodeGrad(x)
+    g1 = G1.nodeGrad(x[:,:,:6])
+    g2 = G2.nodeGrad(x[:,:,6:])
+    gg = torch.cat((g1,g2),dim=-1)
 
-print(torch.norm(g-gg))
+    print(torch.norm(g-gg))
 
 

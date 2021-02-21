@@ -102,7 +102,6 @@ class graphNetwork(nn.Module):
 
             #gradX = torch.exp(-torch.abs(Graph.nodeGrad(xn)))
             gradX = Graph.nodeGrad(xn)
-
             intX  = Graph.nodeAve(xn)
             xec   = torch.cat([intX, xe, gradX], dim=1)
             xec   = self.doubleLayer(xec, self.KE1[i], self.KE2[i])
@@ -112,7 +111,6 @@ class graphNetwork(nn.Module):
 
             #divE = torch.exp(-torch.abs(Graph.edgeDiv(xec)))
             divE = Graph.edgeDiv(xec)
-
             aveE = Graph.edgeAve(xec, method='ave')
             xnc  = torch.cat([aveE,divE,xn], dim=1)
             xnc  = self.doubleLayer(xnc, self.KN1[i], self.KN2[i])
