@@ -152,15 +152,15 @@ def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
 
 
 def getBatchData(S, Aind, Yobs, MSK, IND, device='cpu'):
-    Seq = torch.tensor([])
-    Coords = torch.tensor([])
-    I = torch.tensor([])
-    J = torch.tensor([])
-    xe = torch.tensor([])
-    w = torch.tensor([])
-    M = []
-    D = []
-    nnodes = []
+    Seq = torch.tensor([]).to(device)
+    Coords = torch.tensor([]).to(device)
+    I = torch.tensor([]).to(device)
+    J = torch.tensor([]).to(device)
+    xe = torch.tensor([]).to(device)
+    w = torch.tensor([]).to(device)
+    M = [].to(device)
+    D = [].to(device)
+    nnodes = [].to(device)
     for i in range(len(IND)):
         Seqi, Coordi, Mi, Ii, Ji, xei, Di = getIterData(S, Aind, Yobs, MSK, IND[i], device)
         wi = Di[Ii, Ji]
