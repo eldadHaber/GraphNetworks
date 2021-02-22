@@ -171,7 +171,7 @@ def getBatchData(S, Aind, Yobs, MSK, IND, device='cpu'):
             J = torch.cat((J, Ji))
             xe = torch.cat((xe, xei), dim=-1)
             w = torch.cat((w, wi), dim=-1)
-            M.append([Mi])
-            D.append([Di])
-            nnodes.append([Di.shape[0]])
+            M.append(Mi)
+            D.append(Di)
+            nnodes.append(Di.shape[0])
     return Seq, Coords, M, I.long(), J.long(), xe, D, nnodes, w
