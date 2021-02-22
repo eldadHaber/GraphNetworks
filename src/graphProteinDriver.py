@@ -6,7 +6,6 @@ import torch.optim as optim
 import numpy as np
 import matplotlib.pyplot as plt
 import math
-
 import torch.autograd.profiler as profiler
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
