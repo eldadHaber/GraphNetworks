@@ -95,7 +95,7 @@ epochs = 100000
 ndata = n_data_total
 bestModel = model
 hist = torch.zeros(epochs)
-batchSize = 2
+batchSize = 32
 
 for j in range(epochs):
     # Prepare the data
@@ -107,8 +107,8 @@ for j in range(epochs):
 
 
     for i in range(k):
-        if i % 8 == 0:
-            start.record()
+        #if i % 8 == 0:
+        start.record()
         IND = torch.arange(i * batchSize, (i + 1) * batchSize)
         # Get the data
         nodeProperties, Coords, M, I, J, edgeProperties, Ds, nNodes, w = prc.getBatchData(S, Aind, Yobs,
@@ -138,10 +138,10 @@ for j in range(epochs):
             loss += lossi
 
         loss.backward()
-        if i % 8 == 7:
-            end.record()
-            torch.cuda.synchronize()
-            print("Time for batch:", start.elapsed_time(end))
+        #if i % 8 == 7:
+        end.record()
+        torch.cuda.synchronize()
+        print("Time for batch:", start.elapsed_time(end))
 
         # gN = model.KN1.grad.norm().item()
         # print('norm of the gradient', gN)
