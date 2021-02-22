@@ -104,9 +104,10 @@ for j in range(epochs):
     k = ndata // batchSize
     start = torch.cuda.Event(enable_timing=True)
     end = torch.cuda.Event(enable_timing=True)
-    start.record()
+
 
     for i in range(k):
+        start.record()
         IND = torch.arange(i * batchSize, (i + 1) * batchSize)
         # Get the data
         nodeProperties, Coords, M, I, J, edgeProperties, Ds, nNodes, w = prc.getBatchData(S, Aind, Yobs,
