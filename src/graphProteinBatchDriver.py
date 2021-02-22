@@ -121,11 +121,12 @@ for j in range(epochs):
         xnOut, xeOut = model(xn, xe, G)
         loss = 0.0
         cnt = 0
-        for kk in range(len(nNodes)):
+        for batch_idx, kk in enumerate(range(len(nNodes))):
             print("nNodes[kk][0]:", nNodes[kk])
             xnOuti = xnOut[:, :, cnt:cnt + nNodes[kk]]
             Coordsi = Coords[:, :, cnt:cnt + nNodes[kk]]
-            Mi = M[cnt:cnt + nNodes[kk]]
+            print("M len:", len(M))
+            Mi = M[batch_idx]
             #print("Mi:", Mi)
             print("M:", M)
             Mi = torch.ger(Mi, Mi)
