@@ -128,7 +128,7 @@ for j in range(epochs):
             print("M len:", len(M))
             Mi = M[batch_idx]
             #print("Mi:", Mi)
-            print("M:", M)
+
             Mi = torch.ger(Mi, Mi)
             lossi = utils.dRMSD(xnOuti, Coordsi, Mi)
             loss += lossi
