@@ -7,29 +7,54 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 
-from src import graphOps as GO
-from src import processContacts as prc
-from src import utils
-from src import graphNet as GN
+
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
+caspver = "casp11"  # Change this to choose casp version
+
+if "s" in sys.argv:
+    base_path = '/home/eliasof/pFold/data/'
+    import graphOps as GO
+    import processContacts as prc
+    import utils
+    import graphNet as GN
+    import pnetArch as PNA
+
+
+elif "e" in sys.argv:
+    base_path = '/home/cluster/users/erant_group/pfold/'
+    from src import graphOps as GO
+    from src import processContacts as prc
+    from src import utils
+    from src import graphNet as GN
+    from src import pnetArch as PNA
+
+
+else:
+    base_path = '../../../data/'
+    from src import graphOps as GO
+    from src import processContacts as prc
+    from src import utils
+    from src import graphNet as GN
+    from src import pnetArch as PNA
+
 # load training data
-Aind = torch.load('../../../data/casp11/AminoAcidIdx.pt')
-Yobs = torch.load('../../../data/casp11/RCalpha.pt')
-MSK = torch.load('../../../data/casp11/Masks.pt')
-S = torch.load('../../../data/casp11/PSSM.pt')
+Aind = torch.load(base_path + caspver + '/AminoAcidIdx.pt')
+Yobs = torch.load(base_path + caspver + '/RCalpha.pt')
+MSK = torch.load(base_path + caspver + '/Masks.pt')
+S = torch.load(base_path + caspver + '/PSSM.pt')
 # load validation data
-AindVal = torch.load('../../../data/casp11/AminoAcidIdxVal.pt')
-YobsVal = torch.load('../../../data/casp11/RCalphaVal.pt')
-MSKVal = torch.load('../../../data/casp11/MasksVal.pt')
-SVal = torch.load('../../../data/casp11/PSSMVal.pt')
+AindVal = torch.load(base_path + caspver + '/AminoAcidIdxVal.pt')
+YobsVal = torch.load(base_path + caspver + '/RCalphaVal.pt')
+MSKVal = torch.load(base_path + caspver + '/MasksVal.pt')
+SVal = torch.load(base_path + caspver + '/PSSMVal.pt')
 
 # load Testing data
-AindTesting = torch.load('../../../data/casp11/AminoAcidIdxTesting.pt')
-YobsTesting = torch.load('../../../data/casp11/RCalphaTesting.pt')
-MSKTesting = torch.load('../../../data/casp11/MasksTesting.pt')
-STesting = torch.load('../../../data/casp11/PSSMTesting.pt')
+AindTest = torch.load(base_path + caspver + '/AminoAcidIdxTesting.pt')
+YobsTest = torch.load(base_path + caspver + '/RCalphaTesting.pt')
+MSKTest = torch.load(base_path + caspver + '/MasksTesting.pt')
+STest = torch.load(base_path + caspver + '/PSSMTesting.pt')
 
 print('Number of data: ', len(S))
 n_data_total = len(S)
