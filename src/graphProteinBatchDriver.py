@@ -107,7 +107,7 @@ for j in range(epochs):
 
 
     for i in range(k):
-        if i % 8 == 0
+        if i % 8 == 0:
             start.record()
         IND = torch.arange(i * batchSize, (i + 1) * batchSize)
         # Get the data
