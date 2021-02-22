@@ -122,12 +122,12 @@ for j in range(epochs):
         loss = 0.0
         cnt = 0
         for batch_idx, kk in enumerate(range(len(nNodes))):
-            print("nNodes[kk][0]:", nNodes[kk])
+            #print("nNodes[kk][0]:", nNodes[kk])
             xnOuti = xnOut[:, :, cnt:cnt + nNodes[kk]]
             Coordsi = Coords[:, :, cnt:cnt + nNodes[kk]]
-            print("M len:", len(M))
+            #print("M len:", len(M))
             Mi = M[batch_idx].squeeze()
-            print("Mi:", Mi)
+            #print("Mi:", Mi)
 
             Mi = torch.ger(Mi, Mi)
             lossi = utils.dRMSD(xnOuti, Coordsi, Mi)
