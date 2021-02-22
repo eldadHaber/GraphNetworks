@@ -110,8 +110,7 @@ for j in range(epochs):
             loss += lossi
 
         loss.backward()
-        #gN = model.KN1.grad.norm().item()
-        #print('norm of the gradient', gN)
+
         optimizer.step()
 
         aloss   += loss.detach()
