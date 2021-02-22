@@ -95,7 +95,7 @@ epochs = 100000
 ndata = n_data_total
 bestModel = model
 hist = torch.zeros(epochs)
-batchSize = 1
+batchSize = 2
 
 for j in range(epochs):
     # Prepare the data
@@ -137,7 +137,7 @@ for j in range(epochs):
             loss += lossi
 
         loss.backward()
-        if i % 16 == 15:
+        if i % 8 == 7:
             end.record()
             torch.cuda.synchronize()
             print("Time for batch:", start.elapsed_time(end))
