@@ -108,7 +108,7 @@ for j in range(epochs):
 
     for i in range(k):
         #if i % 8 == 0:
-        start.record()
+
         IND = torch.arange(i * batchSize, (i + 1) * batchSize)
         # Get the data
         nodeProperties, Coords, M, I, J, edgeProperties, Ds, nNodes, w = prc.getBatchData(S, Aind, Yobs,
@@ -121,10 +121,14 @@ for j in range(epochs):
         xn = nodeProperties
 
         optimizer.zero_grad()
-
+        start.record()
         xnOut, xeOut = model(xn, xe, G)
+        end.record()
+        torch.cuda.synchronize()
+        print("Time for model:", start.elapsed_time(end))
         loss = 0.0
         cnt = 0
+        start.record()
         for batch_idx, kk in enumerate(range(len(nNodes))):
             # print("nNodes[kk][0]:", nNodes[kk])
             xnOuti = xnOut[:, :, cnt:cnt + nNodes[kk]]
@@ -136,12 +140,12 @@ for j in range(epochs):
             Mi = torch.ger(Mi, Mi)
             lossi = utils.dRMSD(xnOuti, Coordsi, Mi)
             loss += lossi
-
-        loss.backward()
-        #if i % 8 == 7:
         end.record()
         torch.cuda.synchronize()
-        print("Time for batch:", start.elapsed_time(end))
+        print("Time for loss:", start.elapsed_time(end))
+        loss.backward()
+        #if i % 8 == 7:
+
 
         # gN = model.KN1.grad.norm().item()
         # print('norm of the gradient', gN)
