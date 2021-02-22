@@ -107,7 +107,8 @@ for j in range(epochs):
 
 
     for i in range(k):
-        start.record()
+        if i % 8 == 0
+            start.record()
         IND = torch.arange(i * batchSize, (i + 1) * batchSize)
         # Get the data
         nodeProperties, Coords, M, I, J, edgeProperties, Ds, nNodes, w = prc.getBatchData(S, Aind, Yobs,
