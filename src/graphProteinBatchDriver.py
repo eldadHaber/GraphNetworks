@@ -7,8 +7,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 
-
-
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
 caspver = "casp11"  # Change this to choose casp version
@@ -104,6 +102,10 @@ for j in range(epochs):
     aloss = 0.0
     alossAQ = 0.0
     k = ndata // batchSize
+    start = torch.cuda.Event(enable_timing=True)
+    end = torch.cuda.Event(enable_timing=True)
+    start.record()
+
     for i in range(k):
         IND = torch.arange(i * batchSize, (i + 1) * batchSize)
         # Get the data
@@ -122,18 +124,22 @@ for j in range(epochs):
         loss = 0.0
         cnt = 0
         for batch_idx, kk in enumerate(range(len(nNodes))):
-            #print("nNodes[kk][0]:", nNodes[kk])
+            # print("nNodes[kk][0]:", nNodes[kk])
             xnOuti = xnOut[:, :, cnt:cnt + nNodes[kk]]
             Coordsi = Coords[:, :, cnt:cnt + nNodes[kk]]
-            #print("M len:", len(M))
+            # print("M len:", len(M))
             Mi = M[batch_idx].squeeze()
-            #print("Mi:", Mi)
+            # print("Mi:", Mi)
 
             Mi = torch.ger(Mi, Mi)
             lossi = utils.dRMSD(xnOuti, Coordsi, Mi)
             loss += lossi
 
         loss.backward()
+        end.record()
+        torch.cuda.synchronize()
+        print("Time for batch:",start.elapsed_time(end))
+
         # gN = model.KN1.grad.norm().item()
         # print('norm of the gradient', gN)
         optimizer.step()
