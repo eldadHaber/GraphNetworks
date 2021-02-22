@@ -126,7 +126,7 @@ for j in range(epochs):
             xnOuti = xnOut[:, :, cnt:cnt + nNodes[kk]]
             Coordsi = Coords[:, :, cnt:cnt + nNodes[kk]]
             Mi = M[cnt:cnt + nNodes[kk]]
-            print("Mi:", Mi)
+            #print("Mi:", Mi)
             Mi = torch.ger(Mi, Mi)
             lossi = utils.dRMSD(xnOuti, Coordsi, Mi)
             loss += lossi
