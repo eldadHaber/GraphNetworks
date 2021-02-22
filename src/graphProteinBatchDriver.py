@@ -95,7 +95,7 @@ epochs = 100000
 ndata = n_data_total
 bestModel = model
 hist = torch.zeros(epochs)
-batchSize = 16
+batchSize = 1
 
 for j in range(epochs):
     # Prepare the data
@@ -137,9 +137,10 @@ for j in range(epochs):
             loss += lossi
 
         loss.backward()
-        end.record()
-        torch.cuda.synchronize()
-        print("Time for batch:",start.elapsed_time(end))
+        if i % 16 == 15:
+            end.record()
+            torch.cuda.synchronize()
+            print("Time for batch:", start.elapsed_time(end))
 
         # gN = model.KN1.grad.norm().item()
         # print('norm of the gradient', gN)
