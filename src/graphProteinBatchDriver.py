@@ -122,10 +122,10 @@ for j in range(epochs):
         loss = 0.0
         cnt = 0
         for kk in range(len(nNodes)):
-            print("nNodes:", nNodes)
-            xnOuti = xnOut[:, :, cnt:cnt + nNodes[kk]]
-            Coordsi = Coords[:, :, cnt:cnt + nNodes[kk]]
-            Mi = M[cnt:cnt + nNodes[kk]]
+
+            xnOuti = xnOut[:, :, cnt:cnt + nNodes[kk][0]]
+            Coordsi = Coords[:, :, cnt:cnt + nNodes[kk][0]]
+            Mi = M[cnt:cnt + nNodes[kk][0]]
             Mi = torch.ger(Mi, Mi)
             lossi = utils.dRMSD(xnOuti, Coordsi, Mi)
             loss += lossi
