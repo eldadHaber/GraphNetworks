@@ -126,7 +126,7 @@ for j in range(epochs):
             xnOuti = xnOut[:, :, cnt:cnt + nNodes[kk]]
             Coordsi = Coords[:, :, cnt:cnt + nNodes[kk]]
             print("M len:", len(M))
-            Mi = M[batch_idx]
+            Mi = M[batch_idx].squeeze()
             print("Mi:", Mi)
 
             Mi = torch.ger(Mi, Mi)
