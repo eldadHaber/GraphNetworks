@@ -73,11 +73,11 @@ print('Number of parameters ', total_params)
 
 #### Start Training ####
 
-lrO = 1e-3
-lrC = 1e-3
-lrN = 1e-3
-lrE1 = 1e-3
-lrE2 = 1e-3
+lrO = 1e-2
+lrC = 1e-2
+lrN = 1e-2
+lrE1 = 1e-2
+lrE2 = 1e-2
 
 optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO},
                         {'params': model.K2Nopen, 'lr': lrC},
