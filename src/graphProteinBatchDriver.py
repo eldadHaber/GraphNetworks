@@ -73,11 +73,11 @@ print('Number of parameters ', total_params)
 
 #### Start Training ####
 
-lrO = 1e-1
-lrC = 1e-1
-lrN = 1e-1
-lrE1 = 1e-1
-lrE2 = 1e-1
+lrO = 1e-3
+lrC = 1e-3
+lrN = 1e-3
+lrE1 = 1e-3
+lrE2 = 1e-3
 
 optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO},
                         {'params': model.K2Nopen, 'lr': lrC},
@@ -95,19 +95,17 @@ epochs = 100000
 ndata = n_data_total
 bestModel = model
 hist = torch.zeros(epochs)
-batchSize = 8
+batchSize = 64
 
 for j in range(epochs):
     # Prepare the data
     aloss = 0.0
     alossAQ = 0.0
     k = ndata // batchSize
-    start = torch.cuda.Event(enable_timing=True)
-    end = torch.cuda.Event(enable_timing=True)
-
+    # start = torch.cuda.Event(enable_timing=True)
+    # end = torch.cuda.Event(enable_timing=True)
 
     for i in range(k):
-        #if i % 8 == 0:
 
         IND = torch.arange(i * batchSize, (i + 1) * batchSize)
         # Get the data
@@ -121,34 +119,26 @@ for j in range(epochs):
         xn = nodeProperties
 
         optimizer.zero_grad()
-        start.record()
+        # start.record()
         xnOut, xeOut = model(xn, xe, G)
-        end.record()
-        torch.cuda.synchronize()
-        print("Time for model:", start.elapsed_time(end))
+        # end.record()
+        # torch.cuda.synchronize()
+        # print("Time for model:", start.elapsed_time(end))
         loss = 0.0
         cnt = 0
-        start.record()
+        # start.record()
         for batch_idx, kk in enumerate(range(len(nNodes))):
-            # print("nNodes[kk][0]:", nNodes[kk])
             xnOuti = xnOut[:, :, cnt:cnt + nNodes[kk]]
             Coordsi = Coords[:, :, cnt:cnt + nNodes[kk]]
-            # print("M len:", len(M))
             Mi = M[batch_idx].squeeze()
-            # print("Mi:", Mi)
 
             Mi = torch.ger(Mi, Mi)
             lossi = utils.dRMSD(xnOuti, Coordsi, Mi)
             loss += lossi
-        end.record()
-        torch.cuda.synchronize()
-        print("Time for loss:", start.elapsed_time(end))
+        # end.record()
+        # torch.cuda.synchronize()
+        # print("Time for loss:", start.elapsed_time(end))
         loss.backward()
-        #if i % 8 == 7:
-
-
-        # gN = model.KN1.grad.norm().item()
-        # print('norm of the gradient', gN)
         optimizer.step()
 
         aloss += loss.detach()
@@ -168,7 +158,7 @@ for j in range(epochs):
             with torch.no_grad():
                 misVal = 0
                 AQdis = 0
-                nVal = len(STesting)
+                # nVal = len(STest)
                 for jj in range(nVal):
                     nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
                                                                                         MSK, 0, device=device)
