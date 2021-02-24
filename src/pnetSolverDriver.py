@@ -7,43 +7,67 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 
-from src import graphOps as GO
-from src import processContacts as prc
-from src import utils
-#from src import graphNet as GN
-from src import pnetArch as PNA
+#from src import graphOps as GO
+#from src import processContacts as prc
+#from src import utils
+# from src import graphNet as GN
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
+caspver = "casp11"  # Change this to choose casp version
+
+if "s" in sys.argv:
+    base_path = '/home/eliasof/pFold/data/'
+    import graphOps as GO
+    import processContacts as prc
+    import utils
+    import graphNet as GN
+    import pnetArch as PNA
+
+
+elif "e" in sys.argv:
+    base_path = '/home/cluster/users/erant_group/pfold/'
+    from src import graphOps as GO
+    from src import processContacts as prc
+    from src import utils
+    from src import graphNet as GN
+    from src import pnetArch as PNA
+
+
+else:
+    base_path = '../../../data/'
+    from src import graphOps as GO
+    from src import processContacts as prc
+    from src import utils
+    from src import graphNet as GN
+    from src import pnetArch as PNA
+
 # load training data
-Aind = torch.load('../../../data/casp11/AminoAcidIdx.pt')
-Yobs = torch.load('../../../data/casp11/RCalpha.pt')
-MSK  = torch.load('../../../data/casp11/Masks.pt')
-S     = torch.load('../../../data/casp11/PSSM.pt')
+Aind = torch.load(base_path + caspver + '/AminoAcidIdx.pt')
+Yobs = torch.load(base_path + caspver + '/RCalpha.pt')
+MSK = torch.load(base_path + caspver + '/Masks.pt')
+S = torch.load(base_path + caspver + '/PSSM.pt')
 # load validation data
-AindVal = torch.load('../../../data/casp11/AminoAcidIdxVal.pt')
-YobsVal = torch.load('../../../data/casp11/RCalphaVal.pt')
-MSKVal  = torch.load('../../../data/casp11/MasksVal.pt')
-SVal     = torch.load('../../../data/casp11/PSSMVal.pt')
+AindVal = torch.load(base_path + caspver + '/AminoAcidIdxVal.pt')
+YobsVal = torch.load(base_path + caspver + '/RCalphaVal.pt')
+MSKVal = torch.load(base_path + caspver + '/MasksVal.pt')
+SVal = torch.load(base_path + caspver + '/PSSMVal.pt')
 
 # load Testing data
-AindTesting = torch.load('../../../data/casp11/AminoAcidIdxTesting.pt')
-YobsTesting = torch.load('../../../data/casp11/RCalphaTesting.pt')
-MSKTesting  = torch.load('../../../data/casp11/MasksTesting.pt')
-STesting     = torch.load('../../../data/casp11/PSSMTesting.pt')
-
+AindTest = torch.load(base_path + caspver + '/AminoAcidIdxTesting.pt')
+YobsTest = torch.load(base_path + caspver + '/RCalphaTesting.pt')
+MSKTest = torch.load(base_path + caspver + '/MasksTesting.pt')
+STest = torch.load(base_path + caspver + '/PSSMTesting.pt')
 
 print('Number of data: ', len(S))
 n_data_total = len(S)
 
 nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs, MSK, 0, device=device)
 
-
-
 # Setup the network and its parameters
-nNin    = 40
-nEin    = 1
-nEhid   = 128
+nNin = 40
+nEin = 1
+nEhid = 128
 nNclose = 3
 nEclose = 1
 nlayer = 6
@@ -56,12 +80,11 @@ print('Number of parameters ', total_params)
 
 #### Start Training ####
 
-lrO  = 5e-3
-lrC  = 5e-3
-lrN  = 5e-3
+lrO = 5e-3
+lrC = 5e-3
+lrN = 5e-3
 lrE1 = 5e-3
 lrE2 = 5e-3
-
 
 optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO},
                         {'params': model.K2Nopen, 'lr': lrC},
@@ -73,11 +96,10 @@ optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO},
                         {'params': model.KN2, 'lr': lrE2},
                         {'params': model.KNout, 'lr': lrE2}])
 
-
 alossBest = 1e6
-epochs    = 300
+epochs = 300
 
-ndata = 2 #n_data_total
+ndata = n_data_total
 bestModel = model
 hist = torch.zeros(epochs)
 
@@ -89,10 +111,10 @@ for j in range(epochs):
 
         # Get the data
         nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
-                                                                            MSK, 0, device=device)
+                                                                            MSK, i, device=device)
 
         nNodes = Ds.shape[0]
-        if nNodes < 500:
+        if nNodes < 700:
             w = Ds[IJ[:, 0], IJ[:, 1]]
             G = GO.graph(IJ[:, 0], IJ[:, 1], nNodes, w)
             xe = w.unsqueeze(0).unsqueeze(0)  # edgeProperties
@@ -106,9 +128,9 @@ for j in range(epochs):
             loss = utils.dRMSD(xnOut, Coords, M)
             loss.backward()
 
-            aloss   += loss.detach()
+            aloss += loss.detach()
             alossAQ += torch.sqrt(loss)
-            gN  = model.K1Nopen.grad.norm().item()
+            gN = model.K1Nopen.grad.norm().item()
             gE1 = model.KE1.grad.norm().item()
             gE2 = model.KE2.grad.norm().item()
             gO = model.K2Nopen.grad.norm().item()
@@ -116,21 +138,21 @@ for j in range(epochs):
 
             optimizer.step()
             # scheduler.step()
-            nprnt = 1
+            nprnt = 100
             if (i + 1) % nprnt == 0:
                 aloss = aloss / nprnt
-                alossAQ = alossAQ/nprnt
+                alossAQ = alossAQ / nprnt
                 print("%2d.%1d   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E" %
-                      (j, i, aloss, alossAQ, gO, gN, gE1, gE2, gC))
+                      (j, i, aloss, alossAQ, gO, gN, gE1, gE2, gC), flush=True)
                 aloss = 0.0
                 alossAQ = 0.0
         # Validation
         nextval = 1e9
         if (i + 1) % nextval == 0:
             with torch.no_grad():
-                misVal  = 0
-                AQdis   = 0
-                nVal = len(STesting)
+                misVal = 0
+                AQdis = 0
+                nVal = len(STest)
                 for jj in range(nVal):
                     nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
                                                                                         MSK, 0, device=device)
@@ -145,15 +167,12 @@ for j in range(epochs):
 
                     xnOut, xeOut = model(xn, xe, G, Ds)
                     loss = utils.dRMSD(xnOut, Coords, M)
-                    AQdis  += torch.sqrt(loss)
+                    AQdis += torch.sqrt(loss)
                     misVal += loss.detach()
 
-
-
-                print("%2d       %10.3E   %10.3E" % (j, misVal/nVal, AQdis/nVal))
+                print("%2d       %10.3E   %10.3E" % (j, misVal / nVal, AQdis / nVal))
                 print('===============================================')
 
     if aloss < alossBest:
         alossBest = aloss
         bestModel = model
-

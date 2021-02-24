@@ -13,6 +13,7 @@ import torch.nn.functional as F
 class list2np(object):
     def __init__(self):
         pass
+
     def __call__(self, *args):
         args_array = ()
         for arg in args:
@@ -22,32 +23,33 @@ class list2np(object):
     def __repr__(self):
         return self.__class__.__name__ + '()'
 
-def getPointDistance(output, targets, alpha=0.5):
 
-    #outRot, tarRot, R = rotatePoints(output.squeeze(0), targets.squeeze(0))
-    #doutRot = outRot[:, 1:] - outRot[:, :-1]
-    #dtarRot = tarRot[:, 1:] - tarRot[:, :-1]
+def getPointDistance(output, targets, alpha=0.5):
+    # outRot, tarRot, R = rotatePoints(output.squeeze(0), targets.squeeze(0))
+    # doutRot = outRot[:, 1:] - outRot[:, :-1]
+    # dtarRot = tarRot[:, 1:] - tarRot[:, :-1]
     misfitDis = 0.0
     for i in range(output.shape[0]):
-        outi  = output[i,:,:]
-        tari = targets[i,:,:]
-        Dc = torch.sum(outi**2, dim=0, keepdim=True) + torch.sum(outi**2, dim=0,
-                                                                 keepdim=True).t() - 2*outi.t()@outi
+        outi = output[i, :, :]
+        tari = targets[i, :, :]
+        Dc = torch.sum(outi ** 2, dim=0, keepdim=True) + torch.sum(outi ** 2, dim=0,
+                                                                   keepdim=True).t() - 2 * outi.t() @ outi
         Dc = torch.sqrt(torch.relu(Dc))
-        Do = torch.sum(tari**2, dim=0, keepdim=True) + torch.sum(tari**2, dim=0,
-                                                                  keepdim=True).t() - 2*tari.t()@tari
+        Do = torch.sum(tari ** 2, dim=0, keepdim=True) + torch.sum(tari ** 2, dim=0,
+                                                                   keepdim=True).t() - 2 * tari.t() @ tari
         Do = torch.sqrt(torch.relu(Do))
-        misfitDis += F.mse_loss(Dc, Do) / F.mse_loss(Do, 0*Do)
-    misfitDis = misfitDis/output.shape[0]
+        misfitDis += F.mse_loss(Dc, Do) / F.mse_loss(Do, 0 * Do)
+    misfitDis = misfitDis / output.shape[0]
 
-    #misfitCoo = F.mse_loss(doutRot, dtarRot) / F.mse_loss(dtarRot, dtarRot * 0)
+    # misfitCoo = F.mse_loss(doutRot, dtarRot) / F.mse_loss(dtarRot, dtarRot * 0)
     misfitCoo = F.mse_loss(output, targets) / F.mse_loss(targets, targets * 0)
 
-    misfit = alpha*misfitDis + (1-alpha)*misfitCoo
+    misfit = alpha * misfitDis + (1 - alpha) * misfitCoo
     return misfit, misfitDis, misfitCoo
 
+
 def coord_loss(r1s, r2s, mask):
-    ind = mask.squeeze()>0
+    ind = mask.squeeze() > 0
     r1 = r1s[0, :, ind]
     r2 = r2s[0, :, ind]
 
@@ -55,49 +57,50 @@ def coord_loss(r1s, r2s, mask):
     r1c = r1 - torch.sum(r1, dim=1, keepdim=True) / r1.shape[1]
     r2c = r2 - torch.sum(r2, dim=1, keepdim=True) / r2.shape[1]
 
-    H = r1c@r2c.t()
+    H = r1c @ r2c.t()
     U, S, V = torch.svd(H)
 
     d = F.softsign(torch.det(V @ U.t()))
 
-    ones = torch.ones_like(d,device=r1s.device)
+    ones = torch.ones_like(d, device=r1s.device)
     a = torch.stack((ones, ones, d), dim=-1)
     tmp = torch.diag_embed(a)
 
     R = V @ tmp @ U.t()
 
-    r1cr = torch.zeros(1,3,r1s.shape[2],device=r1.device)
-    r1cr[0,:,ind] = R @ r1c
-    r2cr = torch.zeros(1,3, r2s.shape[2], device=r1.device)
-    r2cr[0,:, ind] = r2c
+    r1cr = torch.zeros(1, 3, r1s.shape[2], device=r1.device)
+    r1cr[0, :, ind] = R @ r1c
+    r2cr = torch.zeros(1, 3, r2s.shape[2], device=r1.device)
+    r2cr[0, :, ind] = r2c
     loss_tr = torch.norm(r1cr - r2cr) ** 2 / torch.norm(r2cr) ** 2
     return loss_tr, r1cr, r2cr
 
 
-
-def getDistMat(X,msk=torch.tensor([1.0])):
+def getDistMat(X, msk=torch.tensor([1.0])):
     X = X.squeeze(0)
-    D = torch.sum(torch.pow(X,2), dim=0, keepdim=True) + \
-        torch.sum(torch.pow(X,2), dim=0, keepdim=True).t() - \
-        2*X.t()@X
-    
+    D = torch.sum(torch.pow(X, 2), dim=0, keepdim=True) + \
+        torch.sum(torch.pow(X, 2), dim=0, keepdim=True).t() - \
+        2 * X.t() @ X
+
     dev = X.device
     msk = msk.to(dev)
 
-    mm = torch.ger(msk,msk)
-    return mm*torch.sqrt(torch.relu(D))
-
-def getNormMat(N,msk=torch.tensor([1.0])):
-    N = N/torch.sqrt(torch.sum(N**2,dim=0,keepdim=True)+1e-9)
-    D = N.t()@N
     mm = torch.ger(msk, msk)
-    return mm*D
+    return mm * torch.sqrt(torch.relu(D))
 
-def orgProtData(x,normals,s, msk, sigma=1.0):
+
+def getNormMat(N, msk=torch.tensor([1.0])):
+    N = N / torch.sqrt(torch.sum(N ** 2, dim=0, keepdim=True) + 1e-9)
+    D = N.t() @ N
+    mm = torch.ger(msk, msk)
+    return mm * D
+
+
+def orgProtData(x, normals, s, msk, sigma=1.0):
     n = s.shape[1]
-    D = getDistMat(x,msk)
-    D = torch.exp(-sigma*D)
-    N = getNormMat(normals,msk)
+    D = getDistMat(x, msk)
+    D = torch.exp(-sigma * D)
+    N = getNormMat(normals, msk)
     XX = torch.zeros(20, 20, n, n)
     NN = torch.zeros(20, 20, n, n)
     mm = torch.ger(msk, msk)
@@ -105,7 +108,7 @@ def orgProtData(x,normals,s, msk, sigma=1.0):
 
     for i in range(20):
         for j in range(20):
-            sij = 0.5*(torch.ger(s[i, :], s[j, :]) + torch.ger(s[j, :], s[i, :]))
+            sij = 0.5 * (torch.ger(s[i, :], s[j, :]) + torch.ger(s[j, :], s[i, :]))
             XX[i, j, :, :] = sij * D
             NN[i, j, :, :] = sij * N
 
@@ -116,56 +119,58 @@ def orgProtData(x,normals,s, msk, sigma=1.0):
     return XX, NN
 
 
-
-
-def linearInterp1D(X,M):
-    n  = X.shape[1]
-    ti = np.arange(0,n)
-    t  = ti[M!=0]
-    f = interpolate.interp1d(t, X[:,M!=0], kind='slinear', axis=-1, copy=True, bounds_error=None,
+def linearInterp1D(X, M):
+    n = X.shape[1]
+    ti = np.arange(0, n)
+    t = ti[M != 0]
+    f = interpolate.interp1d(t, X[:, M != 0], kind='slinear', axis=-1, copy=True, bounds_error=None,
                              fill_value='extrapolate')
     Xnew = f(ti)
 
     return Xnew
 
-def distPenality(D,dc=0.379,M=torch.ones(1)):
-    U = torch.triu(D,2)
-    p2 = torch.norm(M*torch.relu(2*dc - U))**2/torch.sum(M>0)
+
+def distPenality(D, dc=0.379, M=torch.ones(1)):
+    U = torch.triu(D, 2)
+    p2 = torch.norm(M * torch.relu(2 * dc - U)) ** 2 / torch.sum(M > 0)
 
     return p2
 
-def distConstraint(X,dc=0.379, M=torch.tensor([1])):
+
+def distConstraint(X, dc=0.379, M=torch.tensor([1])):
     X = X.squeeze()
     M = M.squeeze()
     n = X.shape[1]
-    dX = X[:,1:] - X[:,:-1]
-    d  = torch.sum(dX**2,dim=0)
+    dX = X[:, 1:] - X[:, :-1]
+    d = torch.sum(dX ** 2, dim=0)
 
-    if torch.numel(M)>1:
-        avM = (M[1:]+M[:-1])/2 < 0.5
-        dc = (avM==0)*dc
+    if torch.numel(M) > 1:
+        avM = (M[1:] + M[:-1]) / 2 < 0.5
+        dc = (avM == 0) * dc
     else:
         avM = 1e-3
-    dX = (dX / torch.sqrt(d+avM)) * dc
+    dX = (dX / torch.sqrt(d + avM)) * dc
 
-    Xh = torch.zeros(X.shape[0],n, device=X.device)
-    Xh[:, 0]  = X[:, 0]
+    Xh = torch.zeros(X.shape[0], n, device=X.device)
+    Xh[:, 0] = X[:, 0]
     Xh[:, 1:] = X[:, 0].unsqueeze(1) + torch.cumsum(dX, dim=1)
-    Xh = M*Xh
+    Xh = M * Xh
     return Xh
+
 
 def kl_div(p, q, weight=False):
     n = p.shape[1]
-    p   = torch.log_softmax(p, dim=0)
+    p = torch.log_softmax(p, dim=0)
     KLD = F.kl_div(p.unsqueeze(0), q.unsqueeze(0), reduction='none').squeeze(0)
     if weight:
-        r = torch.sum(q,dim=1)
+        r = torch.sum(q, dim=1)
     else:
-        r = torch.ones(q.shape[0],device=p.device)
+        r = torch.ones(q.shape[0], device=p.device)
 
-    r = r/r.sum()
-    KLD = torch.diag(1-r)@KLD
-    return KLD.sum()/KLD.shape[1]
+    r = r / r.sum()
+    KLD = torch.diag(1 - r) @ KLD
+    return KLD.sum() / KLD.shape[1]
+
 
 def dMat(X):
     XX = X.t() @ X
@@ -174,30 +179,29 @@ def dMat(X):
     D = torch.sqrt(torch.relu(D))
     return D
 
-def dRMSD(X,Xobs, M):
 
-    X    = torch.squeeze(X)
+def dRMSD(X, Xobs, M):
+    X = torch.squeeze(X)
     Xobs = torch.squeeze(Xobs)
-    M    = torch.squeeze(M)
+    M = torch.squeeze(M)
 
     # Compute distance matrices
-    D    = dMat(X)
+    D = dMat(X)
     Dobs = dMat(Xobs)
-
 
     # Filter non-physical ones
     n = X.shape[-1]
-    Xl = torch.zeros(3,n,device=X.device)
-    Xl[0,:] = 3.8*torch.arange(0,n)
+    Xl = torch.zeros(3, n, device=X.device)
+    Xl[0, :] = 3.8 * torch.arange(0, n)
     Dl = dMat(Xl)
 
-    ML = (M*Dl  - M*Dobs)>0
+    ML = (M * Dl - M * Dobs) > 0
 
-    #MS = Dobs < 100*3.8
-    M  = M > 0
-    M  = (M&ML)*1.0
-    R  = torch.triu(D-Dobs,2)
-    M  = torch.triu(M,2)
-    loss = torch.norm(M*R)**2/torch.sum(M)
+    MS = Dobs < 8*3.8
+    M = M > 0
+    M = (M & ML & MS) * 1.0
+    R = torch.triu(D - Dobs, 2)
+    M = torch.triu(M, 2)
+    loss = torch.norm(M * R) ** 2 / torch.sum(M)
 
     return loss
