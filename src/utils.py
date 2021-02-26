@@ -179,6 +179,8 @@ def dMat(X):
     print("min D:", D.min())
     print("max D:", D.max())
     D = torch.sqrt(torch.relu(D))
+    if D != D:
+        print("its nan !")
     return D
 
 
