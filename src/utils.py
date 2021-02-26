@@ -179,7 +179,7 @@ def dMat(X):
     print("min D:", D.min())
     print("max D:", D.max())
     D = torch.sqrt(torch.relu(D))
-    if D != D:
+    if torch.isnan(D).float().sum() > 0:
         print("its nan !")
     return D
 
