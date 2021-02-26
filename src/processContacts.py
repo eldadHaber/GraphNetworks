@@ -172,8 +172,8 @@ def getBatchData(S, Aind, Yobs, MSK, IND, device='cpu'):
             xe = torch.cat((xe, xei), dim=-1)
             w = torch.cat((w, wi), dim=-1)
             M.append(Mi)
-            if M.sum() < 1:
-                print("Problem in M in getBatchData, sum of elements:", M.sum())
+            if Mi.sum() < 1:
+                print("Problem in M in getBatchData, sum of elements:", Mi.sum())
             D.append(Di)
             nnodes.append(Di.shape[0])
     return Seq, Coords, M, I.long(), J.long(), xe, D, nnodes, w
