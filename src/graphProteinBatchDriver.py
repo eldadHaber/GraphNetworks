@@ -104,88 +104,88 @@ for j in range(epochs):
     k = ndata // batchSize
     # start = torch.cuda.Event(enable_timing=True)
     # end = torch.cuda.Event(enable_timing=True)
-    with torch.autograd.detect_anomaly():
-        for i in range(k):
+    #with torch.autograd.detect_anomaly():
+    for i in range(k):
 
-            IND = torch.arange(i * batchSize, (i + 1) * batchSize)
-            # Get the data
-            nodeProperties, Coords, M, I, J, edgeProperties, Ds, nNodes, w = prc.getBatchData(S, Aind, Yobs,
-                                                                                              MSK, IND, device=device)
+        IND = torch.arange(i * batchSize, (i + 1) * batchSize)
+        # Get the data
+        nodeProperties, Coords, M, I, J, edgeProperties, Ds, nNodes, w = prc.getBatchData(S, Aind, Yobs,
+                                                                                          MSK, IND, device=device)
 
-            N = torch.sum(torch.tensor(nNodes))
-            G = GO.graph(I, J, N, w)
-            xe = w.unsqueeze(0).unsqueeze(0)  # edgeProperties
+        N = torch.sum(torch.tensor(nNodes))
+        G = GO.graph(I, J, N, w)
+        xe = w.unsqueeze(0).unsqueeze(0)  # edgeProperties
 
-            xn = nodeProperties
+        xn = nodeProperties
 
-            optimizer.zero_grad()
-            # start.record()
-            xnOut, xeOut = model(xn, xe, G)
-            # end.record()
-            # torch.cuda.synchronize()
-            # print("Time for model:", start.elapsed_time(end))
-            loss = 0.0
-            cnt = 0
-            # start.record()
-            for batch_idx, kk in enumerate(range(len(nNodes))):
-                xnOuti = xnOut[:, :, cnt:cnt + nNodes[kk]]
-                Coordsi = Coords[:, :, cnt:cnt + nNodes[kk]]
-                Mi = M[batch_idx].squeeze()
+        optimizer.zero_grad()
+        # start.record()
+        xnOut, xeOut = model(xn, xe, G)
+        # end.record()
+        # torch.cuda.synchronize()
+        # print("Time for model:", start.elapsed_time(end))
+        loss = 0.0
+        cnt = 0
+        # start.record()
+        for batch_idx, kk in enumerate(range(len(nNodes))):
+            xnOuti = xnOut[:, :, cnt:cnt + nNodes[kk]]
+            Coordsi = Coords[:, :, cnt:cnt + nNodes[kk]]
+            Mi = M[batch_idx].squeeze()
 
-                Mi = torch.ger(Mi, Mi)
-                lossi = utils.dRMSD(xnOuti, Coordsi, Mi)
-                loss += lossi
-            # end.record()
-            # torch.cuda.synchronize()
-            # print("Time for loss:", start.elapsed_time(end))
-            loss.backward()
-            for param in model.parameters():
-                print("param.data", torch.isfinite(param.data).all())
-                print("param.grad.data", torch.isfinite(param.grad.data).all(), "\n")
-            optimizer.step()
+            Mi = torch.ger(Mi, Mi)
+            lossi = utils.dRMSD(xnOuti, Coordsi, Mi)
+            loss += lossi
+        # end.record()
+        # torch.cuda.synchronize()
+        # print("Time for loss:", start.elapsed_time(end))
+        loss.backward()
+        for param in model.parameters():
+            print("param.data", torch.isfinite(param.data).all())
+            print("param.grad.data", torch.isfinite(param.grad.data).all(), "\n")
+        optimizer.step()
 
-            aloss += loss.detach()
-            alossAQ += torch.sqrt(loss)
+        aloss += loss.detach()
+        alossAQ += torch.sqrt(loss)
 
-            # scheduler.step()
-            nprnt = 1
-            if i % nprnt == 0:
-                aloss = aloss / nprnt
-                alossAQ = alossAQ / nprnt
-                print("%2d.%1d   %10.3E   %10.3E" % (j, i, aloss, alossAQ))
-                aloss = 0.0
-                alossAQ = 0.0
-            # Validation
-            nextval = 1e9
-            if (i + 1) % nextval == 0:
-                with torch.no_grad():
-                    misVal = 0
-                    AQdis = 0
-                    # nVal = len(STest)
-                    for jj in range(nVal):
-                        nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
-                                                                                            MSK, 0, device=device)
+        # scheduler.step()
+        nprnt = 1
+        if i % nprnt == 0:
+            aloss = aloss / nprnt
+            alossAQ = alossAQ / nprnt
+            print("%2d.%1d   %10.3E   %10.3E" % (j, i, aloss, alossAQ))
+            aloss = 0.0
+            alossAQ = 0.0
+        # Validation
+        nextval = 1e9
+        if (i + 1) % nextval == 0:
+            with torch.no_grad():
+                misVal = 0
+                AQdis = 0
+                # nVal = len(STest)
+                for jj in range(nVal):
+                    nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
+                                                                                        MSK, 0, device=device)
 
-                        nNodes = Ds.shape[0]
-                        if dense:
-                            G = GO.dense_graph(nNodes, Ds)
-                            xe = Ds.unsqueeze(0).unsqueeze(0)  # edgeProperties
-                        else:
-                            w = Ds[IJ[:, 0], IJ[:, 1]]
-                            G = GO.graph(IJ[:, 0], IJ[:, 1], nNodes, w)
-                            xe = w.unsqueeze(0).unsqueeze(0)  # edgeProperties
-                        xn = nodeProperties
+                    nNodes = Ds.shape[0]
+                    if dense:
+                        G = GO.dense_graph(nNodes, Ds)
+                        xe = Ds.unsqueeze(0).unsqueeze(0)  # edgeProperties
+                    else:
+                        w = Ds[IJ[:, 0], IJ[:, 1]]
+                        G = GO.graph(IJ[:, 0], IJ[:, 1], nNodes, w)
+                        xe = w.unsqueeze(0).unsqueeze(0)  # edgeProperties
+                    xn = nodeProperties
 
-                        M = torch.ger(M.squeeze(), M.squeeze())
+                    M = torch.ger(M.squeeze(), M.squeeze())
 
-                        xnOut, xeOut = model(xn, xe, G, Ds)
+                    xnOut, xeOut = model(xn, xe, G, Ds)
 
-                        loss = utils.dRMSD(xnOut, Coords, M)
-                        AQdis += torch.sqrt(loss)
-                        misVal += loss.detach()
+                    loss = utils.dRMSD(xnOut, Coords, M)
+                    AQdis += torch.sqrt(loss)
+                    misVal += loss.detach()
 
-                    print("%2d       %10.3E   %10.3E" % (j, misVal / nVal, AQdis / nVal))
-                    print('===============================================')
+                print("%2d       %10.3E   %10.3E" % (j, misVal / nVal, AQdis / nVal))
+                print('===============================================')
 
     if aloss < alossBest:
         alossBest = aloss

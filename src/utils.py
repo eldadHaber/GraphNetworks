@@ -176,11 +176,11 @@ def dMat(X):
     XX = X.t() @ X
     d = torch.diag(XX).unsqueeze(1)
     D = d + d.t() - 2 * XX
-    #print("min D:", D.min())
-    #print("max D:", D.max())
+    # print("min D:", D.min())
+    # print("max D:", D.max())
     eps = 1e-6
-    D = torch.sqrt(torch.relu(D) + eps) #### HERE
-    #D = torch.relu(D)
+    D = torch.sqrt(torch.relu(D) + eps)  #### HERE
+    # D = torch.relu(D)
     if torch.isnan(D).float().sum() > 0:
         print("its nan !")
     return D
@@ -201,11 +201,11 @@ def dRMSD(X, Xobs, M):
     Xl[0, :] = 3.8 * torch.arange(0, n)
     Dl = dMat(Xl)
 
-    #ML = (M * Dl - M * Dobs) > 0
+    ML = (M * Dl - M * Dobs) > 0
 
-    #MS = Dobs < 8*(3.8)
+    # MS = Dobs < 8*(3.8)
     M = M > 0
-    M = (M) * 1.0
+    M = (M & ML) * 1.0
     R = torch.triu(D - Dobs, 2)
     M = torch.triu(M, 2)
     if torch.sum(M) < 1:
@@ -216,6 +216,6 @@ def dRMSD(X, Xobs, M):
 
     if torch.isnan(R).float().sum() > 0:
         print("Problem, NaNs in R")
-    loss = torch.norm(M * R) ** 2 / torch.sum(M) #
+    loss = torch.norm(M * R) ** 2 / torch.sum(M)  #
 
     return loss
