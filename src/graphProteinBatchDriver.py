@@ -139,6 +139,9 @@ for j in range(epochs):
             # torch.cuda.synchronize()
             # print("Time for loss:", start.elapsed_time(end))
             loss.backward()
+            for param in model.parameters():
+                print("param.data", torch.isfinite(param.data).all())
+                print("param.grad.data", torch.isfinite(param.grad.data).all(), "\n")
             optimizer.step()
 
             aloss += loss.detach()
