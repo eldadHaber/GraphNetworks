@@ -176,9 +176,9 @@ def dMat(X):
     XX = X.t() @ X
     d = torch.diag(XX).unsqueeze(1)
     D = d + d.t() - 2 * XX
-    print("min D:", D.min())
-    print("max D:", D.max())
-    #D = torch.sqrt(torch.relu(D))
+    #print("min D:", D.min())
+    #print("max D:", D.max())
+    #D = torch.sqrt(torch.relu(D)) #### HERE
     D = torch.relu(D)
     if torch.isnan(D).float().sum() > 0:
         print("its nan !")
@@ -207,6 +207,8 @@ def dRMSD(X, Xobs, M):
     M = (M & ML & MS) * 1.0
     R = torch.triu(D - Dobs, 2)
     M = torch.triu(M, 2)
+    if torch.sum(M) < 1:
+        print("Problem in M:,", torch.sum(M))
     loss = torch.norm(M * R) ** 2 / torch.sum(M)
 
     return loss
