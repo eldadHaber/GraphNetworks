@@ -176,6 +176,8 @@ def dMat(X):
     XX = X.t() @ X
     d = torch.diag(XX).unsqueeze(1)
     D = d + d.t() - 2 * XX
+    print("min D:", D.min())
+    print("max D:", D.max())
     D = torch.sqrt(torch.relu(D))
     return D
 
