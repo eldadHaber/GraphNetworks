@@ -74,6 +74,7 @@ class graph(nn.Module):
         g = W * (x[:, :, self.iInd] + x[:, :, self.jInd]) / 2.0
         return g
 
+
     def edgeDiv(self, g, W=[]):
         if len(W)==0:
             W = self.W

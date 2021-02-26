@@ -158,18 +158,15 @@ for j in range(epochs):
                 nVal = len(STest)
                 for jj in range(nVal):
                     nodeProperties, Coords, M, I, J, edgeProperties, Ds, nNodes, w = \
-                        prc.getIterData(S, Aind, Yobs,MSK, jj,device=device)
+                        prc.getBatchData(S, Aind, Yobs,MSK, [jj],device=device,maxlen=50000)
 
                     N = torch.sum(torch.tensor(nNodes))
                     G = GO.graph(I, J, N, w)
                     xe = w.unsqueeze(0).unsqueeze(0)  # edgeProperties
-
                     xn = nodeProperties
 
-                    M = torch.ger(M.squeeze(), M.squeeze())
-
-                    xnOut, xeOut = model(xn, xe, G, Ds)
-
+                    xnOut, xeOut = model(xn, xe, G)
+                    M = M[0].squeeze()
                     loss = utils.dRMSD(xnOut, Coords, M)
                     AQdis += torch.sqrt(loss)
                     misVal += loss.detach()

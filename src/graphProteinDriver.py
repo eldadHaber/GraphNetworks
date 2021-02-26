@@ -8,50 +8,36 @@ import matplotlib.pyplot as plt
 import math
 import torch.autograd.profiler as profiler
 
+from src import graphOps as GO
+from src import processContacts as prc
+from src import utils
+from src import graphNet as GN
+
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
-caspver = "casp11"  # Change this to choose casp version
-
-if "s" in sys.argv:
-    base_path = '/home/eliasof/pFold/data/'
-    import graphOps as GO
-    import processContacts as prc
-    import utils
-    import graphNet as GN
-
-elif "e" in sys.argv:
-    base_path = '/home/cluster/users/erant_group/pfold/'
-    from src import graphOps as GO
-    from src import processContacts as prc
-    from src import utils
-    from src import graphNet as GN
-
-else:
-    base_path = '../../../data/'
-    from src import graphOps as GO
-    from src import processContacts as prc
-    from src import utils
-    from src import graphNet as GN
-
 # load training data
-Aind = torch.load(base_path + caspver + '/AminoAcidIdx.pt')
-Yobs = torch.load(base_path + caspver + '/RCalpha.pt')
-MSK = torch.load(base_path + caspver + '/Masks.pt')
-S = torch.load(base_path + caspver + '/PSSM.pt')
+Aind = torch.load('../data/casp11/AminoAcidIdx.pt')
+Yobs = torch.load('../data/casp11/RCalpha.pt')
+MSK  = torch.load('../data/casp11/Masks.pt')
+S     = torch.load('../data/casp11/PSSM.pt')
 # load validation data
-AindVal = torch.load(base_path + caspver + '/AminoAcidIdxVal.pt')
-YobsVal = torch.load(base_path + caspver + '/RCalphaVal.pt')
-MSKVal = torch.load(base_path + caspver + '/MasksVal.pt')
-SVal = torch.load(base_path + caspver + '/PSSMVal.pt')
+AindVal = torch.load('../data/casp11/AminoAcidIdxVal.pt')
+YobsVal = torch.load('../data/casp11/RCalphaVal.pt')
+MSKVal  = torch.load('../data/casp11/MasksVal.pt')
+SVal     = torch.load('../data/casp11/PSSMVal.pt')
 
 # load Testing data
-AindTest = torch.load(base_path + caspver + '/AminoAcidIdxTesting.pt')
-YobsTest = torch.load(base_path + caspver + '/RCalphaTesting.pt')
-MSKTest = torch.load(base_path + caspver + '/MasksTesting.pt')
-STest = torch.load(base_path + caspver + '/PSSMTesting.pt')
+AindTesting = torch.load('../data/casp11/AminoAcidIdxTesting.pt')
+YobsTesting = torch.load('../data/casp11/RCalphaTesting.pt')
+MSKTesting  = torch.load('../data/casp11/MasksTesting.pt')
+STesting     = torch.load('../data/casp11/PSSMTesting.pt')
+
+
 
 print('Number of data: ', len(S))
 n_data_total = len(S)
+
+
 
 # Setup the network and its parameters
 nNin = 40
@@ -63,32 +49,29 @@ nNclose = 3
 nEclose = 1
 nlayer = 6
 
-model = GN.graphNetwork(nNin, nEin, nNopen, nEopen, nEhid, nNclose, nEclose, nlayer, h=.1)
+model = GN.graphNetwork(nNin, nEin, nNopen, nEhid, nNclose, nlayer, h=.1, dense=False)
 model.to(device)
 
 total_params = sum(p.numel() for p in model.parameters())
 print('Number of parameters ', total_params)
 
 #### Start Training ####
-
-lrO = 1e-4
-lrC = 1e-4
-lrN = 1e-4
-lrE1 = 1e-4
-lrE2 = 1e-4
-
 lrO = 1e-3
 lrC = 1e-3
 lrN = 1e-3
 lrE1 = 1e-3
 lrE2 = 1e-3
-optimizer = optim.Adam([{'params': model.KNopen, 'lr': lrO},
-                        {'params': model.KNclose, 'lr': lrC},
-                        {'params': model.KEopen, 'lr': lrO},
-                        {'params': model.KEclose, 'lr': lrC},
+
+optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO},
+                        {'params': model.K2Nopen, 'lr': lrC},
+                        {'params': model.K1Eopen, 'lr': lrO},
+                        {'params': model.K2Eopen, 'lr': lrC},
                         {'params': model.KE1, 'lr': lrE1},
                         {'params': model.KE2, 'lr': lrE2},
-                        {'params': model.KN, 'lr': lrN}])
+                        {'params': model.KN1, 'lr': lrE1},
+                        {'params': model.KN2, 'lr': lrE2},
+                        {'params': model.KNclose, 'lr': lrE2}])
+
 
 alossBest = 1e6
 epochs = 1000
@@ -104,14 +87,14 @@ for j in range(epochs):
     for i in range(ndata):
 
         # Get the data
-        nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
+        nodeProperties, Coords, M, I, J, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
                                                                             MSK, i, device=device)
         if nodeProperties.shape[2] > 700:
             continue
         nNodes = Ds.shape[0]
         # G = GO.dense_graph(nNodes, Ds)
-        w = Ds[IJ[:, 0], IJ[:, 1]]
-        G = GO.graph(IJ[:, 0], IJ[:, 1], nNodes, w)
+        w = Ds[I, J]
+        G = GO.graph(I, J, nNodes, w)
         # Organize the node data
         xn = nodeProperties
         # xe = Ds.unsqueeze(0).unsqueeze(0)  # edgeProperties
@@ -137,11 +120,11 @@ for j in range(epochs):
 
         aloss += loss.detach()
         alossAQ += (torch.norm(M * Dout - M * Dtrue) / torch.sqrt(torch.sum(M)).detach())
-        gN = model.KN.grad.norm().item()
+        gN = model.KNclose.grad.norm().item()
         gE1 = model.KE1.grad.norm().item()
         gE2 = model.KE2.grad.norm().item()
-        gO = model.KNopen.grad.norm().item()
-        gC = model.KNclose.grad.norm().item()
+        gO = model.KN1.grad.norm().item()
+        gC = model.KN2.grad.norm().item()
 
         optimizer.step()
         # scheduler.step()
@@ -154,20 +137,20 @@ for j in range(epochs):
             aloss = 0.0
             alossAQ = 0.0
         # Validation
-        nextval = 1e9
+        nextval = 300
         if (i + 1) % nextval == 0:
             with torch.no_grad():
                 misVal = 0
                 AQdis = 0
-                nVal = len(STest)
+                nVal = len(STesting)
                 for jj in range(nVal):
-                    nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
-                                                                                        MSK, 0, device=device)
+                    nodeProperties, Coords, M, I, J, edgeProperties, Ds = prc.getIterData(STesting, AindTesting, YobsTesting,
+                                                                                        MSKTesting, jj, device=device)
 
                     nNodes = Ds.shape[0]
                     # G = GO.dense_graph(nNodes, Ds)
-                    w = Ds[IJ[:, 0], IJ[:, 1]]
-                    G = GO.graph(IJ[:, 0], IJ[:, 1], nNodes, w)
+                    w = Ds[I, J]
+                    G = GO.graph(I, J, nNodes, w)
                     # Organize the node data
                     xn = nodeProperties
                     # xe = Ds.unsqueeze(0).unsqueeze(0)  # edgeProperties
@@ -175,7 +158,7 @@ for j in range(epochs):
 
                     M = torch.ger(M.squeeze(), M.squeeze())
 
-                    xnOut, xeOut = model(xn, xe, G, Ds)
+                    xnOut, xeOut = model(xn, xe, G)
 
                     Dout = utils.getDistMat(xnOut)
                     Dtrue = utils.getDistMat(Coords)

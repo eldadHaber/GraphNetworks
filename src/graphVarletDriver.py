@@ -86,13 +86,13 @@ for j in range(epochs):
     for i in range(ndata):
 
         # Get the data
-        nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
+        nodeProperties, Coords, M, I, J, edgeProperties, Ds, w = prc.getIterData(S, Aind, Yobs,
                                                                             MSK, i, device=device)
 
         nNodes = Ds.shape[0]
         if nNodes < 500:
-            w = Ds[IJ[:, 0], IJ[:, 1]]
-            G = GO.graph(IJ[:, 0], IJ[:, 1], nNodes, w)
+            w = Ds[I, J]
+            G = GO.graph(I, J, nNodes, w)
 
             xe = w.unsqueeze(0).unsqueeze(0)  # edgeProperties
             xn = nodeProperties
@@ -102,7 +102,11 @@ for j in range(epochs):
                 optimizer.zero_grad()
 
             xnOut, xeOut = model(xn, xe, G)
+
             loss = utils.dRMSD(xnOut, Coords, M)
+
+
+
             loss.backward()
 
             aloss   += loss.detach()
@@ -132,12 +136,12 @@ for j in range(epochs):
                 AQdis   = 0
                 nVal = len(STesting)
                 for jj in range(nVal):
-                    nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
-                                                                                        MSK, 0, device=device)
+                    nodeProperties, Coords, M, I, J, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
+                                                                                        MSK, jj, device=device)
 
                     nNodes = Ds.shape[0]
-                    w = Ds[IJ[:, 0], IJ[:, 1]]
-                    G = GO.graph(IJ[:, 0], IJ[:, 1], nNodes, w)
+                    w = Ds[I, J]
+                    G = GO.graph(I, J, nNodes, w)
                     xe = w.unsqueeze(0).unsqueeze(0)  # edgeProperties
                     xn = nodeProperties
 
