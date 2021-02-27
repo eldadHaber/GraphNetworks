@@ -95,7 +95,7 @@ epochs = 100000
 ndata = n_data_total
 bestModel = model
 hist = torch.zeros(epochs)
-batchSize = 64
+batchSize = 32
 
 for j in range(epochs):
     # Prepare the data
