@@ -187,6 +187,7 @@ def dMat(X):
 
 
 def dRMSD(X, Xobs, M):
+    Morig = M.clone()
     X = torch.squeeze(X)
     Xobs = torch.squeeze(Xobs)
     M = torch.squeeze(M)
@@ -210,6 +211,9 @@ def dRMSD(X, Xobs, M):
     M = torch.triu(M, 2)
     if torch.sum(M) < 1:
         print("Problem in M:,", torch.sum(M), flush=True)
+        print("M original (not triu) nnz:", torch.sum(Morig))
+        print("Nonzero indices:", torch.nonzero(Morig))
+        print("Morig shape:", Morig.shape)
 
     if torch.isnan(M).float().sum() > 0:
         print("Problem, NaNs in M", flush=True)
