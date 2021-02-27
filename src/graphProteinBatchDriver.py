@@ -159,7 +159,7 @@ for j in range(epochs):
         if i % nprnt == 0:
             aloss = aloss / nprnt
             alossAQ = alossAQ / nprnt
-            print("%2d.%1d   %10.3E   %10.3E" % (j, i, aloss, alossAQ))
+            print("%2d.%1d   %10.3E   %10.3E" % (j, i, aloss, alossAQ), flush=True)
             aloss = 0.0
             alossAQ = 0.0
         # Validation
