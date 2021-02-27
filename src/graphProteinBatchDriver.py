@@ -144,7 +144,7 @@ for j in range(epochs):
                 print("Mi sum:", Mi.sum())
                 print("Loss:", lossi)
             else:
-                loss += lossi
+                loss += torch.sqrt(lossi)
         # end.record()
         # torch.cuda.synchronize()
         # print("Time for loss:", start.elapsed_time(end))
@@ -152,7 +152,7 @@ for j in range(epochs):
         optimizer.step()
 
         aloss += loss.detach() / batchSize
-        alossAQ += torch.sqrt(loss / batchSize)
+        alossAQ += loss.detach() / batchSize
 
         # scheduler.step()
         nprnt = 1
@@ -162,31 +162,25 @@ for j in range(epochs):
             print("%2d.%1d   %10.3E   %10.3E" % (j, i, aloss, alossAQ), flush=True)
             aloss = 0.0
             alossAQ = 0.0
-        # Validation
-        nextval = 1e9
+
+        # Test
+        nextval = 1
         if (i + 1) % nextval == 0:
             with torch.no_grad():
                 misVal = 0
                 AQdis = 0
-                # nVal = len(STest)
+                nVal = len(STest)
                 for jj in range(nVal):
-                    nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
-                                                                                        MSK, 0, device=device)
+                    nodeProperties, Coords, M, I, J, edgeProperties, Ds, nNodes, w = \
+                        prc.getBatchData(S, Aind, Yobs, MSK, [jj], device=device, maxlen=50000)
 
-                    nNodes = Ds.shape[0]
-                    if dense:
-                        G = GO.dense_graph(nNodes, Ds)
-                        xe = Ds.unsqueeze(0).unsqueeze(0)  # edgeProperties
-                    else:
-                        w = Ds[IJ[:, 0], IJ[:, 1]]
-                        G = GO.graph(IJ[:, 0], IJ[:, 1], nNodes, w)
-                        xe = w.unsqueeze(0).unsqueeze(0)  # edgeProperties
+                    N = torch.sum(torch.tensor(nNodes))
+                    G = GO.graph(I, J, N, w)
+                    xe = w.unsqueeze(0).unsqueeze(0)  # edgeProperties
                     xn = nodeProperties
 
-                    M = torch.ger(M.squeeze(), M.squeeze())
-
-                    xnOut, xeOut = model(xn, xe, G, Ds)
-
+                    xnOut, xeOut = model(xn, xe, G)
+                    M = M[0].squeeze()
                     loss = utils.dRMSD(xnOut, Coords, M)
                     AQdis += torch.sqrt(loss)
                     misVal += loss.detach()
