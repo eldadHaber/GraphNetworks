@@ -138,6 +138,7 @@ for j in range(epochs):
                 print("Problem in instance ", batch_idx," in batch:", i)
                 print("Mi sum:", Mi.sum())
                 print("Loss:", lossi)
+                exit()
             loss += lossi
         # end.record()
         # torch.cuda.synchronize()
