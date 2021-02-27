@@ -164,29 +164,29 @@ for j in range(epochs):
             alossAQ = 0.0
 
         # Test
-        nextval = 1
-        if (i + 1) % nextval == 0:
-            with torch.no_grad():
-                misVal = 0
-                AQdis = 0
-                nVal = len(STest)
-                for jj in range(nVal):
-                    nodeProperties, Coords, M, I, J, edgeProperties, Ds, nNodes, w = \
-                        prc.getBatchData(S, Aind, Yobs, MSK, [jj], device=device, maxlen=50000)
+    nextval = 1
+    if (j + 1) % nextval == 0:
+        with torch.no_grad():
+            misVal = 0
+            AQdis = 0
+            nVal = len(STest)
+            for jj in range(nVal):
+                nodeProperties, Coords, M, I, J, edgeProperties, Ds, nNodes, w = \
+                    prc.getBatchData(S, Aind, Yobs, MSK, [jj], device=device, maxlen=50000)
 
-                    N = torch.sum(torch.tensor(nNodes))
-                    G = GO.graph(I, J, N, w)
-                    xe = w.unsqueeze(0).unsqueeze(0)  # edgeProperties
-                    xn = nodeProperties
+                N = torch.sum(torch.tensor(nNodes))
+                G = GO.graph(I, J, N, w)
+                xe = w.unsqueeze(0).unsqueeze(0)  # edgeProperties
+                xn = nodeProperties
 
-                    xnOut, xeOut = model(xn, xe, G)
-                    M = M[0].squeeze()
-                    loss = utils.dRMSD(xnOut, Coords, M)
-                    AQdis += torch.sqrt(loss)
-                    misVal += loss.detach()
+                xnOut, xeOut = model(xn, xe, G)
+                M = M[0].squeeze()
+                loss = utils.dRMSD(xnOut, Coords, M)
+                AQdis += torch.sqrt(loss)
+                misVal += loss.detach()
 
-                print("%2d       %10.3E   %10.3E" % (j, misVal / nVal, AQdis / nVal))
-                print('===============================================')
+            print("%2d       %10.3E   %10.3E" % (j, misVal / nVal, AQdis / nVal))
+            print('===============================================')
 
     if aloss < alossBest:
         alossBest = aloss
