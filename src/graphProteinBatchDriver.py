@@ -134,6 +134,10 @@ for j in range(epochs):
 
             Mi = torch.ger(Mi, Mi)
             lossi = utils.dRMSD(xnOuti, Coordsi, Mi)
+            if torch.isnan(lossi).float().sum() > 0:
+                print("Problem in instance ", batch_idx," in batch:", i)
+                print("Mi sum:", Mi.sum())
+                print("Loss:", lossi)
             loss += lossi
         # end.record()
         # torch.cuda.synchronize()
