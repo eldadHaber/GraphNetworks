@@ -65,6 +65,9 @@ nhid = 128
 nNclose = 3
 nlayer = 6
 
+
+batchSize = 32
+
 model = GN.graphNetwork(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False)
 model.to(device)
 
@@ -73,11 +76,11 @@ print('Number of parameters ', total_params)
 
 #### Start Training ####
 
-lrO = 1e-2
-lrC = 1e-2
-lrN = 1e-2
-lrE1 = 1e-2
-lrE2 = 1e-2
+lrO = 1e-2 * batchSize
+lrC = 1e-2 * batchSize
+lrN = 1e-2 * batchSize
+lrE1 = 1e-2 * batchSize
+lrE2 = 1e-2 * batchSize
 
 optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO},
                         {'params': model.K2Nopen, 'lr': lrC},
@@ -95,7 +98,6 @@ epochs = 100000
 ndata = n_data_total
 bestModel = model
 hist = torch.zeros(epochs)
-batchSize = 32
 
 for j in range(epochs):
     # Prepare the data
