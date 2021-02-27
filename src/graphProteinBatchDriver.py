@@ -105,12 +105,7 @@ for j in range(epochs):
     # start = torch.cuda.Event(enable_timing=True)
     # end = torch.cuda.Event(enable_timing=True)
     # with torch.autograd.detect_anomaly():
-    for i in range(k):
-        IND = torch.arange(i * batchSize, (i + 1) * batchSize)
-        # Get the data
-        nodeProperties, Coords, M, I, J, edgeProperties, Ds, nNodes, w = prc.getBatchData(S, Aind, Yobs,
-                                                                                          MSK, IND, device=device)
-    exit()
+
     for i in range(k):
 
         IND = torch.arange(i * batchSize, (i + 1) * batchSize)
