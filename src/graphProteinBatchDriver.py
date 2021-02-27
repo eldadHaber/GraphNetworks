@@ -104,7 +104,13 @@ for j in range(epochs):
     k = ndata // batchSize
     # start = torch.cuda.Event(enable_timing=True)
     # end = torch.cuda.Event(enable_timing=True)
-    #with torch.autograd.detect_anomaly():
+    # with torch.autograd.detect_anomaly():
+    for i in range(k):
+        IND = torch.arange(i * batchSize, (i + 1) * batchSize)
+        # Get the data
+        nodeProperties, Coords, M, I, J, edgeProperties, Ds, nNodes, w = prc.getBatchData(S, Aind, Yobs,
+                                                                                          MSK, IND, device=device)
+    exit()
     for i in range(k):
 
         IND = torch.arange(i * batchSize, (i + 1) * batchSize)
@@ -135,7 +141,7 @@ for j in range(epochs):
             Mi = torch.ger(Mi, Mi)
             lossi = utils.dRMSD(xnOuti, Coordsi, Mi)
             if torch.isnan(lossi).float().sum() > 0:
-                print("Problem in instance ", batch_idx," in batch:", i)
+                print("Problem in instance ", batch_idx, " in batch:", i)
                 print("Mi sum:", Mi.sum())
                 print("Loss:", lossi)
                 exit()
