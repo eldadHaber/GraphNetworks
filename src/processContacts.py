@@ -151,7 +151,7 @@ def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
     return Seq.unsqueeze(0), Coords.unsqueeze(0), M.unsqueeze(0).unsqueeze(0), I, J, xe, D
 
 
-def getBatchData(S, Aind, Yobs, MSK, IND, device='cpu'):
+def getBatchData(S, Aind, Yobs, MSK, IND, device='cpu', maxlen=500):
     Seq = torch.tensor([]).to(device)
     Coords = torch.tensor([]).to(device)
     I = torch.tensor([]).to(device)
@@ -164,7 +164,7 @@ def getBatchData(S, Aind, Yobs, MSK, IND, device='cpu'):
     for i in range(len(IND)):
         Seqi, Coordi, Mi, Ii, Ji, xei, Di = getIterData(S, Aind, Yobs, MSK, IND[i], device)
         wi = Di[Ii, Ji]
-        if Di.shape[0] < 500:
+        if Di.shape[0] < maxlen:
             Seq = torch.cat((Seq, Seqi), dim=-1)
             Coords = torch.cat((Coords, Coordi), dim=-1)
             I = torch.cat((I, Ii))
