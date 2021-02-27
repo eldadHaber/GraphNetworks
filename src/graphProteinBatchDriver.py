@@ -151,8 +151,8 @@ for j in range(epochs):
         loss.backward()
         optimizer.step()
 
-        aloss += loss.detach()
-        alossAQ += torch.sqrt(loss)
+        aloss += loss.detach() / batchSize
+        alossAQ += torch.sqrt(loss / batchSize)
 
         # scheduler.step()
         nprnt = 1
