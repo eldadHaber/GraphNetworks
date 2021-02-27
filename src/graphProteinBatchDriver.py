@@ -132,7 +132,11 @@ for j in range(epochs):
             xnOuti = xnOut[:, :, cnt:cnt + nNodes[kk]]
             Coordsi = Coords[:, :, cnt:cnt + nNodes[kk]]
             Mi = M[batch_idx].squeeze()
-
+            cnt = cnt + nNodes[kk]
+            if len(nNodes) > 1:
+                Mi = M[batch_idx].squeeze()
+            else:
+                Mi = M[0].squeeze()
             Mi = torch.ger(Mi, Mi)
             lossi = utils.dRMSD(xnOuti, Coordsi, Mi)
             if torch.isnan(lossi).float().sum() > 0:

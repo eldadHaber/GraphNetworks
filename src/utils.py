@@ -203,9 +203,9 @@ def dRMSD(X, Xobs, M):
 
     ML = (M * Dl - M * Dobs) > 0
 
-    # MS = Dobs < 8*(3.8)
+    MS = Dobs < 8*(3.8)
     M = M > 0
-    M = (M) * 1.0
+    M = (M & ML & MS) * 1.0
     R = torch.triu(D - Dobs, 2)
     M = torch.triu(M, 2)
     if torch.sum(M) < 1:
