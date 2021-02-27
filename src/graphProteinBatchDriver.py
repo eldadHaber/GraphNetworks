@@ -133,6 +133,7 @@ for j in range(epochs):
             Mi = torch.ger(Mi, Mi)
             lossi = utils.dRMSD(xnOuti, Coordsi, Mi)
             loss += lossi
+            cnt = cnt+nNodes[kk]
 
         loss.backward()
 

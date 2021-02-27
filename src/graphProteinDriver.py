@@ -173,3 +173,4 @@ for j in range(epochs):
     if aloss < alossBest:
         alossBest = aloss
         bestModel = model
+
