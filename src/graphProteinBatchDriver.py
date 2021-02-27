@@ -143,15 +143,12 @@ for j in range(epochs):
                 print("Problem in instance ", batch_idx, " in batch:", i)
                 print("Mi sum:", Mi.sum())
                 print("Loss:", lossi)
-                exit()
-            loss += lossi
+            else:
+                loss += lossi
         # end.record()
         # torch.cuda.synchronize()
         # print("Time for loss:", start.elapsed_time(end))
         loss.backward()
-        for param in model.parameters():
-            print("param.data", torch.isfinite(param.data).all())
-            print("param.grad.data", torch.isfinite(param.grad.data).all(), "\n")
         optimizer.step()
 
         aloss += loss.detach()
