@@ -98,7 +98,7 @@ epochs = 100000
 ndata = n_data_total
 bestModel = model
 hist = torch.zeros(epochs)
-
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.95)
 for j in range(epochs):
     # Prepare the data
     aloss = 0.0
@@ -193,3 +193,5 @@ for j in range(epochs):
     if aloss < alossBest:
         alossBest = aloss
         bestModel = model
+
+    scheduler.step()
