@@ -209,13 +209,13 @@ def dRMSD(X, Xobs, M):
     R = torch.triu(D - Dobs, 2)
     M = torch.triu(M, 2)
     if torch.sum(M) < 1:
-        print("Problem in M:,", torch.sum(M))
+        print("Problem in M:,", torch.sum(M), flush=True)
 
     if torch.isnan(M).float().sum() > 0:
-        print("Problem, NaNs in M")
+        print("Problem, NaNs in M", flush=True)
 
     if torch.isnan(R).float().sum() > 0:
-        print("Problem, NaNs in R")
+        print("Problem, NaNs in R", flush=True)
     loss = torch.norm(M * R) ** 2 / torch.sum(M)  #
 
     return loss
