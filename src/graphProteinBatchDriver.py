@@ -65,7 +65,7 @@ nhid = 128
 nNclose = 3
 nlayer = 6
 
-model = GN.graphNetwork(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False)
+model = GN.graphNetwork(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=True)
 model.to(device)
 
 total_params = sum(p.numel() for p in model.parameters())
@@ -73,12 +73,12 @@ print('Number of parameters ', total_params)
 
 #### Start Training ####
 
-lrO = 1e-1
-lrC = 1e-1
-lrN = 1e-1
-lrE1 = 1e-1
-lrE2 = 1e-1
-
+lrO = 1e-2
+lrC = 1e-2
+lrN = 1e-2
+lrE1 = 1e-2
+lrE2 = 1e-2
+# dssp
 optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO},
                         {'params': model.K2Nopen, 'lr': lrC},
                         {'params': model.K1Eopen, 'lr': lrO},
@@ -92,7 +92,7 @@ optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO},
 alossBest = 1e6
 epochs = 100000
 
-ndata = 48 #n_data_total
+ndata = 8 #n_data_total
 bestModel = model
 hist = torch.zeros(epochs)
 batchSize = 8
@@ -123,7 +123,6 @@ for j in range(epochs):
         loss = 0.0
         cnt = 0
         for batch_idx, kk in enumerate(range(len(nNodes))):
-            # print("nNodes[kk][0]:", nNodes[kk])
             xnOuti = xnOut[:, :, cnt:cnt + nNodes[kk]]
             Coordsi = Coords[:, :, cnt:cnt + nNodes[kk]]
             # print("M len:", len(M))
@@ -131,13 +130,11 @@ for j in range(epochs):
                 Mi      = M[batch_idx].squeeze()
             else:
                 Mi      = M[0].squeeze()
-
-
             Mi = torch.ger(Mi, Mi)
             lossi = utils.dRMSD(xnOuti, Coordsi, Mi)
             loss += lossi
             cnt = cnt+nNodes[kk]
-
+        loss = loss/len(nNodes)
         loss.backward()
 
         optimizer.step()

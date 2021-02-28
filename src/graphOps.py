@@ -122,32 +122,36 @@ class dense_graph(nn.Module):
         self.nnodes = nnodes
         self.W = W
 
-    def nodeGrad(self, x):
-        w = self.W
+    def nodeGrad(self, x, W=[]):
+        if len(W)==0:
+            W = self.W
         x = x.squeeze(0).unsqueeze(1)
-        g = w * (x - x.transpose(1, 2))
+        g = W * (x - x.transpose(1, 2))
         g = g.unsqueeze(0)
         return g
 
-    def nodeAve(self, x):
-        w = self.W
+    def nodeAve(self, x, W=[]):
+        if len(W)==0:
+            W = self.W
         x = x.squeeze(0).unsqueeze(1)
-        g = w * (x + x.transpose(1, 2)) / 2.0
+        g = W * (x + x.transpose(1, 2)) / 2.0
         g = g.unsqueeze(0)
         return g
 
-    def edgeDiv(self, g):
-        w = self.W
-        g = w * g
+    def edgeDiv(self, g, W=[]):
+        if len(W)==0:
+            W = self.W
+        g = W * g
         x1 = g.sum(dim=2, keepdim=True).squeeze(0)
         x2 = g.sum(dim=3, keepdim=True).squeeze(0)
         x = x1 - x2.transpose(2, 1)
         x = x.squeeze(1).unsqueeze(0)
         return x
 
-    def edgeAve(self, g, method='max'):
-        w = self.W
-        g = w * g
+    def edgeAve(self, g, method='max', W=[]):
+        if len(W)==0:
+            W = self.W
+        g = W * g
         x1 = g.mean(dim=2, keepdim=True).squeeze(0)
         x2 = g.mean(dim=3, keepdim=True).squeeze(0)
         x2 = x2.transpose(1, 2)
@@ -158,10 +162,11 @@ class dense_graph(nn.Module):
         x = x.squeeze(1).unsqueeze(0)
         return x
 
-    def nodeLap(self, x):
-        w = self.W
-        g = self.nodeGrad(x, w)
-        d = self.edgeDiv(g, w)
+    def nodeLap(self, x, W=[]):
+        if len(W)==0:
+            W = self.W
+        g = self.nodeGrad(x, W)
+        d = self.edgeDiv(g, W)
         return d
 
     def edgeLength(self, x):
@@ -173,7 +178,7 @@ class dense_graph(nn.Module):
 ### Try to work in parallel
 test = False
 if test:
-    G = [];
+    G = []
     x = []
     for i in range(1000):
         n = torch.randint(100, 400, (1,))
