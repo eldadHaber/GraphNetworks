@@ -112,7 +112,7 @@ class graphNetwork(nn.Module):
             xec = self.doubleLayer(xec, self.KE1[i], self.KE2[i])
 
             xec = F.layer_norm(xec, xec.shape)
-            xec = torch.relu(xec)
+            #xec = torch.relu(xec)
 
             # divE = torch.exp(-torch.abs(Graph.edgeDiv(xec)))
             divE = Graph.edgeDiv(xec)
@@ -120,8 +120,8 @@ class graphNetwork(nn.Module):
             xnc = torch.cat([aveE, divE, xn], dim=1)
             xnc = self.doubleLayer(xnc, self.KN1[i], self.KN2[i])
 
-            xn = xn + self.h * xnc
-            xe = xe + self.h * xec
+            xn = torch.relu(xn + self.h * xnc)
+            xe = torch.relu(xe + self.h * xec)
 
             debug = True
             if debug:
