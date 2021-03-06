@@ -123,6 +123,24 @@ class graphNetwork(nn.Module):
             xn = xn + self.h * xnc
             xe = xe + self.h * xec
 
+            debug = True
+            if debug:
+                print("xn shape:", xn.shape)
+                print("xe shape:", xe.shape)
+                xn_norm = xn.detach().norm(dim=1)
+                xe_norm = xe.detach().norm(dim=1)
+
+                plt.figure()
+                plt.plot(xn_norm)
+                plt.show()
+                plt.savefig('plots/xn_norm_layer' + str(i) + '.jpg')
+                plt.close()
+
+                plt.figure()
+                plt.plot(xe_norm)
+                plt.show()
+                plt.savefig('plots/xe_norm_layer' + str(i) + '.jpg')
+                plt.close()
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
 
         return xn, xe
