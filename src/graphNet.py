@@ -127,8 +127,8 @@ class graphNetwork(nn.Module):
             if debug:
                 print("xn shape:", xn.shape)
                 print("xe shape:", xe.shape)
-                xn_norm = xn.detach().norm(dim=1).cpu().numpy()
-                xe_norm = xe.detach().norm(dim=1).cpu().numpy()
+                xn_norm = xn.detach().squeeze().norm(dim=0).cpu().numpy()
+                xe_norm = xe.detach().squeeze().norm(dim=0).cpu().numpy()
 
                 plt.figure()
                 plt.plot(xn_norm)
