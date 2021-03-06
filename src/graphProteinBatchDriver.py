@@ -83,11 +83,21 @@ def testImpulseResponse():
     #Mpad = torch.ones(256).unsqueeze(0).unsqueeze(0).cuda()
     #Z = dummy_input.cuda()  # .unsqueeze(0).cuda()
 
-    N = torch.sum(torch.tensor(nNodes))
-    G = GO.graph(I, J, N, w)
-    xe = w.unsqueeze(0).unsqueeze(0)  # edgeProperties
-    xn = nodeProperties
-    xnOut, xeOut = model(xn, xe, G)
+    L = 55
+    xn = torch.zeros(1, nNin, L)
+    xn[0, :, 23] = 1
+    xe = torch.ones(1, nEin, L, L)
+
+    G = GO.dense_graph(L)
+
+    xnout, xeout = model(xn, xe, G)
+
+    if 1==0:
+        N = torch.sum(torch.tensor(nNodes))
+        G = GO.graph(I, J, N, w)
+        xe = w.unsqueeze(0).unsqueeze(0)  # edgeProperties
+        xn = nodeProperties
+        xnOut, xeOut = model(xn, xe, G)
 
 
 testImpulseResponse()
