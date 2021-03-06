@@ -71,6 +71,27 @@ batchSize = 32
 model = GN.graphNetwork(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False)
 model.to(device)
 
+
+def testImpulseResponse():
+    test_index = 0
+    nodeProperties, Coords, M, I, J, edgeProperties, Ds, nNodes, w = prc.getBatchData(S, Aind, Yobs,
+                                                                                      MSK, test_index, device=device)
+    #dummy_input = torch.cat([torch.ones(20, 256), torch.eye(20, 256)], dim=0).cuda().unsqueeze(0)
+    #dummy_input = torch.zeros(40, 256).cuda()
+    #dummy_input[:, 128] = 1
+    #dummy_input = dummy_input.unsqueeze(0)
+    #Mpad = torch.ones(256).unsqueeze(0).unsqueeze(0).cuda()
+    #Z = dummy_input.cuda()  # .unsqueeze(0).cuda()
+
+    N = torch.sum(torch.tensor(nNodes))
+    G = GO.graph(I, J, N, w)
+    xe = w.unsqueeze(0).unsqueeze(0)  # edgeProperties
+    xn = nodeProperties
+    xnOut, xeOut = model(xn, xe, G)
+
+
+testImpulseResponse()
+exit()
 total_params = sum(p.numel() for p in model.parameters())
 print('Number of parameters ', total_params)
 
@@ -104,32 +125,20 @@ for j in range(epochs):
     aloss = 0.0
     alossAQ = 0.0
     k = ndata // batchSize
-    # start = torch.cuda.Event(enable_timing=True)
-    # end = torch.cuda.Event(enable_timing=True)
-    # with torch.autograd.detect_anomaly():
-
     for i in range(k):
 
         IND = torch.arange(i * batchSize, (i + 1) * batchSize)
         # Get the data
         nodeProperties, Coords, M, I, J, edgeProperties, Ds, nNodes, w = prc.getBatchData(S, Aind, Yobs,
                                                                                           MSK, IND, device=device)
-
         N = torch.sum(torch.tensor(nNodes))
         G = GO.graph(I, J, N, w)
         xe = w.unsqueeze(0).unsqueeze(0)  # edgeProperties
-
         xn = nodeProperties
-
         optimizer.zero_grad()
-        # start.record()
         xnOut, xeOut = model(xn, xe, G)
-        # end.record()
-        # torch.cuda.synchronize()
-        # print("Time for model:", start.elapsed_time(end))
         loss = 0.0
         cnt = 0
-        # start.record()
         for batch_idx, kk in enumerate(range(len(nNodes))):
             xnOuti = xnOut[:, :, cnt:cnt + nNodes[kk]]
             Coordsi = Coords[:, :, cnt:cnt + nNodes[kk]]
@@ -147,16 +156,13 @@ for j in range(epochs):
                 print("Loss:", lossi)
             else:
                 loss += torch.sqrt(lossi)
-        # end.record()
-        # torch.cuda.synchronize()
-        # print("Time for loss:", start.elapsed_time(end))
+
         loss.backward()
         optimizer.step()
 
         aloss += loss.detach() / batchSize
         alossAQ += loss.detach() / batchSize
 
-        # scheduler.step()
         nprnt = 1
         if i % nprnt == 0:
             aloss = aloss / nprnt
