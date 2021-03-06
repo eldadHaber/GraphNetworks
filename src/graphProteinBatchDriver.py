@@ -68,7 +68,7 @@ nlayer = 50
 
 batchSize = 32
 
-model = GN.graphNetwork(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False)
+model = GN.graphNetwork(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=True)
 model.to(device)
 
 
@@ -90,7 +90,7 @@ def testImpulseResponse():
 
     G = GO.dense_graph(L).to(device)
 
-    xnout, xeout = model(xn, xe, G, dense=True)
+    xnout, xeout = model(xn, xe, G)
 
     if 1==0:
         N = torch.sum(torch.tensor(nNodes))
