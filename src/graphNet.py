@@ -49,8 +49,8 @@ class graphNetwork(nn.Module):
         super(graphNetwork, self).__init__()
 
         self.h = h
-        stdv = 1e-2
-        stdvp = 1e-3
+        stdv = 1e-0
+        stdvp = 1e-1
         self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
         self.K2Nopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
         if dense:
