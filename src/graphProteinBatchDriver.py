@@ -75,7 +75,7 @@ model.to(device)
 def testImpulseResponse():
     test_index = 0
     nodeProperties, Coords, M, I, J, edgeProperties, Ds, nNodes, w = prc.getBatchData(S, Aind, Yobs,
-                                                                                      MSK, test_index, device=device)
+                                                                                      MSK, [test_index], device=device)
     #dummy_input = torch.cat([torch.ones(20, 256), torch.eye(20, 256)], dim=0).cuda().unsqueeze(0)
     #dummy_input = torch.zeros(40, 256).cuda()
     #dummy_input[:, 128] = 1
