@@ -84,13 +84,13 @@ def testImpulseResponse():
     #Z = dummy_input.cuda()  # .unsqueeze(0).cuda()
 
     L = 55
-    xn = torch.ones(1, nNin, L).to(device)
+    xn = torch.zeros(1, nNin, L).to(device)
     xn[0, :, 23] = 1
     xe = torch.ones(1, nEin, L, L).to(device)
 
     G = GO.dense_graph(L).to(device)
 
-    xnout, xeout = model(xn, xe, G)
+    xnout, xeout = model(xn, xe, G, dense=True)
 
     if 1==0:
         N = torch.sum(torch.tensor(nNodes))
