@@ -202,6 +202,25 @@ class verletNetworks(nn.Module):
             # Update
             xn = xn + self.h * Bi
 
+            debug = True
+            if debug:
+                print("xn shape:", xn.shape)
+                print("xe shape:", xe.shape)
+                xn_norm = xn.detach().squeeze().norm(dim=0).cpu().numpy()
+                xe_norm = xe.detach().squeeze().norm(dim=0).cpu().numpy()
+
+                plt.figure()
+                plt.plot(xn_norm)
+                plt.show()
+                plt.savefig('plots/xn_norm_layer_verlet' + str(i) + '.jpg')
+                plt.close()
+
+                plt.figure()
+                plt.plot(xe_norm)
+                plt.show()
+                plt.savefig('plots/xe_norm_layer_verlet' + str(i) + '.jpg')
+                plt.close()
+
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
         xe = F.conv1d(xe, self.KEclose.unsqueeze(-1))
 
