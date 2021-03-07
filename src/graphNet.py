@@ -126,7 +126,7 @@ class graphNetwork(nn.Module):
 
             dxe = F.layer_norm(dxe, dxe.shape)
             # dxe = torch.relu(dxe)
-            xe = (xe + self.h * dxe)
+            #xe = (xe + self.h * dxe)
 
             divE = Graph.edgeDiv(xe)
             aveE = Graph.edgeAve(xe, method='ave')
@@ -141,7 +141,7 @@ class graphNetwork(nn.Module):
             dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
 
 
-            # xe = xe + self.h * dxe
+            xe = xe + self.h * dxe
             xn = (xn + self.h * dxn)
             #xn = 2*xn - xn_old + self.h**2 * dxn
             #xe = 2*xe - xe_old + self.h**2 * dxe
