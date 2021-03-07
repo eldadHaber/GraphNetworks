@@ -50,7 +50,7 @@ class graphNetwork(nn.Module):
 
         self.h = h
         self.varlet = varlet
-        self.dense = dense
+        self.dense  = dense
         stdv = 1e-2
         stdvp = 1e-3
         self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
@@ -121,13 +121,13 @@ class graphNetwork(nn.Module):
             dxe = self.doubleLayer(dxe, self.KE1[i], self.KE2[i])
 
             dxe = F.layer_norm(dxe, dxe.shape)
-            # dxe = torch.relu(dxe)
+            #dxe = torch.relu(dxe)
             xe = xe + self.h * dxe
 
             divE = Graph.edgeDiv(xe)
             aveE = Graph.edgeAve(xe, method='ave')
-            # divE = Graph.edgeDiv(dxe)
-            # aveE = Graph.edgeAve(dxe, method='ave')
+            #divE = Graph.edgeDiv(dxe)
+            #aveE = Graph.edgeAve(dxe, method='ave')
 
             if self.varlet:
                 dxn = torch.cat([aveE, divE], dim=1)
@@ -137,11 +137,32 @@ class graphNetwork(nn.Module):
             dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
 
             xn = xn + self.h * dxn
-            # xe = xe + self.h * dxe
+            #xe = xe + self.h * dxe
+
+            debug = True
+            if debug:
+                print("xn shape:", xn.shape)
+                print("xe shape:", xe.shape)
+                xn_norm = xn.detach().squeeze().norm(dim=0).cpu().numpy()
+                xe_norm = xe.detach().squeeze().norm(dim=0).cpu().numpy()
+
+                plt.figure()
+                plt.plot(xn_norm)
+                plt.show()
+                plt.savefig('plots/xn_norm_layer' + str(i) + '.jpg')
+                plt.close()
+
+                plt.figure()
+                plt.plot(xe_norm)
+                plt.show()
+                plt.savefig('plots/xe_norm_layer' + str(i) + '.jpg')
+                plt.close()
 
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
 
         return xn, xe
+
+
 
 
 Test = False
