@@ -65,11 +65,9 @@ nhid = 32
 nNclose = 3
 nlayer = 10
 
-
 batchSize = 32
 
-model = GN.graphNetwork(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=True, varlet=True)
-
+model = GN.graphNetwork(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=True)
 
 model.to(device)
 
@@ -78,23 +76,17 @@ def testImpulseResponse():
     test_index = 0
     nodeProperties, Coords, M, I, J, edgeProperties, Ds, nNodes, w = prc.getBatchData(S, Aind, Yobs,
                                                                                       MSK, [test_index], device=device)
-    #dummy_input = torch.cat([torch.ones(20, 256), torch.eye(20, 256)], dim=0).cuda().unsqueeze(0)
-    #dummy_input = torch.zeros(40, 256).cuda()
-    #dummy_input[:, 128] = 1
-    #dummy_input = dummy_input.unsqueeze(0)
-    #Mpad = torch.ones(256).unsqueeze(0).unsqueeze(0).cuda()
-    #Z = dummy_input.cuda()  # .unsqueeze(0).cuda()
+    if 1 == 0:
+        L = 55
+        xn = torch.zeros(1, nNin, L).to(device)
+        xn[0, :, 23] = 1
+        xe = torch.ones(1, nEin, L, L).to(device)
 
-    L = 55
-    xn = torch.zeros(1, nNin, L).to(device)
-    xn[0, :, 23] = 1
-    xe = torch.ones(1, nEin, L, L).to(device)
+        G = GO.dense_graph(L).to(device)
 
-    G = GO.dense_graph(L).to(device)
+        xnout, xeout = model(xn, xe, G)
 
-    xnout, xeout = model(xn, xe, G)
-
-    if 1==0:
+    if 1 == 1:
         N = torch.sum(torch.tensor(nNodes))
         G = GO.graph(I, J, N, w)
         xe = w.unsqueeze(0).unsqueeze(0)  # edgeProperties
