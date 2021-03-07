@@ -108,8 +108,12 @@ class graphNetwork(nn.Module):
         xe = self.doubleLayer(xe, self.K1Eopen, self.K2Eopen)
 
         nlayers = self.KE1.shape[0]
-
+        xn_old = xn.clone()
+        xe_old = xe.clone()
         for i in range(nlayers):
+
+            tmp_node = xn.clone()
+            tmp_edge = xe.clone()
             # gradX = torch.exp(-torch.abs(Graph.nodeGrad(xn)))
             gradX = Graph.nodeGrad(xn)
             intX = Graph.nodeAve(xn)
@@ -136,8 +140,13 @@ class graphNetwork(nn.Module):
 
             dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
 
-            xn = F.relu(xn + self.h * dxn)
+
             # xe = xe + self.h * dxe
+            #xn = F.relu(xn + self.h * dxn)
+            xn = 2*xn - xn_old + self.h**2 * dxn
+            xe = 2*xe - xe_old + self.h**2 * dxe
+
+
 
             debug = True
             if debug:
