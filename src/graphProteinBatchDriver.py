@@ -69,7 +69,10 @@ nlayer = 50
 batchSize = 32
 
 model = GN.graphNetwork(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=True)
-model = GN.verletNetworks(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1)
+
+nEout = 32
+nNout = 32
+model = GN.verletNetworks(nNin, nEin, nopen, nhid, nNout, nEout, nlayer, h = 0.1)
 
 model.to(device)
 
