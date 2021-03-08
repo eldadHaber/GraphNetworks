@@ -258,7 +258,7 @@ class graphNetwork_try(nn.Module):
             print("xn shape:", xn.shape)
             gradX = Graph.nodeGrad(xn)
             intX = Graph.nodeAve(xn)
-            deriv3 = self.nodeDeriv(xn, Graph, order=2, noLast=True)
+            deriv3 = self.nodeDeriv(xn, Graph, order=3, noLast=True)
 
             if self.varlet:
                 #dxe = torch.cat([intX, gradX], dim=1)
@@ -271,7 +271,7 @@ class graphNetwork_try(nn.Module):
 
             dxe = F.layer_norm(dxe, dxe.shape)
             # dxe = torch.relu(dxe)
-            # xe = (xe + self.h * dxe)
+            xe = (xe + self.h * dxe)
 
             divE = Graph.edgeDiv(xe)
             aveE = Graph.edgeAve(xe, method='ave')
@@ -285,7 +285,7 @@ class graphNetwork_try(nn.Module):
 
             dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
 
-            xe = xe + self.h * dxe
+            #xe = xe + self.h * dxe
             xn = (xn + self.h * dxn)
             # xn = 2*xn - xn_old + self.h**2 * dxn
             # xe = 2*xe - xe_old + self.h**2 * dxe
