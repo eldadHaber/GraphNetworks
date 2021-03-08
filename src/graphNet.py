@@ -262,6 +262,8 @@ class graphNetwork_try(nn.Module):
         for i in range(nlayers):
             print("xn shape:", xn.shape)
             I, J = getConnectivity(xn.squeeze())
+            print("I shape:", I.shape)
+            print("J shape:", J.shape)
             Graph = GO.graph(I, J, N)
             tmp_node = xn.clone()
             tmp_edge = xe.clone()
