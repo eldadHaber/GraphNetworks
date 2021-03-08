@@ -225,6 +225,7 @@ class graphNetwork_try(nn.Module):
         return x
 
     def nodeDeriv(self, nodeFeatures, Graph, order=1, noLast=False):
+        x = nodeFeatures
         for i in torch.arange(0, order):
             x = Graph.nodeGrad(x)
             print("node_grad shappe:", x.shape)
