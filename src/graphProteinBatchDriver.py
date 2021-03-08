@@ -91,7 +91,7 @@ def testImpulseResponse():
         xn = torch.zeros(1, 1, 32, 32).float()
         xn[0, 0, 5:10, 5:10] = 1
         xn = xn.view(1, 1, 32 * 32)
-        xe = torch.ones(1, 1, edge_index.shape[1])
+        xe = torch.zeros(1, 1, edge_index.shape[1])
 
         xnOut, xeOut = model(xn, xe, G)
         # L = 55
