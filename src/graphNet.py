@@ -258,7 +258,7 @@ class graphNetwork_try(nn.Module):
             print("xn shape:", xn.shape)
             gradX = Graph.nodeGrad(xn)
             intX = Graph.nodeAve(xn)
-            order = 3
+            order = 4
             deriv3 = self.nodeDeriv(xn, Graph, order=order, noLast=True)
 
             if self.varlet:
