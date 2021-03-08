@@ -11,7 +11,7 @@ import time
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
 
-def getConnectivity(X, nsparse=8):
+def getConnectivity(X, nsparse=32):
     D = torch.relu(torch.sum(X ** 2, dim=0, keepdim=True) + \
                    torch.sum(X ** 2, dim=0, keepdim=True).t() - \
                    2 * X.t() @ X)
