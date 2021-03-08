@@ -321,7 +321,7 @@ class graphNetwork_try(nn.Module):
                 plt.close()
 
                 plt.figure()
-                img = xn.clone().detach().squeeze().reshape(32, 32, 3).cpu().numpy()
+                img = xn.clone().detach().squeeze().reshape(32, 32).cpu().numpy()
                 img = img / img.max()
                 plt.imshow(img)
                 plt.show()
