@@ -268,7 +268,7 @@ class graphNetwork_try(nn.Module):
             gradX = Graph.nodeGrad(xn)
             intX = Graph.nodeAve(xn)
             order = 3
-            operators = self.nodeDeriv(xn, Graph, order=order, noLast=True)
+            operators = self.nodeDeriv(xn, Graph, order=order, edgeSpace=True)
             print("operators:", operators)
             if self.varlet:
                 # dxe = torch.cat([intX, gradX], dim=1)
