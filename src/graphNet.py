@@ -270,7 +270,7 @@ class graphNetwork_try(nn.Module):
             order = 3
             operators = self.nodeDeriv(xn, Graph, order=order, edgeSpace=True)
             operators = torch.FloatTensor(operators)
-            print("operators:", operators)
+            print("operators:", operators.shape)
             if self.varlet:
                 # dxe = torch.cat([intX, gradX], dim=1)
                 dxe = torch.cat([operators, gradX], dim=1)
