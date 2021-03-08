@@ -79,6 +79,10 @@ def testImpulseResponse():
     if 1 == 1:
         grid_graph = grid(height=4, width=4, dtype=torch.float, device=device)
         print("grid graph:", grid_graph)
+        print("grid graph edge index shape:", grid_graph.edge_index.shape)
+        print("pos shape:", grid_graph.pos.shape)
+        I = grid_graph.edge_index[:, 1]
+        J = grid_graph.edge_index[:, 2]
 
 
         L = 55
