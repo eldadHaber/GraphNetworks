@@ -18,7 +18,7 @@ def getConnectivity(X, nsparse=16):
 
     D = D / D.std()
     D = torch.exp(-2 * D)
-
+    print("D shape:", D.shape)
     vals, indices = torch.topk(D, k=min(nsparse, D.shape[0]), dim=1)
     nd = D.shape[0]
     I = torch.ger(torch.arange(nd), torch.ones(nsparse, dtype=torch.long))
