@@ -321,7 +321,7 @@ class graphNetwork_try(nn.Module):
                 plt.close()
 
                 plt.figure()
-                plt.imshow(xn_norm.reshape(128, 128))
+                plt.imshow(xn_norm.reshape(32, 32, 3))
                 plt.show()
                 plt.savefig('plots/img_xn_norm_layer_verlet' + str(i) + 'order_nodeDeriv' + str(order) + '.jpg')
                 plt.close()
