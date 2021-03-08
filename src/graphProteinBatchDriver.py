@@ -77,6 +77,10 @@ def testImpulseResponse():
     nodeProperties, Coords, M, I, J, edgeProperties, Ds, nNodes, w = prc.getBatchData(S, Aind, Yobs,
                                                                                       MSK, [test_index], device=device)
     if 1 == 1:
+        grid_graph = grid(height=4, width=4, dtype=torch.float, device=device)
+        print("grid graph:", grid_graph)
+
+
         L = 55
         xn = torch.zeros(1, nNin, L).to(device)
         xn[0, :, 23] = 1
@@ -86,8 +90,7 @@ def testImpulseResponse():
 
         xnout, xeout = model(xn, xe, G)
 
-        grid_graph = grid(height=4, width=4, dtype=torch.float, device=device)
-        print("grid graph:", grid_graph)
+
 
 
     if 1 == 0:
