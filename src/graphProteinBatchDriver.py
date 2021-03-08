@@ -60,8 +60,8 @@ n_data_total = len(S)
 # Setup the network and its parameters
 nNin = 40
 nEin = 1
-nopen = 32
-nhid = 32
+nopen = 8
+nhid = 8
 nNclose = 3
 nlayer = 10
 
