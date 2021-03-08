@@ -228,13 +228,12 @@ class graphNetwork_try(nn.Module):
         x = nodeFeatures
         for i in torch.arange(0, order):
             x = Graph.nodeGrad(x)
-            print("node_grad shappe:", x.shape)
             if i == order-1:
                 break
             x = Graph.edgeDiv(x)
 
         if noLast:
-            out = nodeFeatures
+            out = x
         else:
             out = Graph.edgeAve(x, method='ave')
         return out
