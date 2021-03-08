@@ -64,11 +64,11 @@ nEin = 1
 nopen = 1
 nhid = 1
 nNclose = 3
-nlayer = 50
+nlayer = 10
 
 batchSize = 32
 
-model = GN.graphNetwork_try(nNin, nEin, nopen, nhid, nNclose, nlayer, h=1, dense=False, varlet=True)
+model = GN.graphNetwork_try(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=True)
 
 model.to(device)
 

@@ -255,6 +255,17 @@ class graphNetwork_try(nn.Module):
         # Opening layer
         xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
         xe = self.doubleLayer(xe, self.K1Eopen, self.K2Eopen)
+
+        plt.figure()
+        img = xn.clone().detach().squeeze().reshape(32, 32).cpu().numpy()
+        img = img / img.max()
+        plt.imshow(img)
+        plt.colorbar()
+        plt.show()
+        plt.savefig('plots/img_xn_norm_layer_verlet' + str(0) + 'order_nodeDeriv' + str(0) + '.jpg')
+        plt.close()
+
+
         N = Graph.nnodes
         nlayers = self.KE1.shape[0]
         xn_old = xn.clone()
