@@ -233,6 +233,8 @@ class graphNetwork_try(nn.Module):
 
         if not noLast:
             out = Graph.edgeAve(node_grad, method='ave')
+        else:
+            out = nodeFeatures
         return out
 
     def forward(self, xn, xe, Graph):
