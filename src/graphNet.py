@@ -111,7 +111,8 @@ class graphNetwork(nn.Module):
         xn_old = xn.clone()
         xe_old = xe.clone()
         for i in range(nlayers):
-            IJ = getConnectivity(xn)
+            print("xn shape:", xn.shape)
+            IJ = getConnectivity(xn.shape)
             print("IJ shape:", IJ.shape)
             Graph = GO.graph(IJ[:, 0], IJ[:, 1], N=N)
             tmp_node = xn.clone()
