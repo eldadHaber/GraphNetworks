@@ -227,6 +227,7 @@ class graphNetwork_try(nn.Module):
     def nodeDeriv(self, nodeFeatures, Graph, order=1, noLast=False):
         for i in torch.arange(0, order):
             node_grad = Graph.nodeGrad(nodeFeatures)
+            print("node_grad shappe:", node_grad.shape)
             if i == order-1:
                 break
             nodeFeatures = Graph.edgeDiv(node_grad)
