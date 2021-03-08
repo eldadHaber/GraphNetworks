@@ -228,7 +228,7 @@ class graphNetwork_try(nn.Module):
         x = nodeFeatures
         for i in torch.arange(0, order):
             x = Graph.nodeGrad(x)
-            if i == order-1:
+            if i == order - 1:
                 break
             x = Graph.edgeDiv(x)
 
@@ -258,10 +258,11 @@ class graphNetwork_try(nn.Module):
             print("xn shape:", xn.shape)
             gradX = Graph.nodeGrad(xn)
             intX = Graph.nodeAve(xn)
-            deriv3 = self.nodeDeriv(xn, Graph, order=3, noLast=True)
+            order = 3
+            deriv3 = self.nodeDeriv(xn, Graph, order=order, noLast=True)
 
             if self.varlet:
-                #dxe = torch.cat([intX, gradX], dim=1)
+                # dxe = torch.cat([intX, gradX], dim=1)
                 dxe = torch.cat([deriv3, gradX], dim=1)
 
             else:
@@ -285,7 +286,7 @@ class graphNetwork_try(nn.Module):
 
             dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
 
-            #xe = xe + self.h * dxe
+            # xe = xe + self.h * dxe
             xn = (xn + self.h * dxn)
             # xn = 2*xn - xn_old + self.h**2 * dxn
             # xe = 2*xe - xe_old + self.h**2 * dxe
@@ -300,13 +301,13 @@ class graphNetwork_try(nn.Module):
                 plt.figure()
                 plt.plot(xn_norm)
                 plt.show()
-                plt.savefig('plots/xn_norm_layer_verlet' + str(i) + '.jpg')
+                plt.savefig('plots/xn_norm_layer_verlet' + str(i) + 'order_nodeDeriv' + str(order) + '.jpg')
                 plt.close()
 
                 plt.figure()
                 plt.plot(xe_norm)
                 plt.show()
-                plt.savefig('plots/xe_norm_layer_verlet' + str(i) + '.jpg')
+                plt.savefig('plots/xe_norm_layer_verlet' + str(i) + 'order_nodeDeriv' + str(order) + '.jpg')
                 plt.close()
 
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
