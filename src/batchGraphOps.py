@@ -15,15 +15,17 @@ def getConnectivity(X, nsparse=16):
     X2 = torch.pow(X, 2).sum(dim=1, keepdim=True)
     D = X2 + X2.transpose(2, 1) - 2 * X.transpose(2, 1) @ X
     D = torch.exp(torch.relu(D))
-
+    print("D shape:", D.shape)
+    vals, indices = torch.topk(D, k=min(nsparse, D.shape[0]), dim=1)
+    nd = D.shape[0]
+    nsparse = 16
     vals, indices = torch.topk(D, k=min(nsparse, D.shape[0]), dim=1)
     nd = D.shape[0]
     I = torch.ger(torch.arange(nd), torch.ones(nsparse, dtype=torch.long))
     I = I.view(-1)
     J = indices.view(-1).type(torch.LongTensor)
-    IJ = torch.stack([I, J], dim=1)
 
-    return IJ
+    return I,J
 
 
 def makeBatch(Ilist, Jlist, nnodesList, Wlist=[1.0]):
