@@ -6,7 +6,7 @@ import torch.optim as optim
 import numpy as np
 import matplotlib.pyplot as plt
 import math
-
+from pytorch_geometric.utils import grid
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
 caspver = "casp11"  # Change this to choose casp version
@@ -85,6 +85,10 @@ def testImpulseResponse():
         G = GO.dense_graph(L).to(device)
 
         xnout, xeout = model(xn, xe, G)
+
+        grid_graph = grid(height=4, width=4, dtype=torch.float, device=device)
+        print("grid graph:", grid_graph)
+
 
     if 1 == 0:
         N = torch.sum(torch.tensor(nNodes))
