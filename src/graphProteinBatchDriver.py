@@ -67,7 +67,7 @@ nlayer = 10
 
 batchSize = 32
 
-model = GN.graphNetwork_try(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=True)
+model = GN.graphNetwork_try(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=True, varlet=True)
 
 model.to(device)
 
@@ -76,7 +76,7 @@ def testImpulseResponse():
     test_index = 0
     nodeProperties, Coords, M, I, J, edgeProperties, Ds, nNodes, w = prc.getBatchData(S, Aind, Yobs,
                                                                                       MSK, [test_index], device=device)
-    if 1 == 0:
+    if 1 == 1:
         L = 55
         xn = torch.zeros(1, nNin, L).to(device)
         xn[0, :, 23] = 1
@@ -86,7 +86,7 @@ def testImpulseResponse():
 
         xnout, xeout = model(xn, xe, G)
 
-    if 1 == 1:
+    if 1 == 0:
         N = torch.sum(torch.tensor(nNodes))
         G = GO.graph(I, J, N, w)
         xe = w.unsqueeze(0).unsqueeze(0)  # edgeProperties
