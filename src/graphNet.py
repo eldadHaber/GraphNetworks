@@ -111,10 +111,7 @@ class graphNetwork(nn.Module):
         xn_old = xn.clone()
         xe_old = xe.clone()
         for i in range(nlayers):
-            print("xn shape:", xn.shape)
-            IJ = getConnectivity(xn.shape)
-            print("IJ shape:", IJ.shape)
-            Graph = GO.graph(IJ[:, 0], IJ[:, 1], N=N)
+
             tmp_node = xn.clone()
             tmp_edge = xe.clone()
             # gradX = torch.exp(-torch.abs(Graph.nodeGrad(xn)))
@@ -258,12 +255,15 @@ class graphNetwork_try(nn.Module):
         # Opening layer
         xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
         xe = self.doubleLayer(xe, self.K1Eopen, self.K2Eopen)
-
+        N = Graph.nnodes
         nlayers = self.KE1.shape[0]
         xn_old = xn.clone()
         xe_old = xe.clone()
         for i in range(nlayers):
-            getConnectivity(xn)
+            print("xn shape:", xn.shape)
+            IJ = getConnectivity(xn.shape)
+            print("IJ shape:", IJ.shape)
+            Graph = GO.graph(IJ[:, 0], IJ[:, 1], N=N)
             tmp_node = xn.clone()
             tmp_edge = xe.clone()
             # gradX = torch.exp(-torch.abs(Graph.nodeGrad(xn)))
