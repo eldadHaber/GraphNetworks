@@ -254,6 +254,7 @@ class graphNetwork_try(nn.Module):
             gradX = Graph.nodeGrad(xn)
             intX = Graph.nodeAve(xn)
             deriv3 = self.nodeDeriv(xn, Graph, order=3)
+            print("deriv3 shape:", deriv3.shape)
             if self.varlet:
                 dxe = torch.cat([intX, gradX], dim=1)
             else:
@@ -282,7 +283,7 @@ class graphNetwork_try(nn.Module):
             # xn = 2*xn - xn_old + self.h**2 * dxn
             # xe = 2*xe - xe_old + self.h**2 * dxe
 
-            debug = True
+            debug = False
             if debug:
                 print("xn shape:", xn.shape)
                 print("xe shape:", xe.shape)
