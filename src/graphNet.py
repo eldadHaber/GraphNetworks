@@ -290,7 +290,7 @@ class graphNetwork_try(nn.Module):
             # xn = 2*xn - xn_old + self.h**2 * dxn
             # xe = 2*xe - xe_old + self.h**2 * dxe
 
-            debug = False
+            debug = True
             if debug:
                 print("xn shape:", xn.shape)
                 print("xe shape:", xe.shape)
