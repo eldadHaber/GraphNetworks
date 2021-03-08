@@ -83,6 +83,7 @@ def testImpulseResponse():
         print("grid graph edge index shape:", edge_index.shape)
         print("pos shape:", pos.shape)
         I = edge_index[0, :]
+        print("I shape:", I.shape)
         J = edge_index[1, :]
         N = 32 * 32
         G = GO.graph(I, J, N)
