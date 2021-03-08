@@ -59,7 +59,7 @@ print('Number of data: ', len(S))
 n_data_total = len(S)
 
 # Setup the network and its parameters
-nNin = 40
+nNin = 1
 nEin = 1
 nopen = 8
 nhid = 8
