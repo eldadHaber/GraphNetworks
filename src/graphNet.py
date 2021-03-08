@@ -262,7 +262,7 @@ class graphNetwork_try(nn.Module):
         for i in range(nlayers):
             print("xn shape:", xn.shape)
             I, J = getConnectivity(xn)
-            Graph = GO.graph(I, J, N=N)
+            Graph = GO.graph(I, J, N)
             tmp_node = xn.clone()
             tmp_edge = xe.clone()
             # gradX = torch.exp(-torch.abs(Graph.nodeGrad(xn)))
