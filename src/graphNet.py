@@ -224,14 +224,15 @@ class graphNetwork_try(nn.Module):
         x = self.edgeConv(x, K2)
         return x
 
-    def nodeDeriv(self, nodeFeatures, Graph, order=1):
+    def nodeDeriv(self, nodeFeatures, Graph, order=1, noLast=False):
         for i in torch.arange(0, order):
             node_grad = Graph.nodeGrad(nodeFeatures)
             if i == order-1:
                 break
             nodeFeatures = Graph.edgeDiv(node_grad)
 
-        out = Graph.edgeAve(node_grad, method='ave')
+        if not noLast:
+            out = Graph.edgeAve(node_grad, method='ave')
         return out
 
     def forward(self, xn, xe, Graph):
@@ -253,7 +254,7 @@ class graphNetwork_try(nn.Module):
             # gradX = torch.exp(-torch.abs(Graph.nodeGrad(xn)))
             gradX = Graph.nodeGrad(xn)
             intX = Graph.nodeAve(xn)
-            deriv3 = self.nodeDeriv(xn, Graph, order=3)
+            deriv3 = self.nodeDeriv(xn, Graph, order=3, noLast=True)
             print("deriv3 shape:", deriv3.shape)
             if self.varlet:
                 dxe = torch.cat([intX, gradX], dim=1)
