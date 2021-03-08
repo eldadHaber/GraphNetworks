@@ -324,6 +324,7 @@ class graphNetwork_try(nn.Module):
                 img = xn.clone().detach().squeeze().reshape(32, 32).cpu().numpy()
                 img = img / img.max()
                 plt.imshow(img)
+                plt.colorbar()
                 plt.show()
                 plt.savefig('plots/img_xn_norm_layer_verlet' + str(i) + 'order_nodeDeriv' + str(order) + '.jpg')
                 plt.close()
