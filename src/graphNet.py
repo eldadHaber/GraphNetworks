@@ -283,13 +283,13 @@ class graphNetwork_try(nn.Module):
             print("xn shape:", xn.shape)
             gradX = Graph.nodeGrad(xn)
             intX = Graph.nodeAve(xn)
-            order = 3
+            order = 2
             operators = self.nodeDeriv(xn, Graph, order=order, edgeSpace=True)
             #operators = torch.FloatTensor(operators)
             #print("operators:", operators.shape)
             if self.varlet:
-                dxe = torch.cat([intX, gradX], dim=1)
-                #dxe = torch.cat([operators, gradX], dim=1)
+                #dxe = torch.cat([intX, gradX], dim=1)
+                dxe = torch.cat([operators[1], gradX], dim=1)
 
             else:
                 dxe = torch.cat([intX, xe, gradX], dim=1)
@@ -298,7 +298,7 @@ class graphNetwork_try(nn.Module):
 
             dxe = F.layer_norm(dxe, dxe.shape)
             # dxe = torch.relu(dxe)
-            xe = (xe + self.h * dxe)
+            xe = F.relu(xe + self.h * dxe)
 
             #xe = dxe
             divE = Graph.edgeDiv(xe)
