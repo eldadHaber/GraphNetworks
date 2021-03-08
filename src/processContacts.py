@@ -122,7 +122,7 @@ def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
     D = D / D.std()
     D = torch.exp(-2 * D)
 
-    nsparse = 8
+    nsparse = 16
     vals, indices = torch.topk(D, k=min(nsparse, D.shape[0]), dim=1)
     nd = D.shape[0]
     I = torch.ger(torch.arange(nd), torch.ones(nsparse, dtype=torch.long))
