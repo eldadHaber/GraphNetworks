@@ -6,7 +6,7 @@ import torch.optim as optim
 import numpy as np
 import matplotlib.pyplot as plt
 import math
-from pytorch_geometric.utils import grid
+from torch_geometric.utils import grid
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
 caspver = "casp11"  # Change this to choose casp version
