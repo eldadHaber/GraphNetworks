@@ -226,16 +226,16 @@ class graphNetwork_try(nn.Module):
 
     def nodeDeriv(self, nodeFeatures, Graph, order=1, noLast=False):
         for i in torch.arange(0, order):
-            node_grad = Graph.nodeGrad(nodeFeatures)
-            print("node_grad shappe:", node_grad.shape)
+            x = Graph.nodeGrad(x)
+            print("node_grad shappe:", x.shape)
             if i == order-1:
                 break
-            nodeFeatures = Graph.edgeDiv(node_grad)
+            x = Graph.edgeDiv(x)
 
         if noLast:
             out = nodeFeatures
         else:
-            out = Graph.edgeAve(node_grad, method='ave')
+            out = Graph.edgeAve(x, method='ave')
         return out
 
     def forward(self, xn, xe, Graph):
