@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 from torch_geometric.utils import grid
+
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
 caspver = "casp11"  # Change this to choose casp version
@@ -67,7 +68,7 @@ nlayer = 10
 
 batchSize = 32
 
-model = GN.graphNetwork_try(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=True, varlet=True)
+model = GN.graphNetwork_try(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=True)
 
 model.to(device)
 
@@ -77,25 +78,29 @@ def testImpulseResponse():
     nodeProperties, Coords, M, I, J, edgeProperties, Ds, nNodes, w = prc.getBatchData(S, Aind, Yobs,
                                                                                       MSK, [test_index], device=device)
     if 1 == 1:
-        [edge_index, pos] = grid(height=4, width=4, dtype=torch.float, device=device)
+        [edge_index, pos] = grid(height=32, width=32, dtype=torch.float, device=device)
         print("grid graph:", edge_index)
         print("grid graph edge index shape:", edge_index.shape)
         print("pos shape:", pos.shape)
-        I = edge_index[:, 1]
-        J = edge_index[:, 2]
+        I = edge_index[0, :]
+        J = edge_index[1, :]
+        N = 32 * 32
+        G = GO.graph(I, J, N)
 
+        xn = torch.zeros(1, 1, 32, 32).float()
+        xn[1, 1, 5:10, 5:10] = 1
+        xn = xn.view(1, 1, 32 * 32)
+        xe = torch.ones(1, 1, edge_index.shape[1])
 
-        L = 55
-        xn = torch.zeros(1, nNin, L).to(device)
-        xn[0, :, 23] = 1
-        xe = torch.ones(1, nEin, L, L).to(device)
-
-        G = GO.dense_graph(L).to(device)
-
-        xnout, xeout = model(xn, xe, G)
-
-
-
+        xnOut, xeOut = model(xn, xe, G)
+        # L = 55
+        # xn = torch.zeros(1, nNin, L).to(device)
+        # xn[0, :, 23] = 1
+        # xe = torch.ones(1, nEin, L, L).to(device)
+        #
+        # G = GO.dense_graph(L).to(device)
+        #
+        # xnout, xeout = model(xn, xe, G)
 
     if 1 == 0:
         N = torch.sum(torch.tensor(nNodes))
