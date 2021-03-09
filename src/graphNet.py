@@ -284,10 +284,10 @@ class graphNetwork_try(nn.Module):
             gradX = Graph.nodeGrad(xn)
             intX = Graph.nodeAve(xn)
             order = 10
-            operators = self.nodeDeriv(xn, Graph, order=order, edgeSpace=True)
+            operators = self.nodeDeriv(xn, Graph, order=order, edgeSpace=False)
             for i in torch.arange(0, len(operators)):
                 op = operators[i]
-                op = op.detach().squeeze().cpu().numpy()
+                op = op.detach().squeeze().cpu() #.numpy()
 
                 plt.figure()
                 img = op.reshape(32, 32)
