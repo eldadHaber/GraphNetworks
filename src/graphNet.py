@@ -283,7 +283,7 @@ class graphNetwork_try(nn.Module):
             print("xn shape:", xn.shape)
             gradX = Graph.nodeGrad(xn)
             intX = Graph.nodeAve(xn)
-            order = 2
+            order = 10
             operators = self.nodeDeriv(xn, Graph, order=order, edgeSpace=True)
             if 1==0:
                 for i in torch.arange(0, len(operators)):
@@ -303,7 +303,7 @@ class graphNetwork_try(nn.Module):
             #print("operators:", operators.shape)
             if self.varlet:
                 #dxe = torch.cat([intX, gradX], dim=1)
-                dxe = torch.cat([operators[1], gradX], dim=1)
+                dxe = torch.cat([operators[9], gradX], dim=1)
 
             else:
                 dxe = torch.cat([intX, xe, gradX], dim=1)
