@@ -220,7 +220,7 @@ class graphNetwork_try(nn.Module):
     def doubleLayer(self, x, K1, K2):
         x = self.edgeConv(x, K1)
         x = F.layer_norm(x, x.shape)
-        x = torch.relu(x)
+        x = torch.tanh(x)
         x = self.edgeConv(x, K2)
         return x
 
@@ -283,8 +283,8 @@ class graphNetwork_try(nn.Module):
             print("xn shape:", xn.shape)
             gradX = Graph.nodeGrad(xn)
             intX = Graph.nodeAve(xn)
-            order = 10
-            operators = self.nodeDeriv(xn, Graph, order=order, edgeSpace=False)
+            order = 2
+            operators = self.nodeDeriv(xn, Graph, order=order, edgeSpace=True)
             for i in torch.arange(0, len(operators)):
                 op = operators[i]
                 op = op.detach().squeeze().cpu() #.numpy()
@@ -311,7 +311,7 @@ class graphNetwork_try(nn.Module):
 
             dxe = F.layer_norm(dxe, dxe.shape)
             # dxe = torch.relu(dxe)
-            xe = F.relu(xe + self.h * dxe)
+            xe = F.tanh(xe + self.h * dxe)
 
             #xe = dxe
             divE = Graph.edgeDiv(xe)
@@ -327,7 +327,7 @@ class graphNetwork_try(nn.Module):
             dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
 
             # xe = xe + self.h * dxe
-            xn = F.relu(xn + self.h * dxn)
+            xn = F.tanh(xn + self.h * dxn)
             # xn = 2*xn - xn_old + self.h**2 * dxn
             # xe = 2*xe - xe_old + self.h**2 * dxe
 
