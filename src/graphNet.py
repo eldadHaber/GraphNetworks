@@ -315,7 +315,14 @@ class graphNetwork_try(nn.Module):
             xe = xe + self.h * dxe
 
             divE = Graph.edgeDiv(xe)
+            divE = Graph.nodeGrad(xe)
+            divE = Graph.edgeDiv(xe)
+
             aveE = Graph.edgeAve(xe, method='ave')
+            aveE = Graph.nodeAve(xe, method='ave')
+            aveE = Graph.edgeAve(xe, method='ave')
+
+
 
             #dxe = torch.tanh(dxe)
 
@@ -337,17 +344,6 @@ class graphNetwork_try(nn.Module):
 
             debug = True
             if debug:
-                print("xn shape:", xn.shape)
-                print("xe shape:", xe.shape)
-                xn_norm = xn.detach().squeeze().norm(dim=0).cpu().numpy()
-                xe_norm = xe.detach().squeeze().norm(dim=0).cpu().numpy()
-
-                plt.figure()
-                plt.plot(xn_norm)
-                plt.show()
-                plt.savefig('plots/xn_norm_layer_heat' + str(i) + 'order_nodeDeriv' + str(order) + '.jpg')
-                plt.close()
-
                 plt.figure()
                 img = xn.clone().detach().squeeze().reshape(32, 32).cpu().numpy()
                 #img = img / img.max()
@@ -367,11 +363,6 @@ class graphNetwork_try(nn.Module):
                 plt.savefig('plots/img_xe_div_norm_layer_heat' + str(i) + 'order_nodeDeriv' + str(order) + '.jpg')
                 plt.close()
 
-                plt.figure()
-                plt.plot(xe_norm)
-                plt.show()
-                plt.savefig('plots/xe_norm_layer_heat' + str(i) + 'order_nodeDeriv' + str(order) + '.jpg')
-                plt.close()
 
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
 

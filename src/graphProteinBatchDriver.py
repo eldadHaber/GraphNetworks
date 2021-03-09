@@ -39,25 +39,28 @@ else:
     from src import graphNet as GN
     from src import pnetArch as PNA
 
+loadData = True
+
 # load training data
-Aind = torch.load(base_path + caspver + '/AminoAcidIdx.pt')
-Yobs = torch.load(base_path + caspver + '/RCalpha.pt')
-MSK = torch.load(base_path + caspver + '/Masks.pt')
-S = torch.load(base_path + caspver + '/PSSM.pt')
-# load validation data
-AindVal = torch.load(base_path + caspver + '/AminoAcidIdxVal.pt')
-YobsVal = torch.load(base_path + caspver + '/RCalphaVal.pt')
-MSKVal = torch.load(base_path + caspver + '/MasksVal.pt')
-SVal = torch.load(base_path + caspver + '/PSSMVal.pt')
+if loadData:
+    Aind = torch.load(base_path + caspver + '/AminoAcidIdx.pt')
+    Yobs = torch.load(base_path + caspver + '/RCalpha.pt')
+    MSK = torch.load(base_path + caspver + '/Masks.pt')
+    S = torch.load(base_path + caspver + '/PSSM.pt')
+    # load validation data
+    AindVal = torch.load(base_path + caspver + '/AminoAcidIdxVal.pt')
+    YobsVal = torch.load(base_path + caspver + '/RCalphaVal.pt')
+    MSKVal = torch.load(base_path + caspver + '/MasksVal.pt')
+    SVal = torch.load(base_path + caspver + '/PSSMVal.pt')
 
-# load Testing data
-AindTest = torch.load(base_path + caspver + '/AminoAcidIdxTesting.pt')
-YobsTest = torch.load(base_path + caspver + '/RCalphaTesting.pt')
-MSKTest = torch.load(base_path + caspver + '/MasksTesting.pt')
-STest = torch.load(base_path + caspver + '/PSSMTesting.pt')
+    # load Testing data
+    AindTest = torch.load(base_path + caspver + '/AminoAcidIdxTesting.pt')
+    YobsTest = torch.load(base_path + caspver + '/RCalphaTesting.pt')
+    MSKTest = torch.load(base_path + caspver + '/MasksTesting.pt')
+    STest = torch.load(base_path + caspver + '/PSSMTesting.pt')
 
-print('Number of data: ', len(S))
-n_data_total = len(S)
+    print('Number of data: ', len(S))
+    n_data_total = len(S)
 
 # Setup the network and its parameters
 nNin = 1
