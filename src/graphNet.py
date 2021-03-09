@@ -342,7 +342,7 @@ class graphNetwork_try(nn.Module):
                 plt.figure()
                 plt.plot(xn_norm)
                 plt.show()
-                plt.savefig('plots/xn_norm_layer_verlet' + str(i) + 'order_nodeDeriv' + str(order) + '.jpg')
+                plt.savefig('plots/xn_norm_layer_Notverlet' + str(i) + 'order_nodeDeriv' + str(order) + '.jpg')
                 plt.close()
 
                 plt.figure()
@@ -351,13 +351,13 @@ class graphNetwork_try(nn.Module):
                 plt.imshow(img)
                 plt.colorbar()
                 plt.show()
-                plt.savefig('plots/img_xn_norm_layer_verlet' + str(i) + 'order_nodeDeriv' + str(order) + '.jpg')
+                plt.savefig('plots/img_xn_norm_layer_Notverlet' + str(i) + 'order_nodeDeriv' + str(order) + '.jpg')
                 plt.close()
 
                 plt.figure()
                 plt.plot(xe_norm)
                 plt.show()
-                plt.savefig('plots/xe_norm_layer_verlet' + str(i) + 'order_nodeDeriv' + str(order) + '.jpg')
+                plt.savefig('plots/xe_norm_layer_Notverlet' + str(i) + 'order_nodeDeriv' + str(order) + '.jpg')
                 plt.close()
 
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
