@@ -332,7 +332,7 @@ class graphNetwork_try(nn.Module):
             dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
 
             xe = xe + self.h * dxe
-            xn = xn + self.h * dxe
+            xn = xn + self.h * dxn
             # xn = 2*xn - xn_old + self.h**2 * dxn
             # xe = 2*xe - xe_old + self.h**2 * dxe
 
