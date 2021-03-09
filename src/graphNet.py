@@ -283,8 +283,21 @@ class graphNetwork_try(nn.Module):
             print("xn shape:", xn.shape)
             gradX = Graph.nodeGrad(xn)
             intX = Graph.nodeAve(xn)
-            order = 2
+            order = 10
             operators = self.nodeDeriv(xn, Graph, order=order, edgeSpace=True)
+            for i in torch.arange(0, len(operators)):
+                op = operators[i]
+                op = op.detach().squeeze().cpu().numpy()
+
+                plt.figure()
+                img = op.reshape(32, 32)
+                img = img / img.max()
+                plt.imshow(img)
+                plt.colorbar()
+                plt.show()
+                plt.savefig('plots/operator' + str(i) +'.jpg')
+                plt.close()
+
             #operators = torch.FloatTensor(operators)
             #print("operators:", operators.shape)
             if self.varlet:
