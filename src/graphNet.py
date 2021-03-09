@@ -310,7 +310,7 @@ class graphNetwork_try(nn.Module):
 
             dxe = self.doubleLayer(dxe, self.KE1[i], self.KE2[i])
 
-            #dxe = F.layer_norm(dxe, dxe.shape)
+            dxe = F.layer_norm(dxe, dxe.shape)
 
             xe = xe + self.h * dxe
 
