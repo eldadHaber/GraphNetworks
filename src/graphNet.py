@@ -311,14 +311,18 @@ class graphNetwork_try(nn.Module):
             dxe = self.doubleLayer(dxe, self.KE1[i], self.KE2[i])
 
             dxe = F.layer_norm(dxe, dxe.shape)
-            # dxe = torch.relu(dxe)
-            xe = F.tanh(xe + self.h * dxe)
+
+            dxe = torch.tanh(dxe)
+            #xe = xe + self.h * dxe
 
             #xe = dxe
-            divE = Graph.edgeDiv(xe)
-            aveE = Graph.edgeAve(xe, method='ave')
-            # divE = Graph.edgeDiv(dxe)
-            # aveE = Graph.edgeAve(dxe, method='ave')
+
+            #divE = Graph.edgeDiv(xe)
+            #aveE = Graph.edgeAve(xe, method='ave')
+
+            divE = Graph.edgeDiv(dxe)
+            aveE = Graph.edgeAve(dxe, method='ave')
+
 
             if self.varlet:
                 dxn = torch.cat([aveE, divE], dim=1)
@@ -327,8 +331,8 @@ class graphNetwork_try(nn.Module):
 
             dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
 
-            # xe = xe + self.h * dxe
-            xn = F.tanh(xn + self.h * dxn)
+            xe = xe + self.h * dxe
+            xn = xn + self.h * dxe
             # xn = 2*xn - xn_old + self.h**2 * dxn
             # xe = 2*xe - xe_old + self.h**2 * dxe
 
@@ -342,7 +346,7 @@ class graphNetwork_try(nn.Module):
                 plt.figure()
                 plt.plot(xn_norm)
                 plt.show()
-                plt.savefig('plots/xn_norm_layer_Notverlet' + str(i) + 'order_nodeDeriv' + str(order) + '.jpg')
+                plt.savefig('plots/xn_norm_layer_heat' + str(i) + 'order_nodeDeriv' + str(order) + '.jpg')
                 plt.close()
 
                 plt.figure()
@@ -351,13 +355,13 @@ class graphNetwork_try(nn.Module):
                 plt.imshow(img)
                 plt.colorbar()
                 plt.show()
-                plt.savefig('plots/img_xn_norm_layer_Notverlet' + str(i) + 'order_nodeDeriv' + str(order) + '.jpg')
+                plt.savefig('plots/img_xn_norm_layer_heat' + str(i) + 'order_nodeDeriv' + str(order) + '.jpg')
                 plt.close()
 
                 plt.figure()
                 plt.plot(xe_norm)
                 plt.show()
-                plt.savefig('plots/xe_norm_layer_Notverlet' + str(i) + 'order_nodeDeriv' + str(order) + '.jpg')
+                plt.savefig('plots/xe_norm_layer_heat' + str(i) + 'order_nodeDeriv' + str(order) + '.jpg')
                 plt.close()
 
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
