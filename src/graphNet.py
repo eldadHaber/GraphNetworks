@@ -352,7 +352,7 @@ class graphNetwork_try(nn.Module):
                 plt.figure()
                 img = xn.clone().detach().squeeze().reshape(32, 32).cpu().numpy()
                 #img = img / img.max()
-                plt.imshow(img)
+                plt.imshow(img, vmin=-0.1, vmax=1)
                 plt.colorbar()
                 plt.show()
                 plt.savefig('plots/img_xn_norm_layer_heat' + str(i) + 'order_nodeDeriv' + str(order) + '.jpg')
