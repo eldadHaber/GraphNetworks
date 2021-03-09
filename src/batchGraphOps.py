@@ -82,6 +82,20 @@ class graph(nn.Module):
 
         return x
 
+    def edgeFeaturePlot2D(self, g):
+        x_x = torch.zeros(g.shape[0], g.shape[1], self.nnodes, device=g.device)
+        x_y = torch.zeros(g.shape[0], g.shape[1], self.nnodes, device=g.device)
+        # z = torch.zeros(g.shape[0],g.shape[1],self.nnodes,device=g.device)
+        # for i in range(self.iInd.numel()):
+        #    x[:,:,self.iInd[i]]  += w*g[:,:,i]
+        # for j in range(self.jInd.numel()):
+        #    x[:,:,self.jInd[j]] -= w*g[:,:,j]
+
+        x_x.index_add_(2, self.iInd, self.W * g)
+        x_y.index_add_(2, self.jInd, -self.W * g)
+
+        return x_x, x_y
+
     def edgeAve(self, g, method='max'):
         x1 = torch.zeros(g.shape[0], g.shape[1], self.nnodes, device=g.device)
         x2 = torch.zeros(g.shape[0], g.shape[1], self.nnodes, device=g.device)
