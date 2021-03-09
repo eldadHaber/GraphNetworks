@@ -310,18 +310,17 @@ class graphNetwork_try(nn.Module):
 
             dxe = self.doubleLayer(dxe, self.KE1[i], self.KE2[i])
 
-            dxe = F.layer_norm(dxe, dxe.shape)
+            #dxe = F.layer_norm(dxe, dxe.shape)
 
-            dxe = torch.tanh(dxe)
-            #xe = xe + self.h * dxe
+            xe = xe + self.h * dxe
 
-            #xe = dxe
+            divE = Graph.edgeDiv(xe)
+            aveE = Graph.edgeAve(xe, method='ave')
 
-            #divE = Graph.edgeDiv(xe)
-            #aveE = Graph.edgeAve(xe, method='ave')
+            #dxe = torch.tanh(dxe)
 
-            divE = Graph.edgeDiv(dxe)
-            aveE = Graph.edgeAve(dxe, method='ave')
+            #divE = Graph.edgeDiv(dxe)
+            #aveE = Graph.edgeAve(dxe, method='ave')
 
 
             if self.varlet:
@@ -331,8 +330,8 @@ class graphNetwork_try(nn.Module):
 
             dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
 
-            xe = xe + self.h * dxe
-            xn = xn - self.h * dxn
+            #xe = xe + self.h * dxe
+            xn = xn + self.h * dxn
             # xn = 2*xn - xn_old + self.h**2 * dxn
             # xe = 2*xe - xe_old + self.h**2 * dxe
 
@@ -352,7 +351,7 @@ class graphNetwork_try(nn.Module):
                 plt.figure()
                 img = xn.clone().detach().squeeze().reshape(32, 32).cpu().numpy()
                 #img = img / img.max()
-                plt.imshow(img, vmin=-1.0, vmax=0.2)
+                plt.imshow(img)
                 plt.colorbar()
                 plt.show()
                 plt.savefig('plots/img_xn_norm_layer_heat' + str(i) + 'order_nodeDeriv' + str(order) + '.jpg')
@@ -362,7 +361,7 @@ class graphNetwork_try(nn.Module):
                 plt.figure()
                 img = divE.clone().detach().squeeze().reshape(32, 32).cpu().numpy()
                 # img = img / img.max()
-                plt.imshow(img, vmin=-1.0, vmax=0.2)
+                plt.imshow(img)
                 plt.colorbar()
                 plt.show()
                 plt.savefig('plots/img_xe_div_norm_layer_heat' + str(i) + 'order_nodeDeriv' + str(order) + '.jpg')
