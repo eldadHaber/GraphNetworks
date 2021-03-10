@@ -85,7 +85,7 @@ train_dataset = ModelNet(modelnet_path, '10', train=True, transform=transforms)
 train_loader = DataLoader(
     train_dataset, batch_size=1, shuffle=False, num_workers=1, drop_last=False)
 for i, data in enumerate(train_loader):
-    if data.pos.shape[0] < 10000:
+    if data.pos.shape[0] < 20000:
         continue
     print(data.pos)
     print("pos:", data.pos.shape)
