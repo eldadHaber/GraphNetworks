@@ -414,6 +414,7 @@ class graphNetwork_try(nn.Module):
                     colors = xn.squeeze().clone().detach().cpu().numpy()
                     colors = colors + colors.min()
                     colors = colors / colors.max()
+                    print("colors:", colors)
                     vect_col_map = trimesh.visual.color.interpolate(colors,
                                                                     color_map='jet')
                     print("mesh.vertices.shape[0]:", mesh.vertices.shape[0])
