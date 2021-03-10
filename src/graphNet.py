@@ -411,7 +411,10 @@ class graphNetwork_try(nn.Module):
                     plt.close()
 
                     mesh = trimesh.Trimesh(vertices=Graph.pos, faces=Graph.faces, process=False)
-                    vect_col_map = trimesh.visual.color.interpolate(xn.squeeze().clone().detach().cpu().numpy(),
+                    colors = xn.squeeze().clone().detach().cpu().numpy()
+                    colors = colors + colors.min()
+                    colors = colors / colors.max()
+                    vect_col_map = trimesh.visual.color.interpolate(xn.squeeze().clone().detach().cpu().numpy() / max(xn),
                                                                     color_map='jet')
                     print("mesh.vertices.shape[0]:", mesh.vertices.shape[0])
                     print("mesh.faces.shape[0]:", mesh.faces.shape[0])
