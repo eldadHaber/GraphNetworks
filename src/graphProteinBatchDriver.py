@@ -79,7 +79,7 @@ model = GN.graphNetwork_try(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.05, de
 
 model.to(device)
 
-modelnet_path = '/home/cluster/users/erant_group/ModelNet40'
+modelnet_path = '/home/cluster/users/erant_group/ModelNet10'
 transforms = T.FaceToEdge()
 train_dataset = ModelNet(modelnet_path, '10', train=True, transform=transforms)
 train_loader = DataLoader(
