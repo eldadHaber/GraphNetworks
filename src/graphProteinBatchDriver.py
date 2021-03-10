@@ -89,7 +89,7 @@ for i, data in enumerate(train_loader):
     print("pos:", data.pos.shape)
     print(data.edge_index)
     print("edge index:", data.edge_index.shape)
-    break
+
 import torch
 from torch_sparse import coalesce
 
