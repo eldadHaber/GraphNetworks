@@ -284,6 +284,9 @@ class graphNetwork_try(nn.Module):
             mesh = trimesh.Trimesh(vertices=Graph.pos, faces=Graph.faces)
             vect_col_map = trimesh.visual.color.interpolate(xn.squeeze().clone().detach().cpu().numpy(),
                                                             color_map='jet')
+            print("mesh.vertices.shape[0]:", mesh.vertices.shape[0])
+            print("mesh.faces.shape[0]:", mesh.faces.shape[0])
+
             if xn.shape[2] == mesh.vertices.shape[0]:
                 print("case 1")
                 mesh.visual.vertex_colors = vect_col_map
