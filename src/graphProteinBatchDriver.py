@@ -83,7 +83,7 @@ modelnet_path = '/home/cluster/users/erant_group/ModelNet10'
 transforms = T.FaceToEdge()
 train_dataset = ModelNet(modelnet_path, '10', train=True, transform=transforms)
 train_loader = DataLoader(
-    train_dataset, batch_size=1, shuffle=True, num_workers=1, drop_last=False)
+    train_dataset, batch_size=1, shuffle=False, num_workers=1, drop_last=False)
 for i, data in enumerate(train_loader):
     print(data.pos)
     print("pos:", data.pos.shape)
