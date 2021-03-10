@@ -268,11 +268,12 @@ class graphNetwork_try(nn.Module):
             plt.savefig('plots/img_xn_norm_layer_verlet' + str(0) + 'order_nodeDeriv' + str(0) + '.jpg')
             plt.close()
         else:
+            print("xn shape:", xn.shape)
             pos = Graph.pos
             fig = plt.figure()
             ax = fig.add_subplot(111, projection='3d')
             ax.scatter(pos[:, 0].clone().detach().cpu().numpy(), pos[:, 1].clone().detach().cpu().numpy(),
-                       pos[:, 2].clone().detach().cpu().numpy(), c=xn.norm().clone().detach().cpu().numpy())
+                       pos[:, 2].clone().detach().cpu().numpy(), c=xn.norm(dim=0).clone().detach().cpu().numpy())
             plt.savefig(
                 "/users/others/eliasof/GraphNetworks/plots/xn_norm_verlet_layer_"+str(0))
             plt.close()
