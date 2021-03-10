@@ -94,7 +94,7 @@ for i, data in enumerate(train_loader):
     print("I shape:", I.shape)
     J = data.edge_index[1, :]
     N = data.pos.shape[0]
-    G = GO.graph(I, J, N)
+    G = GO.graph(I, J, N, pos=data.pos)
 
     xn = torch.randn(1, 1, N).float()
     xe = torch.ones(1, 1, data.edge_index.shape[1])

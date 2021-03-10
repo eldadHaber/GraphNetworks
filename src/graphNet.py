@@ -9,6 +9,7 @@ import torch.optim as optim
 ## r=1
 from src import graphOps as GO
 from src.batchGraphOps import getConnectivity
+from mpl_toolkits.mplot3d import Axes3D
 
 def conv2(X, Kernel):
     return F.conv2d(X, Kernel, padding=int((Kernel.shape[-1] - 1) / 2))
@@ -256,14 +257,25 @@ class graphNetwork_try(nn.Module):
         xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
         xe = self.doubleLayer(xe, self.K1Eopen, self.K2Eopen)
 
-        plt.figure()
-        img = xn.clone().detach().squeeze().reshape(32, 32).cpu().numpy()
-        img = img / img.max()
-        plt.imshow(img)
-        plt.colorbar()
-        plt.show()
-        plt.savefig('plots/img_xn_norm_layer_verlet' + str(0) + 'order_nodeDeriv' + str(0) + '.jpg')
-        plt.close()
+        image = False
+        if image:
+            plt.figure()
+            img = xn.clone().detach().squeeze().reshape(32, 32).cpu().numpy()
+            img = img / img.max()
+            plt.imshow(img)
+            plt.colorbar()
+            plt.show()
+            plt.savefig('plots/img_xn_norm_layer_verlet' + str(0) + 'order_nodeDeriv' + str(0) + '.jpg')
+            plt.close()
+        else:
+            pos = Graph.pos
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection='3d')
+            ax.scatter(pos[:, 0].clone().detach().cpu().numpy(), pos[:, 1].clone().detach().cpu().numpy(),
+                       pos[:, 2].clone().detach().cpu().numpy(), c=xn.norm().clone().detach().cpu().numpy())
+            plt.savefig(
+                "/users/others/eliasof/GraphNetworks/plots/xn_norm_verlet_layer_"+str(0))
+            plt.close()
 
 
         N = Graph.nnodes
@@ -353,24 +365,34 @@ class graphNetwork_try(nn.Module):
 
             debug = True
             if debug:
-                plt.figure()
-                img = xn.clone().detach().squeeze().reshape(32, 32).cpu().numpy()
-                #img = img / img.max()
-                plt.imshow(img)
-                plt.colorbar()
-                plt.show()
-                plt.savefig('plots/img_xn_norm_layer_heat' + str(i) + 'order_nodeDeriv' + str(order) + '.jpg')
-                plt.close()
+                if image:
+                    plt.figure()
+                    img = xn.clone().detach().squeeze().reshape(32, 32).cpu().numpy()
+                    #img = img / img.max()
+                    plt.imshow(img)
+                    plt.colorbar()
+                    plt.show()
+                    plt.savefig('plots/img_xn_norm_layer_heat' + str(i) + 'order_nodeDeriv' + str(order) + '.jpg')
+                    plt.close()
 
-                divE = Graph.edgeDiv(dxe)
-                plt.figure()
-                img = divE.clone().detach().squeeze().reshape(32, 32).cpu().numpy()
-                # img = img / img.max()
-                plt.imshow(img)
-                plt.colorbar()
-                plt.show()
-                plt.savefig('plots/img_xe_div_norm_layer_heat' + str(i) + 'order_nodeDeriv' + str(order) + '.jpg')
-                plt.close()
+                    divE = Graph.edgeDiv(dxe)
+                    plt.figure()
+                    img = divE.clone().detach().squeeze().reshape(32, 32).cpu().numpy()
+                    # img = img / img.max()
+                    plt.imshow(img)
+                    plt.colorbar()
+                    plt.show()
+                    plt.savefig('plots/img_xe_div_norm_layer_heat' + str(i) + 'order_nodeDeriv' + str(order) + '.jpg')
+                    plt.close()
+                else:
+                    pos = Graph.pos
+                    fig = plt.figure()
+                    ax = fig.add_subplot(111, projection='3d')
+                    ax.scatter(pos[:, 0].clone().detach().cpu().numpy(), pos[:, 1].clone().detach().cpu().numpy(),
+                               pos[:, 2].clone().detach().cpu().numpy(), c=xn.norm().clone().detach().cpu().numpy())
+                    plt.savefig(
+                        "/users/others/eliasof/GraphNetworks/plots/xn_norm_verlet_layer_" + str(i))
+                    plt.close()
 
 
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
