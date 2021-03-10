@@ -122,12 +122,13 @@ class graphNetwork(nn.Module):
 
             dxe = F.layer_norm(dxe, dxe.shape)
             #dxe = torch.relu(dxe)
-            xe = xe + self.h * dxe
-
-            divE = Graph.edgeDiv(xe)
-            aveE = Graph.edgeAve(xe, method='ave')
-            #divE = Graph.edgeDiv(dxe)
-            #aveE = Graph.edgeAve(dxe, method='ave')
+            if self.varlet:
+                xe = xe + self.h * dxe
+                fe = xe
+            else:
+                fe = dxe
+            divE = Graph.edgeDiv(fe)
+            aveE = Graph.edgeAve(fe, method='ave')
 
             if self.varlet:
                 dxn = torch.cat([aveE, divE], dim=1)
@@ -137,7 +138,8 @@ class graphNetwork(nn.Module):
             dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
 
             xn = xn + self.h * dxn
-            #xe = xe + self.h * dxe
+            if self.varlet == False:
+                xe = xe + self.h * dxe
 
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
 
