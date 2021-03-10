@@ -273,7 +273,7 @@ class graphNetwork_try(nn.Module):
             fig = plt.figure()
             ax = fig.add_subplot(111, projection='3d')
             ax.scatter(pos[:, 0].clone().detach().cpu().numpy(), pos[:, 1].clone().detach().cpu().numpy(),
-                       pos[:, 2].clone().detach().cpu().numpy(), c=xn.norm(dim=2).squeeze().clone().detach().cpu().numpy())
+                       pos[:, 2].clone().detach().cpu().numpy(), c=xn.squeeze().clone().detach().cpu().numpy())
             plt.savefig(
                 "/users/others/eliasof/GraphNetworks/plots/xn_norm_verlet_layer_"+str(0))
             plt.close()
@@ -390,7 +390,7 @@ class graphNetwork_try(nn.Module):
                     fig = plt.figure()
                     ax = fig.add_subplot(111, projection='3d')
                     ax.scatter(pos[:, 0].clone().detach().cpu().numpy(), pos[:, 1].clone().detach().cpu().numpy(),
-                               pos[:, 2].clone().detach().cpu().numpy(), c=xn.norm().clone().detach().cpu().numpy())
+                               pos[:, 2].clone().detach().cpu().numpy(), c=xn.squeeze().clone().detach().cpu().numpy())
                     plt.savefig(
                         "/users/others/eliasof/GraphNetworks/plots/xn_norm_verlet_layer_" + str(i))
                     plt.close()
