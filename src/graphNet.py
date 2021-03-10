@@ -412,7 +412,9 @@ class graphNetwork_try(nn.Module):
 
                     mesh = trimesh.Trimesh(vertices=Graph.pos, faces=Graph.faces, process=False)
                     colors = xn.squeeze().clone().detach().cpu().numpy()
-                    colors = colors + np.min(colors)
+                    print("min :", np.min(colors))
+                    colors = colors - np.min(colors)
+                    print("min after sub min:", np.min(colors))
                     print("max:", np.max(colors))
                     colors = colors / np.max(colors)
                     print("colors:", colors)
