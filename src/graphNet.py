@@ -281,7 +281,7 @@ class graphNetwork_try(nn.Module):
                 "/users/others/eliasof/GraphNetworks/plots/xn_norm_verlet_layer_" + str(0))
             plt.close()
 
-            mesh = trimesh.Trimesh(vertices=Graph.pos, faces=Graph.faces)
+            mesh = trimesh.Trimesh(vertices=Graph.pos, faces=Graph.faces, process=False)
             vect_col_map = trimesh.visual.color.interpolate(xn.squeeze().clone().detach().cpu().numpy(),
                                                             color_map='jet')
             print("mesh.vertices.shape[0]:", mesh.vertices.shape[0])
