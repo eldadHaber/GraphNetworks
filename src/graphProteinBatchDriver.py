@@ -8,6 +8,9 @@ import matplotlib.pyplot as plt
 import math
 
 # from torch_geometric.utils import grid
+from torch_geometric.datasets import ModelNet
+from torch_geometric.data import DataLoader
+import torch_geometric.transforms as T
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
@@ -76,6 +79,15 @@ model = GN.graphNetwork_try(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.05, de
 
 model.to(device)
 
+modelnet_path = '/home/cluster/users/erant_group/ModelNet40'
+transforms = T.FaceToEdge()
+train_dataset = ModelNet(modelnet_path, '10', train=True, transforms=transforms)
+train_dataset = train_dataset[0]
+train_loader = DataLoader(
+    train_dataset, batch_size=1, shuffle=True, num_workers=1, drop_last=False)
+for i, data in enumerate(train_loader):
+    print(data.pos)
+    print(data.edge_index)
 import torch
 from torch_sparse import coalesce
 
