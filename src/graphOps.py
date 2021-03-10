@@ -55,13 +55,14 @@ def makeBatch(Ilist, Jlist, nnodesList, Wlist=[1.0]):
 
 class graph(nn.Module):
 
-    def __init__(self, iInd, jInd, nnodes, W=torch.tensor([1.0]), pos=None):
+    def __init__(self, iInd, jInd, nnodes, W=torch.tensor([1.0]), pos=None, faces=None):
         super(graph, self).__init__()
         self.iInd = iInd.long()
         self.jInd = jInd.long()
         self.nnodes = nnodes
         self.W = W
         self.pos = pos
+        self.faces = faces
 
     def nodeGrad(self, x, W=[]):
         if len(W)==0:

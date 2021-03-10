@@ -10,6 +10,8 @@ import torch.optim as optim
 from src import graphOps as GO
 from src.batchGraphOps import getConnectivity
 from mpl_toolkits.mplot3d import Axes3D
+import trimesh
+
 
 def conv2(X, Kernel):
     return F.conv2d(X, Kernel, padding=int((Kernel.shape[-1] - 1) / 2))
@@ -273,24 +275,34 @@ class graphNetwork_try(nn.Module):
             fig = plt.figure()
             ax = fig.add_subplot(111, projection='3d')
             p = ax.scatter(pos[:, 0].clone().detach().cpu().numpy(), pos[:, 1].clone().detach().cpu().numpy(),
-                       pos[:, 2].clone().detach().cpu().numpy(), c=xn.squeeze().clone().detach().cpu().numpy())
+                           pos[:, 2].clone().detach().cpu().numpy(), c=xn.squeeze().clone().detach().cpu().numpy())
             fig.colorbar(p)
             plt.savefig(
-                "/users/others/eliasof/GraphNetworks/plots/xn_norm_verlet_layer_"+str(0))
+                "/users/others/eliasof/GraphNetworks/plots/xn_norm_verlet_layer_" + str(0))
             plt.close()
 
+            mesh = trimesh.Trimesh(vertices=Graph.pos, faces=Graph.faces)
+            vect_col_map = trimesh.visual.color.interpolate(xn.squeeze().clone().detach().cpu().numpy(),
+                                                            color_map='jet')
+            if xn.shape[2] == mesh.vertices.shape[0]:
+                mesh.visual.vertex_colors = vect_col_map
+            elif xn.shape[2] == mesh.faces.shape[0]:
+                mesh.visual.face_colors = vect_col_map
+                smooth = False
+
+            trimesh.exchange.export.export_mesh(mesh, "/users/others/eliasof/GraphNetworks/plots/xn_norm_verlet_layer_" + str(0), "ply")
 
         N = Graph.nnodes
         nlayers = self.KE1.shape[0]
         xn_old = xn.clone()
         xe_old = xe.clone()
         for i in range(nlayers):
-            #print("xn shape:", xn.shape)
-            #I, J = getConnectivity(xn.squeeze(0))
-            #print("I shape:", I.shape)
-            #print("J shape:", J.shape)
+            # print("xn shape:", xn.shape)
+            # I, J = getConnectivity(xn.squeeze(0))
+            # print("I shape:", I.shape)
+            # print("J shape:", J.shape)
 
-            #Graph = GO.graph(I, J, N)
+            # Graph = GO.graph(I, J, N)
             tmp_node = xn.clone()
             tmp_edge = xe.clone()
             # gradX = torch.exp(-torch.abs(Graph.nodeGrad(xn)))
@@ -299,10 +311,10 @@ class graphNetwork_try(nn.Module):
             intX = Graph.nodeAve(xn)
             order = 10
             operators = self.nodeDeriv(xn, Graph, order=order, edgeSpace=True)
-            if 1==0:
+            if 1 == 0:
                 for i in torch.arange(0, len(operators)):
                     op = operators[i]
-                    op = op.detach().squeeze().cpu() #.numpy()
+                    op = op.detach().squeeze().cpu()  # .numpy()
 
                     plt.figure()
                     img = op.reshape(32, 32)
@@ -310,13 +322,13 @@ class graphNetwork_try(nn.Module):
                     plt.imshow(img)
                     plt.colorbar()
                     plt.show()
-                    plt.savefig('plots/operator' + str(i) +'.jpg')
+                    plt.savefig('plots/operator' + str(i) + '.jpg')
                     plt.close()
 
-            #operators = torch.FloatTensor(operators)
-            #print("operators:", operators.shape)
+            # operators = torch.FloatTensor(operators)
+            # print("operators:", operators.shape)
             if self.varlet:
-                #dxe = torch.cat([intX, gradX], dim=1)
+                # dxe = torch.cat([intX, gradX], dim=1)
                 dxe = torch.cat([operators[9], gradX], dim=1)
 
             else:
@@ -332,7 +344,6 @@ class graphNetwork_try(nn.Module):
 
             aveE = Graph.edgeAve(xe, method='ave')
 
-
             # dxe = torch.tanh(dxe)
             #
             # divE = Graph.edgeDiv(dxe)
@@ -347,7 +358,6 @@ class graphNetwork_try(nn.Module):
             # aveE = Graph.nodeAve(dxe)
             # aveE = Graph.edgeAve(dxe, method='ave')
 
-
             if self.varlet:
                 dxn = torch.cat([aveE, divE], dim=1)
             else:
@@ -355,7 +365,7 @@ class graphNetwork_try(nn.Module):
 
             dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
 
-            #xe = xe + self.h * dxe
+            # xe = xe + self.h * dxe
             xn = xn + self.h * dxn
             # xn = 2*xn - xn_old + self.h**2 * dxn
             # xe = 2*xe - xe_old + self.h**2 * dxe
@@ -365,7 +375,7 @@ class graphNetwork_try(nn.Module):
                 if image:
                     plt.figure()
                     img = xn.clone().detach().squeeze().reshape(32, 32).cpu().numpy()
-                    #img = img / img.max()
+                    # img = img / img.max()
                     plt.imshow(img)
                     plt.colorbar()
                     plt.show()
@@ -386,12 +396,12 @@ class graphNetwork_try(nn.Module):
                     fig = plt.figure()
                     ax = fig.add_subplot(111, projection='3d')
                     p = ax.scatter(pos[:, 0].clone().detach().cpu().numpy(), pos[:, 1].clone().detach().cpu().numpy(),
-                               pos[:, 2].clone().detach().cpu().numpy(), c=xn.squeeze().clone().detach().cpu().numpy())
+                                   pos[:, 2].clone().detach().cpu().numpy(),
+                                   c=xn.squeeze().clone().detach().cpu().numpy())
                     fig.colorbar(p)
                     plt.savefig(
                         "/users/others/eliasof/GraphNetworks/plots/xn_norm_verlet_layer_" + str(i))
                     plt.close()
-
 
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
 

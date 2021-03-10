@@ -80,7 +80,7 @@ model = GN.graphNetwork_try(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.05, de
 model.to(device)
 
 modelnet_path = '/home/cluster/users/erant_group/ModelNet10'
-transforms = T.FaceToEdge()
+transforms = T.FaceToEdge(remove_faces=False)
 train_dataset = ModelNet(modelnet_path, '10', train=True, transform=transforms)
 train_loader = DataLoader(
     train_dataset, batch_size=1, shuffle=False, num_workers=1, drop_last=False)
@@ -94,7 +94,7 @@ for i, data in enumerate(train_loader):
     print("I shape:", I.shape)
     J = data.edge_index[1, :]
     N = data.pos.shape[0]
-    G = GO.graph(I, J, N, pos=data.pos)
+    G = GO.graph(I, J, N, pos=data.pos, faces=data.faces.t())
 
     xn = torch.randn(1, 1, N).float()
     xn = torch.zeros(1, 1, N).float()
