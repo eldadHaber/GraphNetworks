@@ -285,12 +285,16 @@ class graphNetwork_try(nn.Module):
             vect_col_map = trimesh.visual.color.interpolate(xn.squeeze().clone().detach().cpu().numpy(),
                                                             color_map='jet')
             if xn.shape[2] == mesh.vertices.shape[0]:
+                print("case 1")
                 mesh.visual.vertex_colors = vect_col_map
             elif xn.shape[2] == mesh.faces.shape[0]:
+                print("case 2")
                 mesh.visual.face_colors = vect_col_map
                 smooth = False
 
-            trimesh.exchange.export.export_mesh(mesh, "/users/others/eliasof/GraphNetworks/plots/xn_norm_verlet_layer_" + str(0), "ply")
+            trimesh.exchange.export.export_mesh(mesh,
+                                                "/users/others/eliasof/GraphNetworks/plots/xn_norm_verlet_layer_" + str(
+                                                    0) + ".ply", "ply")
 
         N = Graph.nnodes
         nlayers = self.KE1.shape[0]
