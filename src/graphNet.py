@@ -413,6 +413,7 @@ class graphNetwork_try(nn.Module):
                     mesh = trimesh.Trimesh(vertices=Graph.pos, faces=Graph.faces, process=False)
                     colors = xn.squeeze().clone().detach().cpu().numpy()
                     colors = colors + np.min(colors)
+                    print("max:", np.max(colors))
                     colors = colors / np.max(colors)
                     print("colors:", colors)
                     vect_col_map = trimesh.visual.color.interpolate(colors,
