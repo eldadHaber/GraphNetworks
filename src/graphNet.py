@@ -410,6 +410,24 @@ class graphNetwork_try(nn.Module):
                         "/users/others/eliasof/GraphNetworks/plots/xn_norm_verlet_layer_" + str(i))
                     plt.close()
 
+                    mesh = trimesh.Trimesh(vertices=Graph.pos, faces=Graph.faces, process=False)
+                    vect_col_map = trimesh.visual.color.interpolate(xn.squeeze().clone().detach().cpu().numpy(),
+                                                                    color_map='jet')
+                    print("mesh.vertices.shape[0]:", mesh.vertices.shape[0])
+                    print("mesh.faces.shape[0]:", mesh.faces.shape[0])
+
+                    if xn.shape[2] == mesh.vertices.shape[0]:
+                        print("case 1")
+                        mesh.visual.vertex_colors = vect_col_map
+                    elif xn.shape[2] == mesh.faces.shape[0]:
+                        print("case 2")
+                        mesh.visual.face_colors = vect_col_map
+                        smooth = False
+
+                    trimesh.exchange.export.export_mesh(mesh,
+                                                        "/users/others/eliasof/GraphNetworks/plots/xn_norm_verlet_layer_" + str(
+                                                            i) + ".ply", "ply")
+
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
 
         return xn, xe
