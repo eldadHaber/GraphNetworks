@@ -430,7 +430,7 @@ class graphNetwork_try(nn.Module):
                         print("case 2")
                         mesh.visual.face_colors = vect_col_map
                         smooth = False
-
+                    print("mesh.visual.kind:", mesh.visual.kind)
                     trimesh.exchange.export.export_mesh(mesh,
                                                         "/users/others/eliasof/GraphNetworks/plots/xn_norm_verlet_layer_" + str(
                                                             i) + ".obj", "obj")
