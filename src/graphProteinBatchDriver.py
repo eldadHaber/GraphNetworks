@@ -97,6 +97,8 @@ for i, data in enumerate(train_loader):
     G = GO.graph(I, J, N, pos=data.pos)
 
     xn = torch.randn(1, 1, N).float()
+    xn = torch.zeros(1, 1, N).float()
+    xn[:, :, 1:100] = 1.0
     xe = torch.ones(1, 1, data.edge_index.shape[1])
 
     xnOut, xeOut = model(xn, xe, G)
