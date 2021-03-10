@@ -82,12 +82,12 @@ model.to(device)
 modelnet_path = '/home/cluster/users/erant_group/ModelNet40'
 transforms = T.FaceToEdge()
 train_dataset = ModelNet(modelnet_path, '10', train=True, transform=transforms)
-train_dataset = train_dataset[0]
 train_loader = DataLoader(
     train_dataset, batch_size=1, shuffle=True, num_workers=1, drop_last=False)
 for i, data in enumerate(train_loader):
     print(data.pos)
     print(data.edge_index)
+    break
 import torch
 from torch_sparse import coalesce
 
