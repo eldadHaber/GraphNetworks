@@ -90,6 +90,17 @@ for i, data in enumerate(train_loader):
     print(data.edge_index)
     print("edge index:", data.edge_index.shape)
 
+    I = data.edge_index[0, :]
+    print("I shape:", I.shape)
+    J = data.edge_index[1, :]
+    N = data.pos.size[0]
+    G = GO.graph(I, J, N)
+
+    xn = torch.randn(1, 1, N).float()
+    xe = torch.ones(1, 1, data.edge_index.shape[1])
+
+    xnOut, xeOut = model(xn, xe, G)
+    exit()
 import torch
 from torch_sparse import coalesce
 
