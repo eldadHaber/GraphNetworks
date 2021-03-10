@@ -86,6 +86,7 @@ train_loader = DataLoader(
     train_dataset, batch_size=1, shuffle=True, num_workers=1, drop_last=False)
 for i, data in enumerate(train_loader):
     print(data.pos)
+    print("pos:", data.pos.shape)
     print(data.edge_index)
     print("edge index:", data.edge_index.shape)
     break
