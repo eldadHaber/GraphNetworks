@@ -433,7 +433,8 @@ class graphNetwork_try(nn.Module):
 
                     trimesh.exchange.export.export_mesh(mesh,
                                                         "/users/others/eliasof/GraphNetworks/plots/xn_norm_verlet_layer_" + str(
-                                                            i) + ".ply", "ply")
+                                                            i) + ".obj", "obj")
+
 
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
 
