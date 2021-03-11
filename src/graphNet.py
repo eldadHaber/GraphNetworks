@@ -37,7 +37,8 @@ def tv_norm(X, eps=1e-3):
 
 def doubleLayer(x, K1, K2):
     x = F.conv1d(x, K1.unsqueeze(-1))
-    x = F.layer_norm(x, x.shape)
+    #x = F.layer_norm(x, x.shape)
+    x = tv_norm(x)
     x = torch.relu(x)
     x = F.conv1d(x, K2.unsqueeze(-1))
     return x
@@ -51,8 +52,8 @@ class graphNetwork(nn.Module):
         self.h = h
         self.varlet = varlet
         self.dense  = dense
-        stdv = 1e-2
-        stdvp = 1e-3
+        stdv = 1.0 #1e-2
+        stdvp = 1.0 # 1e-3
         self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
         self.K2Nopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
         if dense:
@@ -93,9 +94,12 @@ class graphNetwork(nn.Module):
 
     def doubleLayer(self, x, K1, K2):
         x = self.edgeConv(x, K1)
-        x = F.layer_norm(x, x.shape)
-        x = torch.relu(x)
+        #x = F.layer_norm(x, x.shape)
+        x = tv_norm(x)
+        #x = torch.relu(x)
+        x = torch.tanh(x)
         x = self.edgeConv(x, K2)
+
         return x
 
     def forward(self, xn, xe, Graph):
@@ -120,15 +124,17 @@ class graphNetwork(nn.Module):
 
             dxe = self.doubleLayer(dxe, self.KE1[i], self.KE2[i])
 
-            dxe = F.layer_norm(dxe, dxe.shape)
+            #dxe = F.layer_norm(dxe, dxe.shape)
+            dxe = tv_norm(dxe)
+
             #dxe = torch.relu(dxe)
             if self.varlet:
                 xe = xe + self.h * dxe
-                fe = xe
+                flux = xe
             else:
-                fe = dxe
-            divE = Graph.edgeDiv(fe)
-            aveE = Graph.edgeAve(fe, method='ave')
+                flux = dxe
+            divE = Graph.edgeDiv(flux)
+            aveE = Graph.edgeAve(flux, method='ave')
 
             if self.varlet:
                 dxn = torch.cat([aveE, divE], dim=1)
@@ -137,9 +143,9 @@ class graphNetwork(nn.Module):
 
             dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
 
-            xn = xn + self.h * dxn
+            xn = xn - self.h * dxn
             if self.varlet == False:
-                xe = xe + self.h * dxe
+                xe = xe - self.h * dxe
 
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
 
