@@ -60,7 +60,7 @@ train_loader = DataLoader(
 class Net(torch.nn.Module):
     def __init__(self, out_channels, k=10, aggr='max'):
         super().__init__()
-        self.numlayers = 10
+        self.numlayers = 100
         #self.conv1 = EdgeConv(MLP([2 * 3, 3]), aggr)
         #self.conv2 = EdgeConv(MLP([2 * 3, 3]), aggr)
         self.Layers = torch.nn.ModuleList()
