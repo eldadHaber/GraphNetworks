@@ -68,8 +68,8 @@ if loadData:
 # Setup the network and its parameters
 nNin = 1
 nEin = 1
-nopen = 1
-nhid = 1
+nopen = 32
+nhid = 32
 nNclose = 3
 nlayer = 100
 
