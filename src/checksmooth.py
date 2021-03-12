@@ -65,7 +65,7 @@ class Net(torch.nn.Module):
         #self.conv2 = EdgeConv(MLP([2 * 3, 3]), aggr)
         self.Layers = torch.nn.ModuleList()
         for i in torch.arange(0, self.numlayers):
-            self.Layers.append(GCNConv(in_channels=1, out_channels=1))
+            self.Layers.append(GCNConv(in_channels=3, out_channels=3))
 
         self.lin1 = MLP([64 + 64, 64])
 
@@ -75,7 +75,7 @@ class Net(torch.nn.Module):
 
     def forward(self, data):
         pos, batch = data.pos, data.batch
-        xn = torch.ones(1, pos.shape[0]).float()
+        xn = torch.ones(3, pos.shape[0]).float()
         print("data.edgeindex:", data.edge_index)
         print("data.pos shape:", data.pos.shape)
         print("xn shape:", xn.shape)
