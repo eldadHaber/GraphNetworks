@@ -354,16 +354,16 @@ class graphNetwork_try(nn.Module):
             dxe = torch.tanh(dxe)
             #
             divE = Graph.edgeDiv(dxe)
-            divE = Graph.nodeGrad(dxe)
-            divE = Graph.edgeDiv(dxe)
-            divE = Graph.nodeGrad(dxe)
-            divE = Graph.edgeDiv(dxe)
+            #divE = Graph.nodeGrad(dxe)
+            #divE = Graph.edgeDiv(dxe)
+            #divE = Graph.nodeGrad(dxe)
+            #divE = Graph.edgeDiv(dxe)
             #
             aveE = Graph.edgeAve(dxe, method='ave')
-            aveE = Graph.nodeAve(dxe)
-            aveE = Graph.edgeAve(dxe, method='ave')
-            aveE = Graph.nodeAve(dxe)
-            aveE = Graph.edgeAve(dxe, method='ave')
+            #aveE = Graph.nodeAve(dxe)
+            #aveE = Graph.edgeAve(dxe, method='ave')
+            #aveE = Graph.nodeAve(dxe)
+            #aveE = Graph.edgeAve(dxe, method='ave')
 
             if self.varlet:
                 dxn = torch.cat([aveE, divE], dim=1)
@@ -399,6 +399,8 @@ class graphNetwork_try(nn.Module):
                     plt.savefig('plots/img_xe_div_norm_layer_heat' + str(i) + 'order_nodeDeriv' + str(order) + '.jpg')
                     plt.close()
                 else:
+                    print(xn.squeeze().shape())
+                    exit()
                     pos = Graph.pos
                     fig = plt.figure()
                     ax = fig.add_subplot(111, projection='3d')
