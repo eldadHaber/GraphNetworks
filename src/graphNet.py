@@ -275,14 +275,16 @@ class graphNetwork_try(nn.Module):
             fig = plt.figure()
             ax = fig.add_subplot(111, projection='3d')
             p = ax.scatter(pos[:, 0].clone().detach().cpu().numpy(), pos[:, 1].clone().detach().cpu().numpy(),
-                           pos[:, 2].clone().detach().cpu().numpy(), c=xn.squeeze().clone().detach().cpu().numpy())
+                           pos[:, 2].clone().detach().cpu().numpy(),
+                           c=xn.squeeze(0).norm(dim=1).clone().detach().cpu().numpy())
             fig.colorbar(p)
             plt.savefig(
                 "/users/others/eliasof/GraphNetworks/plots/xn_norm_verlet_layer_" + str(0))
             plt.close()
 
             mesh = trimesh.Trimesh(vertices=Graph.pos, faces=Graph.faces, process=False)
-            vect_col_map = trimesh.visual.color.interpolate(xn.squeeze().clone().detach().cpu().numpy(),
+            colors = xn.squeeze(0).norm(dim=1).clone().detach().cpu().numpy()
+            vect_col_map = trimesh.visual.color.interpolate(colors,
                                                             color_map='jet')
             print("mesh.vertices.shape[0]:", mesh.vertices.shape[0])
             print("mesh.faces.shape[0]:", mesh.faces.shape[0])
@@ -345,25 +347,25 @@ class graphNetwork_try(nn.Module):
 
             dxe = F.layer_norm(dxe, dxe.shape)
 
-            #xe = xe + self.h * dxe
+            # xe = xe + self.h * dxe
 
-            #divE = Graph.edgeDiv(xe)
+            # divE = Graph.edgeDiv(xe)
 
-            #aveE = Graph.edgeAve(xe, method='ave')
+            # aveE = Graph.edgeAve(xe, method='ave')
 
             dxe = torch.tanh(dxe)
             #
             divE = Graph.edgeDiv(dxe)
-            #divE = Graph.nodeGrad(dxe)
-            #divE = Graph.edgeDiv(dxe)
-            #divE = Graph.nodeGrad(dxe)
-            #divE = Graph.edgeDiv(dxe)
+            # divE = Graph.nodeGrad(dxe)
+            # divE = Graph.edgeDiv(dxe)
+            # divE = Graph.nodeGrad(dxe)
+            # divE = Graph.edgeDiv(dxe)
             #
             aveE = Graph.edgeAve(dxe, method='ave')
-            #aveE = Graph.nodeAve(dxe)
-            #aveE = Graph.edgeAve(dxe, method='ave')
-            #aveE = Graph.nodeAve(dxe)
-            #aveE = Graph.edgeAve(dxe, method='ave')
+            # aveE = Graph.nodeAve(dxe)
+            # aveE = Graph.edgeAve(dxe, method='ave')
+            # aveE = Graph.nodeAve(dxe)
+            # aveE = Graph.edgeAve(dxe, method='ave')
 
             if self.varlet:
                 dxn = torch.cat([aveE, divE], dim=1)
@@ -399,21 +401,20 @@ class graphNetwork_try(nn.Module):
                     plt.savefig('plots/img_xe_div_norm_layer_heat' + str(i) + 'order_nodeDeriv' + str(order) + '.jpg')
                     plt.close()
                 else:
-                    print(xn.squeeze().shape())
-                    exit()
                     pos = Graph.pos
                     fig = plt.figure()
                     ax = fig.add_subplot(111, projection='3d')
                     p = ax.scatter(pos[:, 0].clone().detach().cpu().numpy(), pos[:, 1].clone().detach().cpu().numpy(),
                                    pos[:, 2].clone().detach().cpu().numpy(),
-                                   c=xn.squeeze().clone().detach().cpu().numpy())
+                                   c=xn.squeeze(0).norm(dim=1).clone().detach().cpu().numpy())
                     fig.colorbar(p)
                     plt.savefig(
                         "/users/others/eliasof/GraphNetworks/plots/xn_norm_verlet_layer_" + str(i))
                     plt.close()
 
                     mesh = trimesh.Trimesh(vertices=Graph.pos, faces=Graph.faces, process=False)
-                    colors = xn.squeeze().clone().detach().cpu().numpy()
+                    # colors = xn.squeeze().clone().detach().cpu().numpy()
+                    colors = xn.squeeze(0).norm(dim=1).clone().detach().cpu().numpy()
                     print("min :", np.min(colors))
                     colors = colors - np.min(colors)
                     print("min after sub min:", np.min(colors))
@@ -435,7 +436,6 @@ class graphNetwork_try(nn.Module):
                     trimesh.exchange.export.export_mesh(mesh,
                                                         "/users/others/eliasof/GraphNetworks/plots/xn_norm_verlet_layer_" + str(
                                                             i) + ".obj", "obj")
-
 
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
 
