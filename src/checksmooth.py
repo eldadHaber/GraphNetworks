@@ -81,7 +81,7 @@ class Net(torch.nn.Module):
         print("data.edgeindex:", data.edge_index)
         print("data.pos shape:", data.pos.shape)
         print("xn shape:", xn.shape)
-        #xn = data.pos
+        xn = data.pos
         saveMesh(xn, data.face, data.pos, 0)
         for i,layer in enumerate(self.Layers):
             xn = layer(xn, data.edge_index)
