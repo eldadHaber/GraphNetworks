@@ -54,17 +54,19 @@ path = '/home/cluster/users/erant_group/faust'
 transform = T.FaceToEdge(remove_faces=False)
 train_dataset = FAUST(path, True, transform)
 train_loader = DataLoader(
-    train_dataset, batch_size=1, shuffle=True, num_workers=6)
+    train_dataset, batch_size=1, shuffle=False, num_workers=6)
 
 
 class Net(torch.nn.Module):
     def __init__(self, out_channels, k=10, aggr='max'):
         super().__init__()
-
+        self.numlayers = 10
         #self.conv1 = EdgeConv(MLP([2 * 3, 3]), aggr)
         #self.conv2 = EdgeConv(MLP([2 * 3, 3]), aggr)
-        self.conv1 = GCNConv(in_channels=3, out_channels=3)
-        self.conv2 = GCNConv(in_channels=3, out_channels=3)
+        self.Layers = torch.nn.ModuleList()
+        for i in torch.arange(0, self.numlayers):
+            self.Layers.append(GCNConv(in_channels=3, out_channels=3))
+
         self.lin1 = MLP([64 + 64, 64])
 
         self.mlp = Seq(
@@ -77,12 +79,13 @@ class Net(torch.nn.Module):
         print("data.edgeindex:", data.edge_index)
         print("data.pos shape:", data.pos.shape)
         print("xn shape:", xn.shape)
-        x1 = self.conv1(data.pos, data.edge_index)
-        saveMesh(x1, data.face, data.pos, 1)
-        x2 = self.conv2(x1, data.edge_index)
-        saveMesh(x2, data.face, data.pos, 2)
+        xn = data.pos
+        for layer in self.Layers:
+            xn = self.conv1(xn, data.edge_index)
+            saveMesh(xn, data.face, data.pos, 1)
+
         exit()
-        out = self.lin1(torch.cat([x1, x2], dim=1))
+        out = self.lin1(torch.cat([xn, xn], dim=1))
         out = global_max_pool(out, batch)
         out = self.mlp(out)
         return F.log_softmax(out, dim=1)
