@@ -32,7 +32,7 @@ def saveMesh(xn, faces, pos, i=0):
         "/users/others/eliasof/GraphNetworks/plots/xn_norm_verlet_layer_" + str(i))
     plt.close()
 
-    mesh = trimesh.Trimesh(vertices=pos, faces=faces, process=False)
+    mesh = trimesh.Trimesh(vertices=pos, faces=faces.t(), process=False)
     colors = xn.squeeze(0).norm(dim=1).clone().detach().cpu().numpy()
     vect_col_map = trimesh.visual.color.interpolate(colors,
                                                     color_map='jet')
