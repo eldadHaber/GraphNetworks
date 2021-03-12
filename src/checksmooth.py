@@ -7,6 +7,7 @@ from torch_geometric.datasets import ModelNet, FAUST
 import torch_geometric.transforms as T
 from torch_geometric.data import DataLoader
 from torch_geometric.nn import DynamicEdgeConv, global_max_pool, EdgeConv, GCNConv
+from torch.nn import Sequential as Seq, Linear as Lin, ReLU, BatchNorm1d as BN, LeakyReLU as LRU
 
 import trimesh
 import matplotlib.pyplot as plt
