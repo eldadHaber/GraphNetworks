@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import math
 
 # from torch_geometric.utils import grid
-from torch_geometric.datasets import ModelNet
+from torch_geometric.datasets import ModelNet, FAUST
 from torch_geometric.data import DataLoader
 import torch_geometric.transforms as T
 
@@ -80,8 +80,12 @@ model = GN.graphNetwork_try(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, den
 model.to(device)
 
 modelnet_path = '/home/cluster/users/erant_group/ModelNet10'
+faust_path = '/home/cluster/users/erant_group/faust'
 transforms = T.FaceToEdge(remove_faces=False)
-train_dataset = ModelNet(modelnet_path, '10', train=True, transform=transforms)
+#train_dataset = ModelNet(modelnet_path, '10', train=True, transform=transforms)
+
+train_dataset = FAUST(faust_path, train=True, transform=transforms)
+
 train_loader = DataLoader(
     train_dataset, batch_size=1, shuffle=False, num_workers=1, drop_last=False)
 for i, data in enumerate(train_loader):
@@ -102,6 +106,7 @@ for i, data in enumerate(train_loader):
     xn = torch.randn(1, 1, N).float()
     xn = torch.zeros(1, 1, N).float()
     xn[:, :, 1:100] = 1.0
+    xn[:, :, 1000:1700] = 1.0
     xe = torch.ones(1, 1, data.edge_index.shape[1])
 
     xnOut, xeOut = model(xn, xe, G)
