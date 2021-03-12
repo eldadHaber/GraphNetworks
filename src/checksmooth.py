@@ -37,10 +37,10 @@ def saveMesh(xn, faces, pos, i=0):
     vect_col_map = trimesh.visual.color.interpolate(colors,
                                                     color_map='jet')
 
-    if xn.shape[2] == mesh.vertices.shape[0]:
+    if xn.shape[0] == mesh.vertices.shape[0]:
         print("case 1")
         mesh.visual.vertex_colors = vect_col_map
-    elif xn.shape[2] == mesh.faces.shape[0]:
+    elif xn.shape[0] == mesh.faces.shape[0]:
         print("case 2")
         mesh.visual.face_colors = vect_col_map
         smooth = False
