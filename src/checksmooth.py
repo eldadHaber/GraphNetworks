@@ -65,7 +65,7 @@ class Net(torch.nn.Module):
         #self.conv2 = EdgeConv(MLP([2 * 3, 3]), aggr)
         self.Layers = torch.nn.ModuleList()
         for i in torch.arange(0, self.numlayers):
-            self.Layers.append(GCNConv(in_channels=3, out_channels=3))
+            self.Layers.append(GCNConv(in_channels=1, out_channels=1))
 
         self.lin1 = MLP([64 + 64, 64])
 
@@ -79,10 +79,11 @@ class Net(torch.nn.Module):
         print("data.edgeindex:", data.edge_index)
         print("data.pos shape:", data.pos.shape)
         print("xn shape:", xn.shape)
-        xn = data.pos
+        #xn = data.pos
+        saveMesh(xn, data.face, data.pos, 0)
         for i,layer in enumerate(self.Layers):
             xn = layer(xn, data.edge_index)
-            saveMesh(xn, data.face, data.pos, i)
+            saveMesh(xn, data.face, data.pos, i+1)
 
         exit()
         out = self.lin1(torch.cat([xn, xn], dim=1))
