@@ -77,7 +77,7 @@ class Net(torch.nn.Module):
         pos, batch = data.pos, data.batch
         xn = torch.zeros(pos.shape[0], 3).float()
         xn[1:100, :] = 1.0
-        xn[1000:1700, :] = 1.0
+        xn[1000:1700, :] = 100.0
         print("data.edgeindex:", data.edge_index)
         print("data.pos shape:", data.pos.shape)
         print("xn shape:", xn.shape)
