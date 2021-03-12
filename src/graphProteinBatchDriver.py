@@ -71,7 +71,7 @@ nEin = 1
 nopen = 1
 nhid = 1
 nNclose = 3
-nlayer = 50
+nlayer = 100
 
 batchSize = 32
 
