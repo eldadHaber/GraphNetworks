@@ -276,14 +276,14 @@ class graphNetwork_try(nn.Module):
             ax = fig.add_subplot(111, projection='3d')
             p = ax.scatter(pos[:, 0].clone().detach().cpu().numpy(), pos[:, 1].clone().detach().cpu().numpy(),
                            pos[:, 2].clone().detach().cpu().numpy(),
-                           c=xn.squeeze(0).norm(dim=1).clone().detach().cpu().numpy())
+                           c=xn.squeeze(0).norm(dim=0).clone().detach().cpu().numpy())
             fig.colorbar(p)
             plt.savefig(
                 "/users/others/eliasof/GraphNetworks/plots/xn_norm_verlet_layer_" + str(0))
             plt.close()
 
             mesh = trimesh.Trimesh(vertices=Graph.pos, faces=Graph.faces, process=False)
-            colors = xn.squeeze(0).norm(dim=1).clone().detach().cpu().numpy()
+            colors = xn.squeeze(0).norm(dim=0).clone().detach().cpu().numpy()
             vect_col_map = trimesh.visual.color.interpolate(colors,
                                                             color_map='jet')
             print("mesh.vertices.shape[0]:", mesh.vertices.shape[0])
@@ -406,7 +406,7 @@ class graphNetwork_try(nn.Module):
                     ax = fig.add_subplot(111, projection='3d')
                     p = ax.scatter(pos[:, 0].clone().detach().cpu().numpy(), pos[:, 1].clone().detach().cpu().numpy(),
                                    pos[:, 2].clone().detach().cpu().numpy(),
-                                   c=xn.squeeze(0).norm(dim=1).clone().detach().cpu().numpy())
+                                   c=xn.squeeze(0).norm(dim=0).clone().detach().cpu().numpy())
                     fig.colorbar(p)
                     plt.savefig(
                         "/users/others/eliasof/GraphNetworks/plots/xn_norm_verlet_layer_" + str(i))
@@ -414,7 +414,7 @@ class graphNetwork_try(nn.Module):
 
                     mesh = trimesh.Trimesh(vertices=Graph.pos, faces=Graph.faces, process=False)
                     # colors = xn.squeeze().clone().detach().cpu().numpy()
-                    colors = xn.squeeze(0).norm(dim=1).clone().detach().cpu().numpy()
+                    colors = xn.squeeze(0).norm(dim=0).clone().detach().cpu().numpy()
                     print("min :", np.min(colors))
                     colors = colors - np.min(colors)
                     print("min after sub min:", np.min(colors))
