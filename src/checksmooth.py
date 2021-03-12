@@ -80,9 +80,9 @@ class Net(torch.nn.Module):
         print("data.pos shape:", data.pos.shape)
         print("xn shape:", xn.shape)
         xn = data.pos
-        for layer in self.Layers:
+        for i,layer in enumerate(self.Layers):
             xn = layer(xn, data.edge_index)
-            saveMesh(xn, data.face, data.pos, 1)
+            saveMesh(xn, data.face, data.pos, i)
 
         exit()
         out = self.lin1(torch.cat([xn, xn], dim=1))
