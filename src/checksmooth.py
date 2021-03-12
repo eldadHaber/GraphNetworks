@@ -33,7 +33,7 @@ def saveMesh(xn, faces, pos, i=0):
     plt.close()
 
     mesh = trimesh.Trimesh(vertices=pos, faces=faces.t(), process=False)
-    colors = xn.squeeze(0).norm(dim=1).clone().detach().cpu().numpy()
+    colors = xn.squeeze(0).clone().detach().cpu().numpy()[:, 0]
     vect_col_map = trimesh.visual.color.interpolate(colors,
                                                     color_map='jet')
 
@@ -77,7 +77,7 @@ class Net(torch.nn.Module):
         pos, batch = data.pos, data.batch
         xn = torch.zeros(pos.shape[0], 3).float()
         xn[1:100, :] = 1.0
-        xn[1000:1700, :] = 100.0
+        xn[1000:1700, :] = 1.0
         print("data.edgeindex:", data.edge_index)
         print("data.pos shape:", data.pos.shape)
         print("xn shape:", xn.shape)
