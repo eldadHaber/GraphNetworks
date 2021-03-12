@@ -8,10 +8,16 @@ import torch_geometric.transforms as T
 from torch_geometric.data import DataLoader
 from torch_geometric.nn import DynamicEdgeConv, global_max_pool, EdgeConv, GCNConv
 
-from pointnet2_classification import MLP
 import trimesh
 import matplotlib.pyplot as plt
 
+
+
+def MLP(channels, batch_norm=True):
+    return Seq(*[
+        Seq(Lin(channels[i - 1], channels[i]), BN(channels[i]), ReLU())
+        for i in range(1, len(channels))
+    ])
 
 def saveMesh(xn, faces, pos, i=0):
     print("xn shape:", xn.shape)
