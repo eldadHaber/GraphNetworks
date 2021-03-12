@@ -354,16 +354,16 @@ class graphNetwork_try(nn.Module):
             dxe = torch.tanh(dxe)
             #
             divE = Graph.edgeDiv(dxe)
-            # divE = Graph.nodeGrad(dxe)
-            # divE = Graph.edgeDiv(dxe)
-            # divE = Graph.nodeGrad(dxe)
-            # divE = Graph.edgeDiv(dxe)
+            divE = Graph.nodeGrad(dxe)
+            divE = Graph.edgeDiv(dxe)
+            divE = Graph.nodeGrad(dxe)
+            divE = Graph.edgeDiv(dxe)
             #
             aveE = Graph.edgeAve(dxe, method='ave')
-            # aveE = Graph.nodeAve(dxe)
-            # aveE = Graph.edgeAve(dxe, method='ave')
-            # aveE = Graph.nodeAve(dxe)
-            # aveE = Graph.edgeAve(dxe, method='ave')
+            aveE = Graph.nodeAve(dxe)
+            aveE = Graph.edgeAve(dxe, method='ave')
+            aveE = Graph.nodeAve(dxe)
+            aveE = Graph.edgeAve(dxe, method='ave')
 
             if self.varlet:
                 dxn = torch.cat([aveE, divE], dim=1)
