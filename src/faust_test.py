@@ -92,7 +92,8 @@ def train(epoch):
         for param_group in optimizer.param_groups:
             param_group['lr'] = 0.001
 
-    for data in train_loader:
+    total_loss = 0
+    for i, data in enumerate(train_loader):
         data = data.to(device)
         optimizer.zero_grad()
 
@@ -104,8 +105,14 @@ def train(epoch):
         xn = data.x.t().unsqueeze(0)
         xe = data.edge_attr.t().unsqueeze(0)
         xnOut = model(xn, xe, G)
-        F.nll_loss(xnOut, target).backward()
+        loss = F.nll_loss(xnOut, target)
+        total_loss += loss.item()
+        loss.backward
         optimizer.step()
+
+        if i % 10 == 9:
+            print("train loss:", total_loss / 10)
+            total_loss = 0
 
 
 def test():
@@ -113,7 +120,19 @@ def test():
     correct = 0
 
     for data in test_loader:
-        pred = model(data.to(device)).max(1)[1]
+        data = data.to(device)
+        optimizer.zero_grad()
+
+        I = data.edge_index[0, :]
+        J = data.edge_index[1, :]
+        N = data.pos.shape[0]
+        G = GO.graph(I, J, N, pos=data.pos, faces=data.face.t())
+        G = G.to(device)
+        xn = data.x.t().unsqueeze(0)
+        xe = data.edge_attr.t().unsqueeze(0)
+        xnOut = model(xn, xe, G)
+
+        pred = model(xnOut).max(1)[1]
         correct += pred.eq(target).sum().item()
     return correct / (len(test_dataset) * d.num_nodes)
 
