@@ -375,7 +375,7 @@ class graphNetwork_try(nn.Module):
 
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
         print("xn shape:", xn.shape)
-        xn = xn.squeeze()
+        xn = xn.squeeze().t()
         x = F.elu(self.lin1(xn))
         x = F.dropout(x, training=self.training)
         x = self.lin2(x)
