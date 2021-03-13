@@ -8,7 +8,8 @@ import torch
 import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
-
+import trimesh
+import matplotlib.pyplot as plt
 
 class list2np(object):
     def __init__(self):
@@ -223,3 +224,37 @@ def dRMSD(X, Xobs, M):
     loss = torch.norm(M * R) ** 2 / torch.sum(M)  #
 
     return loss
+
+
+def saveMesh(xn, faces, pos, i=0):
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    p = ax.scatter(pos[:, 0].clone().detach().cpu().numpy(), pos[:, 1].clone().detach().cpu().numpy(),
+                   pos[:, 2].clone().detach().cpu().numpy(),
+                   c=xn.squeeze(0).norm(dim=1).clone().detach().cpu().numpy(), vmin=0.0, vmax=1.0)
+    fig.colorbar(p)
+    plt.savefig(
+        "/users/others/eliasof/GraphNetworks/plots/xn_norm_verlet_layer_" + str(i))
+    plt.close()
+
+    mesh = trimesh.Trimesh(vertices=pos, faces=faces.t(), process=False)
+    colors = xn.squeeze(0).clone().detach().cpu().numpy()[:, 0]
+    colors[colors < 0.0] = 0.0
+    colors[colors > 1.0] = 1.0
+    add = np.array([[1.0], [0.0]], dtype=np.float).squeeze()
+    vect_col_map2 = trimesh.visual.color.interpolate(colors,
+                                                    color_map='jet')
+
+    colors = np.concatenate((add, colors), axis=0)
+    vect_col_map = trimesh.visual.color.interpolate(colors,
+                                                    color_map='jet')
+    vect_col_map = vect_col_map[2:, :]
+    if xn.shape[0] == mesh.vertices.shape[0]:
+        mesh.visual.vertex_colors = vect_col_map
+    elif xn.shape[0] == mesh.faces.shape[0]:
+        mesh.visual.face_colors = vect_col_map
+        smooth = False
+
+    trimesh.exchange.export.export_mesh(mesh,
+                                        "/users/others/eliasof/GraphNetworks/plots/xn_norm_verlet_layer_" + str(
+                                            i) + ".ply", "ply")

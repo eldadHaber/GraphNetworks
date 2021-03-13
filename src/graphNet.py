@@ -10,8 +10,7 @@ import torch.optim as optim
 from src import graphOps as GO
 from src.batchGraphOps import getConnectivity
 from mpl_toolkits.mplot3d import Axes3D
-import trimesh
-
+from src.utils import saveMesh
 
 def conv2(X, Kernel):
     return F.conv2d(X, Kernel, padding=int((Kernel.shape[-1] - 1) / 2))
@@ -270,36 +269,7 @@ class graphNetwork_try(nn.Module):
             plt.savefig('plots/img_xn_norm_layer_verlet' + str(0) + 'order_nodeDeriv' + str(0) + '.jpg')
             plt.close()
         else:
-            print("xn shape:", xn.shape)
-            pos = Graph.pos
-            fig = plt.figure()
-            ax = fig.add_subplot(111, projection='3d')
-            p = ax.scatter(pos[:, 0].clone().detach().cpu().numpy(), pos[:, 1].clone().detach().cpu().numpy(),
-                           pos[:, 2].clone().detach().cpu().numpy(),
-                           c=xn.squeeze(0).norm(dim=0).clone().detach().cpu().numpy())
-            fig.colorbar(p)
-            plt.savefig(
-                "/users/others/eliasof/GraphNetworks/plots/xn_norm_verlet_layer_" + str(0))
-            plt.close()
-
-            mesh = trimesh.Trimesh(vertices=Graph.pos, faces=Graph.faces, process=False)
-            colors = xn.squeeze(0).norm(dim=0).clone().detach().cpu().numpy()
-            vect_col_map = trimesh.visual.color.interpolate(colors,
-                                                            color_map='jet')
-            print("mesh.vertices.shape[0]:", mesh.vertices.shape[0])
-            print("mesh.faces.shape[0]:", mesh.faces.shape[0])
-
-            if xn.shape[2] == mesh.vertices.shape[0]:
-                print("case 1")
-                mesh.visual.vertex_colors = vect_col_map
-            elif xn.shape[2] == mesh.faces.shape[0]:
-                print("case 2")
-                mesh.visual.face_colors = vect_col_map
-                smooth = False
-
-            trimesh.exchange.export.export_mesh(mesh,
-                                                "/users/others/eliasof/GraphNetworks/plots/xn_norm_verlet_layer_" + str(
-                                                    0) + ".ply", "ply")
+            saveMesh(xn, Graph.faces, Graph.pos, 0)
 
         N = Graph.nnodes
         nlayers = self.KE1.shape[0]
@@ -401,41 +371,7 @@ class graphNetwork_try(nn.Module):
                     plt.savefig('plots/img_xe_div_norm_layer_heat' + str(i) + 'order_nodeDeriv' + str(order) + '.jpg')
                     plt.close()
                 else:
-                    pos = Graph.pos
-                    fig = plt.figure()
-                    ax = fig.add_subplot(111, projection='3d')
-                    p = ax.scatter(pos[:, 0].clone().detach().cpu().numpy(), pos[:, 1].clone().detach().cpu().numpy(),
-                                   pos[:, 2].clone().detach().cpu().numpy(),
-                                   c=xn.squeeze(0).norm(dim=0).clone().detach().cpu().numpy())
-                    fig.colorbar(p)
-                    plt.savefig(
-                        "/users/others/eliasof/GraphNetworks/plots/xn_norm_verlet_layer_" + str(i))
-                    plt.close()
-
-                    mesh = trimesh.Trimesh(vertices=Graph.pos, faces=Graph.faces, process=False)
-                    # colors = xn.squeeze().clone().detach().cpu().numpy()
-                    colors = xn.squeeze(0).norm(dim=0).clone().detach().cpu().numpy()
-                    print("min :", np.min(colors))
-                    colors = colors - np.min(colors)
-                    print("min after sub min:", np.min(colors))
-                    print("max:", np.max(colors))
-                    colors = colors / np.max(colors)
-                    print("colors:", colors)
-                    vect_col_map = trimesh.visual.color.interpolate(colors, 'jet')
-                    print("mesh.vertices.shape[0]:", mesh.vertices.shape[0])
-                    print("mesh.faces.shape[0]:", mesh.faces.shape[0])
-
-                    if xn.shape[2] == mesh.vertices.shape[0]:
-                        print("case 1")
-                        mesh.visual.vertex_colors = vect_col_map
-                    elif xn.shape[2] == mesh.faces.shape[0]:
-                        print("case 2")
-                        mesh.visual.face_colors = vect_col_map
-                        smooth = False
-                    print("mesh.visual.kind:", mesh.visual.kind)
-                    trimesh.exchange.export.export_mesh(mesh,
-                                                        "/users/others/eliasof/GraphNetworks/plots/xn_norm_verlet_layer_" + str(
-                                                            i) + ".obj", "obj")
+                    saveMesh(xn, Graph.faces, Graph.pos, i+1)
 
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
 

@@ -21,7 +21,6 @@ def MLP(channels, batch_norm=True):
 
 
 def saveMesh(xn, faces, pos, i=0):
-    print("xn shape:", xn.shape)
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     p = ax.scatter(pos[:, 0].clone().detach().cpu().numpy(), pos[:, 1].clone().detach().cpu().numpy(),
@@ -34,28 +33,19 @@ def saveMesh(xn, faces, pos, i=0):
 
     mesh = trimesh.Trimesh(vertices=pos, faces=faces.t(), process=False)
     colors = xn.squeeze(0).clone().detach().cpu().numpy()[:, 0]
-    print("colors shape:", colors.shape)
-    print("colors max:", colors.max())
-    print("colors min:", colors.min())
     colors[colors < 0.0] = 0.0
     colors[colors > 1.0] = 1.0
     add = np.array([[1.0], [0.0]], dtype=np.float).squeeze()
-    print("add shape:", add.shape)
     vect_col_map2 = trimesh.visual.color.interpolate(colors,
                                                     color_map='jet')
-    print("vect_col_map2:", vect_col_map2)
+
     colors = np.concatenate((add, colors), axis=0)
-    print("colors after add:", colors.shape)
     vect_col_map = trimesh.visual.color.interpolate(colors,
                                                     color_map='jet')
-    print("vect_col_map shape:", vect_col_map.shape)
     vect_col_map = vect_col_map[2:, :]
-    print("vect_col_map:", vect_col_map)
     if xn.shape[0] == mesh.vertices.shape[0]:
-        print("case 1")
         mesh.visual.vertex_colors = vect_col_map
     elif xn.shape[0] == mesh.faces.shape[0]:
-        print("case 2")
         mesh.visual.face_colors = vect_col_map
         smooth = False
 
