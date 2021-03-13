@@ -63,7 +63,7 @@ transforms = T.FaceToEdge(remove_faces=False)
 #train_dataset = ModelNet(modelnet_path, '10', train=True, transform=transforms)
 
 
-pre_transform = T.Compose([T.FaceToEdge(), T.Constant(value=1)])
+pre_transform = T.Compose([T.FaceToEdge(remove_faces=False), T.Constant(value=1)])
 train_dataset = FAUST(faust_path, True, T.Cartesian(), pre_transform)
 test_dataset = FAUST(faust_path, False, T.Cartesian(), pre_transform)
 train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True)
