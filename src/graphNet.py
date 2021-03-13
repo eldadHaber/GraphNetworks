@@ -371,7 +371,7 @@ class graphNetwork_try(nn.Module):
                     plt.savefig('plots/img_xe_div_norm_layer_heat' + str(i) + 'order_nodeDeriv' + str(order) + '.jpg')
                     plt.close()
                 else:
-                    saveMesh(xn, Graph.faces, Graph.pos, i+1)
+                    saveMesh(xn.t(), Graph.faces, Graph.pos, i+1)
 
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
 
