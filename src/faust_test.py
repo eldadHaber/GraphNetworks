@@ -69,7 +69,7 @@ test_loader = DataLoader(test_dataset, batch_size=1)
 #train_dataset = FAUST(faust_path, train=True, transform=transforms)
 d = train_dataset[0]
 
-model = GN.graphNetwork_try(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.5, dense=False, varlet=True, wave=False,
+model = GN.graphNetwork_try(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=True, wave=True,
                  diffOrder=1, num_nodes=d.num_nodes)
 
 model.to(device)
@@ -104,6 +104,11 @@ def train(epoch):
         G = G.to(device)
         xn = data.x.t().unsqueeze(0)
         xe = data.edge_attr.t().unsqueeze(0)
+
+        print("I shape:", I.shape)
+        print("edge index shape:", data.edge_index.shape)
+        print("xn shape:", xn.shape)
+        print("xe shape:", xe.shape)
         xnOut = model(xn, xe, G)
         loss = F.nll_loss(xnOut, target)
         total_loss += loss.item()
