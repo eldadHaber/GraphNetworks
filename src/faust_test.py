@@ -52,10 +52,6 @@ nlayer = 50
 
 batchSize = 32
 
-model = GN.graphNetwork_try(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.05, dense=False, varlet=True)
-
-model.to(device)
-
 
 modelnet_path = '/home/cluster/users/erant_group/ModelNet10'
 faust_path = '/home/cluster/users/erant_group/faust'
@@ -72,6 +68,11 @@ test_loader = DataLoader(test_dataset, batch_size=1)
 
 #train_dataset = FAUST(faust_path, train=True, transform=transforms)
 d = train_dataset[0]
+
+model = GN.graphNetwork_try(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=True, wave=True,
+                 diffOrder=1, num_nodes=d.num_nodes)
+
+model.to(device)
 
 target = torch.arange(d.num_nodes, dtype=torch.long, device=device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
