@@ -374,12 +374,10 @@ class graphNetwork_try(nn.Module):
                     saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, i + 1)
 
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
-        print("xn shape:", xn.shape)
         xn = xn.squeeze().t()
         x = F.elu(self.lin1(xn))
         x = F.dropout(x, training=self.training)
         x = self.lin2(x)
-        print("x:", x.shape)
         return F.log_softmax(x, dim=1)
 
         #return xn, xe
