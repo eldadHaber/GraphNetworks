@@ -132,7 +132,7 @@ def test():
         xe = data.edge_attr.t().unsqueeze(0)
         xnOut = model(xn, xe, G)
 
-        pred = model(xnOut).max(1)[1]
+        pred = xnOut.max(1)[1]
         correct += pred.eq(target).sum().item()
     return correct / (len(test_dataset) * d.num_nodes)
 
