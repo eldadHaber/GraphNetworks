@@ -379,7 +379,7 @@ class graphNetwork_try(nn.Module):
         x = F.elu(self.lin1(xn))
         x = F.dropout(x, training=self.training)
         x = self.lin2(x)
-        return F.log_softmax(xn, dim=1)
+        return F.log_softmax(x, dim=1)
 
         #return xn, xe
 
