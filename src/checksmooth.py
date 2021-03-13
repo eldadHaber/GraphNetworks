@@ -34,6 +34,7 @@ def saveMesh(xn, faces, pos, i=0):
 
     mesh = trimesh.Trimesh(vertices=pos, faces=faces.t(), process=False)
     colors = xn.squeeze(0).clone().detach().cpu().numpy()[:, 0]
+    print("colors shape:", colors.shape)
     colors[colors < 0.0] = 0.0
     colors[colors > 1.0] = 1.0
     colors = np.concatenate([colors, 1.0, 0.0])
