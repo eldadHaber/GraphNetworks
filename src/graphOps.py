@@ -60,25 +60,24 @@ class graph(nn.Module):
         self.iInd = iInd.long()
         self.jInd = jInd.long()
         self.nnodes = nnodes
-        self.W = W
+        self.W = W.to(device)
         self.pos = pos
         self.faces = faces
 
     def nodeGrad(self, x, W=[]):
-        if len(W)==0:
+        if len(W) == 0:
             W = self.W
         g = W * (x[:, :, self.iInd] - x[:, :, self.jInd])
         return g
 
     def nodeAve(self, x, W=[]):
-        if len(W)==0:
+        if len(W) == 0:
             W = self.W
         g = W * (x[:, :, self.iInd] + x[:, :, self.jInd]) / 2.0
         return g
 
-
     def edgeDiv(self, g, W=[]):
-        if len(W)==0:
+        if len(W) == 0:
             W = self.W
         x = torch.zeros(g.shape[0], g.shape[1], self.nnodes, device=g.device)
         # z = torch.zeros(g.shape[0],g.shape[1],self.nnodes,device=g.device)
@@ -93,7 +92,7 @@ class graph(nn.Module):
         return x
 
     def edgeAve(self, g, method='max', W=[]):
-        if len(W)==0:
+        if len(W) == 0:
             W = self.W
         x1 = torch.zeros(g.shape[0], g.shape[1], self.nnodes, device=g.device)
         x2 = torch.zeros(g.shape[0], g.shape[1], self.nnodes, device=g.device)
@@ -125,7 +124,7 @@ class dense_graph(nn.Module):
         self.W = W
 
     def nodeGrad(self, x, W=[]):
-        if len(W)==0:
+        if len(W) == 0:
             W = self.W
         x = x.squeeze(0).unsqueeze(1)
         g = W * (x - x.transpose(1, 2))
@@ -133,7 +132,7 @@ class dense_graph(nn.Module):
         return g
 
     def nodeAve(self, x, W=[]):
-        if len(W)==0:
+        if len(W) == 0:
             W = self.W
         x = x.squeeze(0).unsqueeze(1)
         g = W * (x + x.transpose(1, 2)) / 2.0
@@ -141,7 +140,7 @@ class dense_graph(nn.Module):
         return g
 
     def edgeDiv(self, g, W=[]):
-        if len(W)==0:
+        if len(W) == 0:
             W = self.W
         g = W * g
         x1 = g.sum(dim=2, keepdim=True).squeeze(0)
@@ -151,7 +150,7 @@ class dense_graph(nn.Module):
         return x
 
     def edgeAve(self, g, method='max', W=[]):
-        if len(W)==0:
+        if len(W) == 0:
             W = self.W
         g = W * g
         x1 = g.mean(dim=2, keepdim=True).squeeze(0)
@@ -165,7 +164,7 @@ class dense_graph(nn.Module):
         return x
 
     def nodeLap(self, x, W=[]):
-        if len(W)==0:
+        if len(W) == 0:
             W = self.W
         g = self.nodeGrad(x, W)
         d = self.edgeDiv(g, W)
