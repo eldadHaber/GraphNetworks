@@ -375,7 +375,8 @@ class graphNetwork_try(nn.Module):
 
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
         print("xn shape:", xn.shape)
-        x = F.elu(self.lin1(xn.squeeze()))
+        xn = xn.squeeze()
+        x = F.elu(self.lin1(xn))
         x = F.dropout(x, training=self.training)
         x = self.lin2(x)
         return F.log_softmax(xn, dim=1)
