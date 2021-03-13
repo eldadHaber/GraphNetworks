@@ -38,7 +38,7 @@ def saveMesh(xn, faces, pos, i=0):
     colors[colors < 0.0] = 0.0
     colors[colors > 1.0] = 1.0
     add = np.array([[1.0], [0.0]])
-
+    print("add shape:", add.shape)
     colors = np.concatenate((colors, add), axis=0)
     vect_col_map = trimesh.visual.color.interpolate(colors,
                                                     color_map='jet')
