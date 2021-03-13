@@ -269,7 +269,7 @@ class graphNetwork_try(nn.Module):
             plt.savefig('plots/img_xn_norm_layer_verlet' + str(0) + 'order_nodeDeriv' + str(0) + '.jpg')
             plt.close()
         else:
-            saveMesh(xn, Graph.faces, Graph.pos, 0)
+            saveMesh(xn.t(), Graph.faces, Graph.pos, 0)
 
         N = Graph.nnodes
         nlayers = self.KE1.shape[0]
