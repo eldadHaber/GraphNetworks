@@ -105,7 +105,8 @@ def train(epoch):
         print("xn:", xn.shape)
         print("xe:", xe.shape)
         xnOut = model(xn, xe, G)
-
+        print("xnOut shape:", xnOut.shape)
+        print("target shape:", target.shape)
         F.nll_loss(xnOut, target).backward()
         optimizer.step()
 
