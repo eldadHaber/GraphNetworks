@@ -62,19 +62,27 @@ faust_path = '/home/cluster/users/erant_group/faust'
 transforms = T.FaceToEdge(remove_faces=False)
 #train_dataset = ModelNet(modelnet_path, '10', train=True, transform=transforms)
 
-train_dataset = FAUST(faust_path, train=True, transform=transforms)
+
+pre_transform = T.Compose([T.FaceToEdge(), T.Constant(value=1)])
+train_dataset = FAUST(faust_path, True, T.Cartesian(), pre_transform)
+test_dataset = FAUST(faust_path, False, T.Cartesian(), pre_transform)
+train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True)
+test_loader = DataLoader(test_dataset, batch_size=1)
+
+
+#train_dataset = FAUST(faust_path, train=True, transform=transforms)
 d = train_dataset[0]
 
 target = torch.arange(d.num_nodes, dtype=torch.long, device=device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 
-train_loader = DataLoader(
-    train_dataset, batch_size=1, shuffle=True, num_workers=1, drop_last=False)
+#train_loader = DataLoader(
+#    train_dataset, batch_size=1, shuffle=True, num_workers=1, drop_last=False)
 
-test_dataset = FAUST(faust_path, train=False, transform=transforms)
-test_loader = DataLoader(
-    train_dataset, batch_size=1, shuffle=False, num_workers=1, drop_last=False)
+#test_dataset = FAUST(faust_path, train=False, transform=transforms)
+#test_loader = DataLoader(
+#    train_dataset, batch_size=1, shuffle=False, num_workers=1, drop_last=False)
 
 def train(epoch):
     model.train()
