@@ -48,7 +48,7 @@ nEin = 3
 nopen = 64
 nhid = 64
 nNclose = 64
-nlayer = 50
+nlayer = 10
 
 batchSize = 32
 
@@ -103,11 +103,7 @@ def train(epoch):
         G = G.to(device)
         xn = data.x.t().unsqueeze(0)
         xe = data.edge_attr.t().unsqueeze(0)
-        print("xn:", xn.shape)
-        print("xe:", xe.shape)
         xnOut = model(xn, xe, G)
-        print("xnOut shape:", xnOut.shape)
-        print("target shape:", target.shape)
         F.nll_loss(xnOut, target).backward()
         optimizer.step()
 
