@@ -269,7 +269,7 @@ class graphNetwork_try(nn.Module):
             plt.savefig('plots/img_xn_norm_layer_verlet' + str(0) + 'order_nodeDeriv' + str(0) + '.jpg')
             plt.close()
         else:
-            saveMesh(xn.t(), Graph.faces, Graph.pos, 0)
+            saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, 0)
 
         N = Graph.nnodes
         nlayers = self.KE1.shape[0]
@@ -371,7 +371,7 @@ class graphNetwork_try(nn.Module):
                     plt.savefig('plots/img_xe_div_norm_layer_heat' + str(i) + 'order_nodeDeriv' + str(order) + '.jpg')
                     plt.close()
                 else:
-                    saveMesh(xn.t(), Graph.faces, Graph.pos, i+1)
+                    saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, i+1)
 
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
 
