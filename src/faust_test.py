@@ -95,7 +95,7 @@ def train(epoch):
         xn = data.x
         xe = data.edge_attr
 
-        xnOut, xeOut = model(xn, xe, G)
+        xnOut = model(xn, xe, G)
 
         F.nll_loss(xnOut, target).backward()
         optimizer.step()
