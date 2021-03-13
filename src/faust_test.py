@@ -75,7 +75,7 @@ model = GN.graphNetwork_try(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.05, de
 model.to(device)
 
 target = torch.arange(d.num_nodes, dtype=torch.long, device=device)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 
 
 #train_loader = DataLoader(

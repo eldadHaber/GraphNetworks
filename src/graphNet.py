@@ -187,7 +187,7 @@ class graphNetwork_try(nn.Module):
         self.dense = dense
         self.diffOrder = diffOrder
         self.num_nodes = num_nodes
-        stdv = 1e-2
+        stdv = 1e-1
         stdvp = 1e-1
         self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
         self.K2Nopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
