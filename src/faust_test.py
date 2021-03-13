@@ -94,7 +94,8 @@ def train(epoch):
 
         xn = data.x
         xe = data.edge_attr
-
+        print("xn:", xn.shape)
+        print("xe:", xe.shape)
         xnOut = model(xn, xe, G)
 
         F.nll_loss(xnOut, target).backward()
