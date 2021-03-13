@@ -237,7 +237,7 @@ def saveMesh(xn, faces, pos, i=0):
         "/users/others/eliasof/GraphNetworks/plots/xn_norm_verlet_layer_" + str(i))
     plt.close()
 
-    mesh = trimesh.Trimesh(vertices=pos, faces=faces.t(), process=False)
+    mesh = trimesh.Trimesh(vertices=pos, faces=faces, process=False)
     colors = xn.squeeze(0).clone().detach().cpu().numpy()[:, 0]
     colors[colors < 0.0] = 0.0
     colors[colors > 1.0] = 1.0
