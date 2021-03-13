@@ -100,8 +100,8 @@ def train(epoch):
         N = data.pos.shape[0]
         G = GO.graph(I, J, N, pos=data.pos, faces=data.face.t())
 
-        xn = data.x
-        xe = data.edge_attr
+        xn = data.x.unsqueeze(0)
+        xe = data.edge_attr.unsqueeze(0)
         print("xn:", xn.shape)
         print("xe:", xe.shape)
         xnOut = model(xn, xe, G)
