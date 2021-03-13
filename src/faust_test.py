@@ -84,8 +84,20 @@ def train(epoch):
             param_group['lr'] = 0.001
 
     for data in train_loader:
+        data = data.to(device)
         optimizer.zero_grad()
-        F.nll_loss(model(data.to(device)), target).backward()
+
+        I = data.edge_index[0, :]
+        J = data.edge_index[1, :]
+        N = data.pos.shape[0]
+        G = GO.graph(I, J, N, pos=data.pos, faces=data.face.t())
+
+        xn = data.x
+        xe = data.edge_attr
+
+        xnOut, xeOut = model(xn, xe, G)
+
+        F.nll_loss(xnOut, target).backward()
         optimizer.step()
 
 
