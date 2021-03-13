@@ -69,7 +69,7 @@ test_loader = DataLoader(test_dataset, batch_size=1)
 #train_dataset = FAUST(faust_path, train=True, transform=transforms)
 d = train_dataset[0]
 
-model = GN.graphNetwork_try(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=True, wave=True,
+model = GN.graphNetwork_try(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.05, dense=False, varlet=True, wave=True,
                  diffOrder=1, num_nodes=d.num_nodes)
 
 model.to(device)
