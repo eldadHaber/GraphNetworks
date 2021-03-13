@@ -13,12 +13,12 @@ import trimesh
 import matplotlib.pyplot as plt
 
 
-
 def MLP(channels, batch_norm=True):
     return Seq(*[
         Seq(Lin(channels[i - 1], channels[i]), BN(channels[i]), ReLU())
         for i in range(1, len(channels))
     ])
+
 
 def saveMesh(xn, faces, pos, i=0):
     print("xn shape:", xn.shape)
@@ -26,7 +26,7 @@ def saveMesh(xn, faces, pos, i=0):
     ax = fig.add_subplot(111, projection='3d')
     p = ax.scatter(pos[:, 0].clone().detach().cpu().numpy(), pos[:, 1].clone().detach().cpu().numpy(),
                    pos[:, 2].clone().detach().cpu().numpy(),
-                   c=xn.squeeze(0).norm(dim=1).clone().detach().cpu().numpy())
+                   c=xn.squeeze(0).norm(dim=1).clone().detach().cpu().numpy(), vmin=0.0, vmax=1.0)
     fig.colorbar(p)
     plt.savefig(
         "/users/others/eliasof/GraphNetworks/plots/xn_norm_verlet_layer_" + str(i))
@@ -34,9 +34,12 @@ def saveMesh(xn, faces, pos, i=0):
 
     mesh = trimesh.Trimesh(vertices=pos, faces=faces.t(), process=False)
     colors = xn.squeeze(0).clone().detach().cpu().numpy()[:, 0]
+    colors[colors < 0.0] = 0.0
+    colors[colors > 1.0] = 1.0
+    colors = np.concatenate([colors, 1.0, 0.0])
     vect_col_map = trimesh.visual.color.interpolate(colors,
                                                     color_map='jet')
-
+    vect_col_map = vect_col_map[2:-1, :]
     if xn.shape[0] == mesh.vertices.shape[0]:
         print("case 1")
         mesh.visual.vertex_colors = vect_col_map
@@ -61,8 +64,8 @@ class Net(torch.nn.Module):
     def __init__(self, out_channels, k=10, aggr='max'):
         super().__init__()
         self.numlayers = 100
-        #self.conv1 = EdgeConv(MLP([2 * 3, 3]), aggr)
-        #self.conv2 = EdgeConv(MLP([2 * 3, 3]), aggr)
+        # self.conv1 = EdgeConv(MLP([2 * 3, 3]), aggr)
+        # self.conv2 = EdgeConv(MLP([2 * 3, 3]), aggr)
         self.Layers = torch.nn.ModuleList()
         for i in torch.arange(0, self.numlayers):
             self.Layers.append(GCNConv(in_channels=3, out_channels=3))
@@ -83,9 +86,9 @@ class Net(torch.nn.Module):
         print("xn shape:", xn.shape)
         xn = data.pos
         saveMesh(xn, data.face, data.pos, 0)
-        for i,layer in enumerate(self.Layers):
+        for i, layer in enumerate(self.Layers):
             xn = layer(xn, data.edge_index)
-            saveMesh(xn, data.face, data.pos, i+1)
+            saveMesh(xn, data.face, data.pos, i + 1)
 
         exit()
         out = self.lin1(torch.cat([xn, xn], dim=1))
