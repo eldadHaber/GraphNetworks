@@ -105,14 +105,14 @@ def train(epoch):
         xn = data.x.t().unsqueeze(0)
         xe = data.edge_attr.t().unsqueeze(0)
 
-        print("I shape:", I.shape)
-        print("edge index shape:", data.edge_index.shape)
-        print("xn shape:", xn.shape)
-        print("xe shape:", xe.shape)
+        # print("I shape:", I.shape)
+        # print("edge index shape:", data.edge_index.shape)
+        # print("xn shape:", xn.shape)
+        # print("xe shape:", xe.shape)
         xnOut = model(xn, xe, G)
         loss = F.nll_loss(xnOut, target)
         total_loss += loss.item()
-        loss.backward
+        loss.backward()
         optimizer.step()
 
         if i % 10 == 9:
