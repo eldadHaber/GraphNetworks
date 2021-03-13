@@ -45,6 +45,7 @@ def saveMesh(xn, faces, pos, i=0):
                                                     color_map='jet')
     print("vect_col_map shape:", vect_col_map.shape)
     vect_col_map = vect_col_map[2:-1, :]
+    print("vect_col_map:", vect_col_map)
     if xn.shape[0] == mesh.vertices.shape[0]:
         print("case 1")
         mesh.visual.vertex_colors = vect_col_map
