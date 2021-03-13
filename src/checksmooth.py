@@ -44,12 +44,12 @@ def saveMesh(xn, faces, pos, i=0):
     vect_col_map2 = trimesh.visual.color.interpolate(colors,
                                                     color_map='jet')
     print("vect_col_map2:", vect_col_map2)
-    #colors = np.concatenate((add, colors), axis=0)
+    colors = np.concatenate((add, colors), axis=0)
     print("colors after add:", colors.shape)
     vect_col_map = trimesh.visual.color.interpolate(colors,
                                                     color_map='jet')
     print("vect_col_map shape:", vect_col_map.shape)
-    #vect_col_map = vect_col_map[2:-1, :]
+    vect_col_map = vect_col_map[2:, :]
     print("vect_col_map:", vect_col_map)
     if xn.shape[0] == mesh.vertices.shape[0]:
         print("case 1")
