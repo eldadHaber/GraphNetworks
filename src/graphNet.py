@@ -12,6 +12,7 @@ from src.batchGraphOps import getConnectivity
 from mpl_toolkits.mplot3d import Axes3D
 from src.utils import saveMesh
 
+
 def conv2(X, Kernel):
     return F.conv2d(X, Kernel, padding=int((Kernel.shape[-1] - 1) / 2))
 
@@ -173,14 +174,21 @@ class graphNetwork(nn.Module):
 
 class graphNetwork_try(nn.Module):
 
-    def __init__(self, nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=False):
+    def __init__(self, nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=False, wave=True,
+                 diffOrder=1, num_nodes=1024):
         super(graphNetwork_try, self).__init__()
-
+        self.wave = wave
+        if not wave:
+            self.heat = True
+        else:
+            self.heat = False
         self.h = h
         self.varlet = varlet
         self.dense = dense
-        stdv = 1e-0
-        stdvp = 1e-0
+        self.diffOrder = diffOrder
+        self.num_nodes = num_nodes
+        stdv = 1e-3
+        stdvp = 1e-3
         self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
         self.K2Nopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
         if dense:
@@ -205,6 +213,9 @@ class graphNetwork_try(nn.Module):
 
         self.KN1 = nn.Parameter(torch.rand(nlayer, nhid, Nfeatures) * stdvp)
         self.KN2 = nn.Parameter(torch.rand(nlayer, nopen, nhid) * stdvp)
+
+        self.lin1 = torch.nn.Linear(nopen, 256)
+        self.lin2 = torch.nn.Linear(256, self.num_nodes)
 
     def edgeConv(self, xe, K):
         if xe.dim() == 4:
@@ -235,8 +246,8 @@ class graphNetwork_try(nn.Module):
             if edgeSpace:
                 operators.append(x)
 
-            if i == order - 1:
-                break
+            # if i == order - 1:
+            #    break
 
             x = Graph.edgeDiv(x)
             if not edgeSpace:
@@ -249,6 +260,40 @@ class graphNetwork_try(nn.Module):
         operators.append(out)
         return operators
 
+    def saveOperatorImages(self, operators):
+        for i in torch.arange(0, len(operators)):
+            op = operators[i]
+            op = op.detach().squeeze().cpu()  # .numpy()
+
+            plt.figure()
+            img = op.reshape(32, 32)
+            img = img / img.max()
+            plt.imshow(img)
+            plt.colorbar()
+            plt.show()
+            plt.savefig('plots/operator' + str(i) + '.jpg')
+            plt.close()
+
+    def savePropagationImage(self, xn, xe, dxe, Graph, i=0):
+        plt.figure()
+        img = xn.clone().detach().squeeze().reshape(32, 32).cpu().numpy()
+        # img = img / img.max()
+        plt.imshow(img)
+        plt.colorbar()
+        plt.show()
+        plt.savefig('plots/img_xn_norm_layer_heat' + str(i) + 'order_nodeDeriv' + str(self.diffOrder) + '.jpg')
+        plt.close()
+
+        divE = Graph.edgeDiv(dxe)
+        plt.figure()
+        img = divE.clone().detach().squeeze().reshape(32, 32).cpu().numpy()
+        # img = img / img.max()
+        plt.imshow(img)
+        plt.colorbar()
+        plt.show()
+        plt.savefig('plots/img_xe_div_norm_layer_heat' + str(i) + 'order_nodeDeriv' + str(self.diffOrder) + '.jpg')
+        plt.close()
+
     def forward(self, xn, xe, Graph):
 
         # Opening layer
@@ -258,58 +303,41 @@ class graphNetwork_try(nn.Module):
         xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
         xe = self.doubleLayer(xe, self.K1Eopen, self.K2Eopen)
 
-        image = False
-        if image:
-            plt.figure()
-            img = xn.clone().detach().squeeze().reshape(32, 32).cpu().numpy()
-            img = img / img.max()
-            plt.imshow(img)
-            plt.colorbar()
-            plt.show()
-            plt.savefig('plots/img_xn_norm_layer_verlet' + str(0) + 'order_nodeDeriv' + str(0) + '.jpg')
-            plt.close()
-        else:
-            saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, 0)
+        debug = False
+        if debug:
+            image = False
+            if image:
+                plt.figure()
+                img = xn.clone().detach().squeeze().reshape(32, 32).cpu().numpy()
+                img = img / img.max()
+                plt.imshow(img)
+                plt.colorbar()
+                plt.show()
+                plt.savefig('plots/img_xn_norm_layer_verlet' + str(0) + 'order_nodeDeriv' + str(0) + '.jpg')
+                plt.close()
+            else:
+                saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, 0)
 
         N = Graph.nnodes
         nlayers = self.KE1.shape[0]
         xn_old = xn.clone()
         xe_old = xe.clone()
         for i in range(nlayers):
-            # print("xn shape:", xn.shape)
-            # I, J = getConnectivity(xn.squeeze(0))
-            # print("I shape:", I.shape)
-            # print("J shape:", J.shape)
-
-            # Graph = GO.graph(I, J, N)
+            if i % 200 == 199:  # update graph
+                I, J = getConnectivity(xn.squeeze(0))
+                Graph = GO.graph(I, J, N)
             tmp_node = xn.clone()
             tmp_edge = xe.clone()
-            # gradX = torch.exp(-torch.abs(Graph.nodeGrad(xn)))
-            print("xn shape:", xn.shape)
+
             gradX = Graph.nodeGrad(xn)
             intX = Graph.nodeAve(xn)
-            order = 10
-            operators = self.nodeDeriv(xn, Graph, order=order, edgeSpace=True)
-            if 1 == 0:
-                for i in torch.arange(0, len(operators)):
-                    op = operators[i]
-                    op = op.detach().squeeze().cpu()  # .numpy()
 
-                    plt.figure()
-                    img = op.reshape(32, 32)
-                    img = img / img.max()
-                    plt.imshow(img)
-                    plt.colorbar()
-                    plt.show()
-                    plt.savefig('plots/operator' + str(i) + '.jpg')
-                    plt.close()
+            operators = self.nodeDeriv(xn, Graph, order=self.diffOrder, edgeSpace=True)
+            if debug and image:
+                self.saveOperatorImages(operators)
 
-            # operators = torch.FloatTensor(operators)
-            # print("operators:", operators.shape)
             if self.varlet:
-                # dxe = torch.cat([intX, gradX], dim=1)
-                dxe = torch.cat([operators[9], gradX], dim=1)
-
+                dxe = torch.cat([intX, gradX], dim=1)
             else:
                 dxe = torch.cat([intX, xe, gradX], dim=1)
 
@@ -317,25 +345,15 @@ class graphNetwork_try(nn.Module):
 
             dxe = F.layer_norm(dxe, dxe.shape)
 
-            xe = xe + self.h * dxe
+            if self.wave:
+                xe = xe + self.h * dxe
+                divE = Graph.edgeDiv(xe)
+                aveE = Graph.edgeAve(xe, method='ave')
 
-            divE = Graph.edgeDiv(xe)
-
-            aveE = Graph.edgeAve(xe, method='ave')
-
-            #dxe = torch.tanh(dxe)
-            #
-            #divE = Graph.edgeDiv(dxe)
-            # divE = Graph.nodeGrad(dxe)
-            # divE = Graph.edgeDiv(dxe)
-            # divE = Graph.nodeGrad(dxe)
-            # divE = Graph.edgeDiv(dxe)
-            #
-            #aveE = Graph.edgeAve(dxe, method='ave')
-            # aveE = Graph.nodeAve(dxe)
-            # aveE = Graph.edgeAve(dxe, method='ave')
-            # aveE = Graph.nodeAve(dxe)
-            # aveE = Graph.edgeAve(dxe, method='ave')
+            if self.heat:
+                dxe = torch.tanh(dxe)
+                divE = Graph.edgeDiv(dxe)
+                aveE = Graph.edgeAve(dxe, method='ave')
 
             if self.varlet:
                 dxn = torch.cat([aveE, divE], dim=1)
@@ -344,38 +362,25 @@ class graphNetwork_try(nn.Module):
 
             dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
 
-            #xe = xe + self.h * dxe
-            xn = xn + self.h * dxn
-            # xn = 2*xn - xn_old + self.h**2 * dxn
-            # xe = 2*xe - xe_old + self.h**2 * dxe
+            if self.wave:
+                xn = xn + self.h * dxn
+            else:
+                xn = xn - self.h * dxn
 
-            debug = True
             if debug:
                 if image:
-                    plt.figure()
-                    img = xn.clone().detach().squeeze().reshape(32, 32).cpu().numpy()
-                    # img = img / img.max()
-                    plt.imshow(img)
-                    plt.colorbar()
-                    plt.show()
-                    plt.savefig('plots/img_xn_norm_layer_heat' + str(i) + 'order_nodeDeriv' + str(order) + '.jpg')
-                    plt.close()
-
-                    divE = Graph.edgeDiv(dxe)
-                    plt.figure()
-                    img = divE.clone().detach().squeeze().reshape(32, 32).cpu().numpy()
-                    # img = img / img.max()
-                    plt.imshow(img)
-                    plt.colorbar()
-                    plt.show()
-                    plt.savefig('plots/img_xe_div_norm_layer_heat' + str(i) + 'order_nodeDeriv' + str(order) + '.jpg')
-                    plt.close()
+                    self.savePropagationImage(xn, xe, dxe, Graph, i + 1)
                 else:
-                    saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, i+1)
+                    saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, i + 1)
 
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
 
-        return xn, xe
+        x = F.elu(self.lin1(xn))
+        x = F.dropout(x, training=self.training)
+        x = self.lin2(x)
+        return F.log_softmax(xn, dim=1)
+
+        #return xn, xe
 
 
 Test = False
