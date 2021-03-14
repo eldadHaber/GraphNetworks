@@ -376,6 +376,7 @@ class graphNetwork_try(nn.Module):
         xn = xn.squeeze().t()
         x = F.elu(self.lin1(xn))
         x = self.lin2(x)
+
         return F.log_softmax(x, dim=1)
 
         #return xn, xe

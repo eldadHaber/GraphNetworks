@@ -108,6 +108,8 @@ def train():
     model.train()
     optimizer.zero_grad()
     print("data:", data)
+    print("dataset.num_classes:", dataset.num_classes)
+    print("dataset.num_features:", dataset.num_features)
     I = data.edge_index[0, :]
     J = data.edge_index[1, :]
     N = data.y.shape[0]
