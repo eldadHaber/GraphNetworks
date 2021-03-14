@@ -115,7 +115,7 @@ def train():
     G = G.to(device)
     xn = data.x.t().unsqueeze(0)
     #xe = data.edge_attr.t().unsqueeze(0)
-    xe = torch.ones(1, 1, I.shape[0])
+    xe = torch.ones(1, 1, I.shape[0]).to(device)
     # print("I shape:", I.shape)
     # print("edge index shape:", data.edge_index.shape)
     # print("xn shape:", xn.shape)
