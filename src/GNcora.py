@@ -96,9 +96,8 @@ optimizer = torch.optim.Adam([
     dict(params=model.convs.parameters(), weight_decay=0.01),
     dict(params=model.lins.parameters(), weight_decay=5e-4)
 ], lr=0.01)
-
-data = data.to(device)
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+data = data.to(device)
 model = GN.graphNetwork_try(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=True, wave=True,
                  diffOrder=1, num_nodes=data.num_nodes)
 
