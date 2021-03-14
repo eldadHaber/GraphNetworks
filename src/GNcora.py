@@ -111,7 +111,7 @@ def train():
     print("data:", data)
     I = data.edge_index[0, :]
     J = data.edge_index[1, :]
-    N = data.pos.shape[0]
+    N = data.y.shape[0]
     G = GO.graph(I, J, N, pos=None, faces=None)
     G = G.to(device)
     xn = data.x.t().unsqueeze(0)
