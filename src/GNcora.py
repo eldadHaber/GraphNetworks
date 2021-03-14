@@ -108,7 +108,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 def train():
     model.train()
     optimizer.zero_grad()
-
+    print("data:", data)
     I = data.edge_index[0, :]
     J = data.edge_index[1, :]
     N = data.pos.shape[0]
