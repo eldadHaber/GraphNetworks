@@ -302,8 +302,10 @@ class graphNetwork_try(nn.Module):
         # xn = [B, C, N]
         # xe = [B, C, N, N] or [B, C, E]
         # Opening layer
+        xn = F.dropout(xn, p=0.6, training=self.training)
         xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
         xe = self.doubleLayer(xe, self.K1Eopen, self.K2Eopen)
+        xn = F.dropout(xn, p=0.6, training=self.training)
         debug = False
         if debug:
             image = False
@@ -377,6 +379,7 @@ class graphNetwork_try(nn.Module):
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
         xn = xn.squeeze().t()
         #x = F.elu(self.lin1(xn))
+        x = F.dropout(xn, p=0.6, training=self.training)
         x = F.relu(self.lin1(xn))
         x = F.dropout(x, p=0.6, training=self.training)
         x = self.lin2(x)
