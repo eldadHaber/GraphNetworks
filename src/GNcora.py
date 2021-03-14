@@ -7,7 +7,7 @@ from torch_geometric.datasets import Planetoid
 import torch_geometric.transforms as T
 from torch_geometric.nn import GCN2Conv
 from torch_geometric.nn.conv.gcn_conv import gcn_norm
-
+import sys
 if "s" in sys.argv:
     base_path = '/home/eliasof/pFold/data/'
     import graphOps as GO
