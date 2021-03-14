@@ -302,7 +302,6 @@ class graphNetwork_try(nn.Module):
         # Opening layer
         xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
         xe = self.doubleLayer(xe, self.K1Eopen, self.K2Eopen)
-        xn = F.dropout(xn, 0.6)
         debug = False
         if debug:
             image = False
@@ -364,7 +363,6 @@ class graphNetwork_try(nn.Module):
 
             if self.wave:
                 xn = xn + self.h * dxn
-                xn = F.dropout(xn, 0.6)
             else:
                 xn = xn - self.h * dxn
 
@@ -377,7 +375,6 @@ class graphNetwork_try(nn.Module):
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
         xn = xn.squeeze().t()
         x = F.elu(self.lin1(xn))
-        x = F.dropout(x, training=self.training, p=0.6)
         x = self.lin2(x)
         return F.log_softmax(x, dim=1)
 

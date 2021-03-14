@@ -102,7 +102,7 @@ model = GN.graphNetwork_try(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, den
                  diffOrder=1, num_nodes=data.num_nodes)
 
 model.to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 def train():
     model.train()
@@ -114,7 +114,6 @@ def train():
     G = GO.graph(I, J, N, pos=None, faces=None)
     G = G.to(device)
     xn = data.x.t().unsqueeze(0)
-    xn = F.dropout(xn, 0.6)
     #xe = data.edge_attr.t().unsqueeze(0)
     xe = torch.ones(1, 1, I.shape[0]).to(device)
     # print("I shape:", I.shape)
