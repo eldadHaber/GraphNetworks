@@ -114,6 +114,7 @@ def train():
     G = GO.graph(I, J, N, pos=None, faces=None)
     G = G.to(device)
     xn = data.x.t().unsqueeze(0)
+    xn = F.dropout(xn, 0.6)
     #xe = data.edge_attr.t().unsqueeze(0)
     xe = torch.ones(1, 1, I.shape[0]).to(device)
     # print("I shape:", I.shape)
