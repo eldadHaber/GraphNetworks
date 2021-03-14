@@ -8,14 +8,53 @@ import torch_geometric.transforms as T
 from torch_geometric.nn import GCN2Conv
 from torch_geometric.nn.conv.gcn_conv import gcn_norm
 
+if "s" in sys.argv:
+    base_path = '/home/eliasof/pFold/data/'
+    import graphOps as GO
+    import processContacts as prc
+    import utils
+    import graphNet as GN
+    import pnetArch as PNA
+
+
+elif "e" in sys.argv:
+    base_path = '/home/cluster/users/erant_group/pfold/'
+    from src import graphOps as GO
+    from src import processContacts as prc
+    from src import utils
+    from src import graphNet as GN
+    from src import pnetArch as PNA
+
+
+else:
+    base_path = '../../../data/'
+    from src import graphOps as GO
+    from src import processContacts as prc
+    from src import utils
+    from src import graphNet as GN
+    from src import pnetArch as PNA
+
+# Setup the network and its parameters
+nNin = 1
+nEin = 3
+nopen = 64
+nhid = 64
+nNclose = 64
+nlayer = 10
+
+batchSize = 32
 
 
 dataset = 'Cora'
 path = '/home/cluster/users/erant_group/moshe/cora'
-transform = T.Compose([T.NormalizeFeatures(), T.ToSparseTensor()])
+transform = T.Compose([T.NormalizeFeatures()])
+#transform = T.Compose([T.NormalizeFeatures(), T.()])
+
 dataset = Planetoid(path, dataset, transform=transform)
 data = dataset[0]
-data.adj_t = gcn_norm(data.adj_t)  # Pre-process GCN normalization.
+#data.adj_t = gcn_norm(data.adj_t)  # Pre-process GCN normalization.
+
+
 
 
 class Net(torch.nn.Module):
@@ -53,22 +92,42 @@ class Net(torch.nn.Module):
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = Net(hidden_channels=64, num_layers=64, alpha=0.1, theta=0.5,
             shared_weights=True, dropout=0.6).to(device)
-data = data.to(device)
 optimizer = torch.optim.Adam([
     dict(params=model.convs.parameters(), weight_decay=0.01),
     dict(params=model.lins.parameters(), weight_decay=5e-4)
 ], lr=0.01)
 
+data = data.to(device)
+device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+model = GN.graphNetwork_try(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=True, wave=True,
+                 diffOrder=1, num_nodes=data.num_nodes)
+
+model.to(device)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 
 def train():
     model.train()
     optimizer.zero_grad()
-    out = model(data.x, data.adj_t)
+
+    I = data.edge_index[0, :]
+    J = data.edge_index[1, :]
+    N = data.pos.shape[0]
+    G = GO.graph(I, J, N, pos=None, faces=None)
+    G = G.to(device)
+    xn = data.x.t().unsqueeze(0)
+    #xe = data.edge_attr.t().unsqueeze(0)
+    xe = torch.ones(1, 1, I.shape[0])
+    # print("I shape:", I.shape)
+    # print("edge index shape:", data.edge_index.shape)
+    # print("xn shape:", xn.shape)
+    # print("xe shape:", xe.shape)
+    out = model(xn, xe, G)
+
+    #out = model(data.x, data.adj_t)
     loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask])
     loss.backward()
     optimizer.step()
     return float(loss)
-
 
 @torch.no_grad()
 def test():
