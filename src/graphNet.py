@@ -215,7 +215,9 @@ class graphNetwork_try(nn.Module):
         self.KN2 = nn.Parameter(torch.rand(nlayer, nopen, nhid) * stdvp)
 
         self.lin1 = torch.nn.Linear(nopen, 256)
-        self.lin2 = torch.nn.Linear(256, self.num_nodes)
+        #self.lin2 = torch.nn.Linear(256, self.num_nodes)
+
+        self.lin2 = torch.nn.Linear(256, 7)
 
     def edgeConv(self, xe, K):
         if xe.dim() == 4:
