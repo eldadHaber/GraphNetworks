@@ -131,7 +131,16 @@ def train():
 @torch.no_grad()
 def test():
     model.eval()
-    pred, accs = model(data.x, data.adj_t).argmax(dim=-1), []
+    I = data.edge_index[0, :]
+    J = data.edge_index[1, :]
+    N = data.y.shape[0]
+    G = GO.graph(I, J, N, pos=None, faces=None)
+    G = G.to(device)
+    xn = data.x.t().unsqueeze(0)
+    xe = torch.ones(1, 1, I.shape[0]).to(device)
+    out = model(xn, xe, G)
+    pred, accs = out.argmax(dim=-1), []
+    #pred, accs = model(data.x, data.adj_t).argmax(dim=-1), []
     for _, mask in data('train_mask', 'val_mask', 'test_mask'):
         accs.append(int((pred[mask] == data.y[mask]).sum()) / int(mask.sum()))
     return accs
