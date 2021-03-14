@@ -40,7 +40,7 @@ nEin = 1
 nopen = 64
 nhid = 64
 nNclose = 64
-nlayer = 50
+nlayer = 5
 
 batchSize = 32
 
@@ -102,7 +102,7 @@ model = GN.graphNetwork_try(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, den
                  diffOrder=1, num_nodes=data.num_nodes)
 
 model.to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 
 def train():
     model.train()
