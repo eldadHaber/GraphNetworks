@@ -121,7 +121,7 @@ def train():
     # print("xn shape:", xn.shape)
     # print("xe shape:", xe.shape)
     out = model(xn, xe, G)
-
+    print("out shape:", out.shape)
     #out = model(data.x, data.adj_t)
     loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask])
     loss.backward()
