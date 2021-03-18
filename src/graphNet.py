@@ -238,7 +238,7 @@ class graphNetwork_try(nn.Module):
         x = F.layer_norm(x, x.shape)
         x = torch.tanh(x)
         x = self.edgeConv(x, K2)
-        x = dropout(x, p=0.6, training=self.training)
+        x = F.dropout(x, p=0.6, training=self.training)
         return x
 
     def nodeDeriv(self, features, Graph, order=1, edgeSpace=True):
