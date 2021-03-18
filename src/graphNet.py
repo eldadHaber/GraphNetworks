@@ -234,9 +234,11 @@ class graphNetwork_try(nn.Module):
 
     def doubleLayer(self, x, K1, K2):
         x = self.edgeConv(x, K1)
+        x = F.dropout(x, p=0.6, training=self.training)
         x = F.layer_norm(x, x.shape)
         x = torch.tanh(x)
         x = self.edgeConv(x, K2)
+        x = dropout(x, p=0.6, training=self.training)
         return x
 
     def nodeDeriv(self, features, Graph, order=1, edgeSpace=True):
