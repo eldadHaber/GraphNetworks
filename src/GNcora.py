@@ -98,11 +98,11 @@ optimizer = torch.optim.Adam([
 ], lr=0.01)
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 data = data.to(device)
-model = GN.graphNetwork_try(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=True, wave=False,
+model = GN.graphNetwork_try(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=False, wave=True,
                  diffOrder=1, num_nodes=data.num_nodes)
 
 model.to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.0001, weight_decay=0.0001)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0.0001)
 
 def train():
     model.train()
