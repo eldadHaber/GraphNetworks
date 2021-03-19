@@ -113,7 +113,16 @@ def train():
     I = data.edge_index[0, :]
     J = data.edge_index[1, :]
     N = data.y.shape[0]
-    G = GO.graph(I, J, N, pos=None, faces=None)
+
+    features = data.x.squeeze()
+    D = torch.relu(torch.sum(features ** 2, dim=0, keepdim=True) + \
+                   torch.sum(features ** 2, dim=0, keepdim=True).t() - \
+                   2 * features.t() @ features)
+
+    D = D / D.std()
+    D = torch.exp(-2 * D)
+    w = D[I, J]
+    G = GO.graph(I, J, N, W=w, pos=None, faces=None)
     G = G.to(device)
     xn = data.x.t().unsqueeze(0)
     #xe = data.edge_attr.t().unsqueeze(0)
@@ -136,7 +145,15 @@ def test():
     I = data.edge_index[0, :]
     J = data.edge_index[1, :]
     N = data.y.shape[0]
-    G = GO.graph(I, J, N, pos=None, faces=None)
+    features = data.x.squeeze()
+    D = torch.relu(torch.sum(features ** 2, dim=0, keepdim=True) + \
+                   torch.sum(features ** 2, dim=0, keepdim=True).t() - \
+                   2 * features.t() @ features)
+
+    D = D / D.std()
+    D = torch.exp(-2 * D)
+    w = D[I, J]
+    G = GO.graph(I, J, N, W=w, pos=None, faces=None)
     G = G.to(device)
     xn = data.x.t().unsqueeze(0)
     xe = torch.ones(1, 1, I.shape[0]).to(device)

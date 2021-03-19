@@ -259,3 +259,8 @@ def saveMesh(xn, faces, pos, i=0):
     trimesh.exchange.export.export_mesh(mesh,
                                         "/users/others/eliasof/GraphNetworks/plots/xn_norm_verlet_layer_" + str(
                                             i) + ".ply", "ply")
+
+
+
+
+
