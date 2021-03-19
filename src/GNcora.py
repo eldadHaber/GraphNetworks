@@ -121,9 +121,7 @@ def train():
 
     D = D / D.std()
     D = torch.exp(-2 * D)
-    print("D shape:", D.shape)
-    print("I max:", I.max())
-    print("J max:", J.max())
+
     w = D[I, J]
     G = GO.graph(I, J, N, W=w, pos=None, faces=None)
     G = G.to(device)
@@ -148,7 +146,7 @@ def test():
     I = data.edge_index[0, :]
     J = data.edge_index[1, :]
     N = data.y.shape[0]
-    features = data.x.squeeze()
+    features = data.x.squeeze().t()
     D = torch.relu(torch.sum(features ** 2, dim=0, keepdim=True) + \
                    torch.sum(features ** 2, dim=0, keepdim=True).t() - \
                    2 * features.t() @ features)
