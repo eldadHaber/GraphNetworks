@@ -114,7 +114,7 @@ def train():
     J = data.edge_index[1, :]
     N = data.y.shape[0]
 
-    features = data.x.squeeze()
+    features = data.x.squeeze().t()
     D = torch.relu(torch.sum(features ** 2, dim=0, keepdim=True) + \
                    torch.sum(features ** 2, dim=0, keepdim=True).t() - \
                    2 * features.t() @ features)
