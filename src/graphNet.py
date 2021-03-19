@@ -339,6 +339,17 @@ class graphNetwork_try(nn.Module):
             tmp_node = xn.clone()
             tmp_edge = xe.clone()
 
+            features = xn.squeeze()
+            D = torch.relu(torch.sum(features ** 2, dim=0, keepdim=True) + \
+                           torch.sum(features ** 2, dim=0, keepdim=True).t() - \
+                           2 * features.t() @ features)
+
+            D = D / D.std()
+            D = torch.exp(-2 * D)
+
+            w = D[I, J]
+            Graph = GO.graph(I, J, N, W=w, pos=None, faces=None)
+
             gradX = Graph.nodeGrad(xn)
             intX = Graph.nodeAve(xn)
 
