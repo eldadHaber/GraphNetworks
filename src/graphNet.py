@@ -346,7 +346,8 @@ class graphNetwork_try(nn.Module):
 
             D = D / D.std()
             D = torch.exp(-2 * D)
-
+            I = Graph.iInd
+            J = Graph.jInd
             w = D[I, J]
             Graph = GO.graph(I, J, N, W=w, pos=None, faces=None)
 
