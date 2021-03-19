@@ -102,7 +102,7 @@ model = GN.graphNetwork_try(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, den
                  diffOrder=1, num_output=dataset.num_classes)
 
 model.to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0.01)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=0.01)
 
 def train():
     model.train()
