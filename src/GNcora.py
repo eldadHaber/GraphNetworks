@@ -121,6 +121,7 @@ def train():
 
     D = D / D.std()
     D = torch.exp(-2 * D)
+    print("D shape:", D.shape)
     w = D[I, J]
     G = GO.graph(I, J, N, W=w, pos=None, faces=None)
     G = G.to(device)
