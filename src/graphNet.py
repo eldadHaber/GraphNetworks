@@ -175,7 +175,7 @@ class graphNetwork(nn.Module):
 class graphNetwork_try(nn.Module):
 
     def __init__(self, nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=False, wave=True,
-                 diffOrder=1, num_nodes=1024):
+                 diffOrder=1, num_output=1024, dropOut=False):
         super(graphNetwork_try, self).__init__()
         self.wave = wave
         if not wave:
@@ -186,7 +186,8 @@ class graphNetwork_try(nn.Module):
         self.varlet = varlet
         self.dense = dense
         self.diffOrder = diffOrder
-        self.num_nodes = num_nodes
+        self.num_output = num_output
+        self.dropout = dropOut
         stdv = 1e-1
         stdvp = 1e-1
         self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
@@ -215,9 +216,9 @@ class graphNetwork_try(nn.Module):
         self.KN2 = nn.Parameter(torch.rand(nlayer, nopen, nhid) * stdvp)
 
         self.lin1 = torch.nn.Linear(nopen, 256)
-        #self.lin2 = torch.nn.Linear(256, self.num_nodes)
+        # self.lin2 = torch.nn.Linear(256, self.num_nodes)
 
-        self.lin2 = torch.nn.Linear(256, 7)
+        self.lin2 = torch.nn.Linear(256, num_output)
 
     def edgeConv(self, xe, K):
         if xe.dim() == 4:
@@ -234,11 +235,13 @@ class graphNetwork_try(nn.Module):
 
     def doubleLayer(self, x, K1, K2):
         x = self.edgeConv(x, K1)
-        x = F.dropout(x, p=0.6, training=self.training)
+        if self.dropout:
+            x = F.dropout(x, p=0.6, training=self.training)
         x = F.layer_norm(x, x.shape)
         x = torch.tanh(x)
         x = self.edgeConv(x, K2)
-        x = F.dropout(x, p=0.6, training=self.training)
+        if self.dropout:
+            x = F.dropout(x, p=0.6, training=self.training)
         return x
 
     def nodeDeriv(self, features, Graph, order=1, edgeSpace=True):
@@ -304,10 +307,12 @@ class graphNetwork_try(nn.Module):
         # xn = [B, C, N]
         # xe = [B, C, N, N] or [B, C, E]
         # Opening layer
-        xn = F.dropout(xn, p=0.6, training=self.training)
+        if self.dropout:
+            xn = F.dropout(xn, p=0.6, training=self.training)
         xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
         xe = self.doubleLayer(xe, self.K1Eopen, self.K2Eopen)
-        xn = F.dropout(xn, p=0.6, training=self.training)
+        if self.dropout:
+            xn = F.dropout(xn, p=0.6, training=self.training)
         debug = False
         if debug:
             image = False
@@ -380,15 +385,21 @@ class graphNetwork_try(nn.Module):
 
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
         xn = xn.squeeze().t()
-        #x = F.elu(self.lin1(xn))
-        x = F.dropout(xn, p=0.6, training=self.training)
-        x = F.relu(self.lin1(xn))
-        x = F.dropout(x, p=0.6, training=self.training)
+
+        if self.dropout:
+            # for cora
+            x = F.dropout(xn, p=0.6, training=self.training)
+            x = F.relu(self.lin1(xn))
+        else:
+            # for faust
+            x = F.elu(self.lin1(xn))
+        if self.dropout:
+            x = F.dropout(x, p=0.6, training=self.training)
         x = self.lin2(x)
 
         return F.log_softmax(x, dim=1)
 
-        #return xn, xe
+        # return xn, xe
 
 
 Test = False
