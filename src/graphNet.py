@@ -640,13 +640,14 @@ class graphNetwork_nodesOnly(nn.Module):
 
         if self.dropout:
             # for cora
-            x = F.dropout(xn, p=0.6, training=self.training)
+
             x = F.relu(self.lin1(xn))
+            x = F.dropout(xn, p=0.6, training=self.training)
         else:
             # for faust
             x = F.elu(self.lin1(xn))
-        if self.dropout:
-            x = F.dropout(x, p=0.6, training=self.training)
+        #if self.dropout:
+            #x = F.dropout(x, p=0.6, training=self.training)
         x = self.lin2(x)
 
         return F.log_softmax(x, dim=1)
