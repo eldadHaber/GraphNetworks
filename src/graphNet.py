@@ -600,9 +600,9 @@ class graphNetwork_nodesOnly(nn.Module):
 
             nodalGradX = Graph.edgeAve(gradX)
             lapX = Graph.nodeLap(xn.permute((0, 2, 1)))
-            operators = self.nodeDeriv(xn, Graph, order=self.diffOrder, edgeSpace=True)
-            if debug and image:
-                self.saveOperatorImages(operators)
+            #operators = self.nodeDeriv(xn, Graph, order=self.diffOrder, edgeSpace=True)
+            #if debug and image:
+            #    self.saveOperatorImages(operators)
 
             if self.varlet:
                 dxn = torch.cat([xn, lapX], dim=1)
