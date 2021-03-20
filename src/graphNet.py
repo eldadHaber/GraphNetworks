@@ -610,6 +610,7 @@ class graphNetwork_nodesOnly(nn.Module):
                 dxn = torch.cat([xn, intX, gradX], dim=1)
             print("dxn shape:", dxn.shape)
             # dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
+            print("self.KN1[i]:", self.KN1[i])
             dxn = self.newDoubleLayer(dxn, self.KN1[i], self.KN2[i])
             if self.wave:
                 # xn = xn + self.h * dxn
