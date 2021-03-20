@@ -107,7 +107,7 @@ model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense
 model.reset_parameters()
 model.to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0.0001)
-
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer=optimizer, step_size=1, gamma=0.99)
 def train():
     model.train()
     optimizer.zero_grad()
@@ -147,6 +147,7 @@ def train():
     loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask]) + 0.1*tvreg
     loss.backward()
     optimizer.step()
+    scheduler.step()
     return float(loss)
 
 @torch.no_grad()
