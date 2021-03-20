@@ -595,7 +595,7 @@ class graphNetwork_nodesOnly(nn.Module):
             I = Graph.iInd
             J = Graph.jInd
             w = D[I, J]
-            Graph = GO.graph(I, J, N, W=w, pos=None, faces=None)
+            Graph = GO.graph(I, J, N,  pos=None, faces=None)
 
             gradX = Graph.nodeGrad(xn.permute((0, 2, 1)))
             intX = Graph.nodeAve(xn.permute((0, 2, 1)))
