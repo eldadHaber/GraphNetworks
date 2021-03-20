@@ -440,7 +440,7 @@ class graphNetwork_nodesOnly(nn.Module):
         # self.K1Nopen = torch.nn.Linear(nNin, nopen)
         self.K2Nopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
         # self.K2Nopen = torch.nn.Linear(nopen, nopen)
-        self.KNclose = nn.Parameter(torch.randn(nNclose, nopen) * stdv)
+        self.KNclose = nn.Parameter(torch.randn(num_output, nopen) * stdv)
         # self.KNclose = torch.nn.Linear(nopen, nNclose)
 
         if varlet:
@@ -663,8 +663,9 @@ class graphNetwork_nodesOnly(nn.Module):
                     saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, i + 1)
 
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
-        xn = xn.squeeze().t()
 
+        xn = xn.squeeze().t()
+        return F.log_softmax(xn, dim=1)
         if self.dropout:
             # for cora
             # x = F.dropout(xn, p=0.6, training=self.training)
