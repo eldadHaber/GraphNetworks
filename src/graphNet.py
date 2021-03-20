@@ -477,7 +477,7 @@ class graphNetwork_nodesOnly(nn.Module):
 
     def newDoubleLayer(self, x, K1, K2):
         x = K1(x)
-        x = F.layer_norm(x, x.shape)
+        #x = F.layer_norm(x, x.shape)
         x = torch.tanh(x)
         if self.dropout:
             #print("self.training:", self.training)
