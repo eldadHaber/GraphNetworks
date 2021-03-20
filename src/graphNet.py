@@ -432,10 +432,12 @@ class graphNetwork_nodesOnly(nn.Module):
         self.dropout = dropOut
         stdv = 1e-3
         stdvp = 1e-3
-        self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
-        self.K2Nopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
-
-        self.KNclose = nn.Parameter(torch.randn(nNclose, nopen) * stdv)
+        #self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
+        self.K1Nopen = torch.nn.Linear(nNin, nopen)
+        #self.K2Nopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
+        self.K2Nopen = torch.nn.Linear(nopen, nopen)
+        #self.KNclose = nn.Parameter(torch.randn(nNclose, nopen) * stdv)
+        self.KNclose = torch.nn.Linear(nopen, nNclose)
 
         if varlet:
             Nfeatures = 2 * nopen
@@ -527,7 +529,10 @@ class graphNetwork_nodesOnly(nn.Module):
         # Opening layer
         if self.dropout:
             xn = F.dropout(xn, p=0.6, training=self.training)
-        xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
+        #xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
+        xn = F.tanh(F.layer_norm(self.K1Nopen(xn)))
+        xn = self.K2Nopen(xn)
+
         if self.dropout:
             xn = F.dropout(xn, p=0.6, training=self.training)
         debug = False
@@ -594,7 +599,8 @@ class graphNetwork_nodesOnly(nn.Module):
                 else:
                     saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, i + 1)
 
-        xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
+        #xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
+        xn = self.KNclose(xn)
         xn = xn.squeeze().t()
 
         if self.dropout:
