@@ -479,7 +479,7 @@ class graphNetwork_nodesOnly(nn.Module):
         x = F.layer_norm(x, x.shape)
         x = torch.tanh(x)
         if self.dropout:
-            print("self.training:", self.training)
+            #print("self.training:", self.training)
             x = F.dropout(x, p=0.6, training=self.training)
         x = K2(x)
 
@@ -552,12 +552,12 @@ class graphNetwork_nodesOnly(nn.Module):
         if self.dropout:
             xn = F.dropout(xn, p=0.6, training=self.training)
         # xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
-        print("xn shgape:", xn.shape)
+        #print("xn shgape:", xn.shape)
         xn = xn.unsqueeze(0)
         xn = self.K1Nopen(xn)
         xn = F.tanh(F.layer_norm(xn, xn.shape))
         xn = self.K2Nopen(xn)
-        print("xn shape:", xn.shape)
+        #print("xn shape:", xn.shape)
         # xn = xn.permute((0, 2, 1))
         if self.dropout:
             xn = F.dropout(xn, p=0.6, training=self.training)
@@ -605,16 +605,16 @@ class graphNetwork_nodesOnly(nn.Module):
             #operators = self.nodeDeriv(xn, Graph, order=self.diffOrder, edgeSpace=True)
             #if debug and image:
             #    self.saveOperatorImages(operators)
-            print("xn shape:", xn.shape)
+            #print("xn shape:", xn.shape)
             if self.varlet:
                 dxn = torch.cat([xn, lapX], dim=2).permute((0, 2, 1))
             else:
                 dxn = torch.cat([xn, intX, gradX], dim=1)
-            print("dxn shape:", dxn.shape)
+            #print("dxn shape:", dxn.shape)
             # dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
-            print("self.KN1[i]:", self.KN1[i])
+            #print("self.KN1[i]:", self.KN1[i])
             dxn = self.newDoubleLayer(dxn, self.KN1[i], self.KN2[i])
-            print("dxn:", dxn)
+            #print("dxn:", dxn)
             if self.wave:
                 # xn = xn + self.h * dxn
                 xn = 2 * xn - xn_old - (self.h ** 2) * dxn.permute((0, 2, 1))
