@@ -672,7 +672,7 @@ class graphNetwork_nodesOnly(nn.Module):
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
 
         xn = xn.squeeze().t()
-        return F.log_softmax(xn, dim=1)
+        return F.log_softmax(xn, dim=1), G
         if self.dropout:
             # for cora
             # x = F.dropout(xn, p=0.6, training=self.training)
