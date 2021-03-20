@@ -37,9 +37,9 @@ else:
 # Setup the network and its parameters
 nNin = 1433
 nEin = 1
-nopen = 64
-nhid = 64
-nNclose = 64
+nopen = 512
+nhid = 512
+nNclose = 512
 nlayer = 16
 h = 1/nlayer
 
@@ -106,7 +106,7 @@ model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense
                  diffOrder=1, num_output=dataset.num_classes, dropOut=True)
 model.reset_parameters()
 model.to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0.0001)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0.00001)
 
 def train():
     model.train()
