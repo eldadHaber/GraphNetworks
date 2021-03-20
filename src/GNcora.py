@@ -37,9 +37,9 @@ else:
 # Setup the network and its parameters
 nNin = 1433
 nEin = 1
-nopen = 64
-nhid = 256
-nNclose = 64
+nopen = 16
+nhid = 64
+nNclose = 16
 nlayer = 16
 h = 1/nlayer
 
