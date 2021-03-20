@@ -459,8 +459,8 @@ class graphNetwork_nodesOnly(nn.Module):
         # self.KN1 = nn.Parameter(torch.rand(nlayer, nhid, Nfeatures) * stdvp)
         # self.KN2 = nn.Parameter(torch.rand(nlayer, nopen, nhid) * stdvp)
 
-        self.lin1 = torch.nn.Linear(nopen, 256)
-        self.lin2 = torch.nn.Linear(256, num_output)
+        self.lin1 = torch.nn.Linear(nopen, nopen)
+        self.lin2 = torch.nn.Linear(nopen, num_output)
 
     def edgeConv(self, xe, K):
         if xe.dim() == 4:
