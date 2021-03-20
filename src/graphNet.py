@@ -507,7 +507,7 @@ class graphNetwork_nodesOnly(nn.Module):
         if self.dropout:
             #x = F.dropout(x, p=0.6, training=self.training)
             x = F.layer_norm(x, x.shape)
-            x = torch.relu(x)
+            #x = torch.relu(x)
         return x
 
     def nodeDeriv(self, features, Graph, order=1, edgeSpace=True):
