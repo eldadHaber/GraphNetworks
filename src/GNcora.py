@@ -129,8 +129,7 @@ def train():
     w = D[I, J]
     G = GO.graph(I, J, N, W=w, pos=None, faces=None)
     G = G.to(device)
-    #xn = data.x.t().unsqueeze(0)
-    xn = data.x
+    xn = data.x.t().unsqueeze(0)
     #xe = data.edge_attr.t().unsqueeze(0)
     xe = torch.ones(1, 1, I.shape[0]).to(device)
     # print("I shape:", I.shape)
@@ -163,8 +162,7 @@ def test():
     w = D[I, J]
     G = GO.graph(I, J, N, W=w, pos=None, faces=None)
     G = G.to(device)
-    #xn = data.x.t().unsqueeze(0)
-    xn = data.x
+    xn = data.x.t().unsqueeze(0)
     xe = torch.ones(1, 1, I.shape[0]).to(device)
     #out = model(xn, xe, G)
     out = model(xn, G)

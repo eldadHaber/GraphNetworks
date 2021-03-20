@@ -581,7 +581,6 @@ class graphNetwork_nodesOnly(nn.Module):
             xn = F.dropout(xn, p=0.6, training=self.training)
         xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
 
-        xn = xn.unsqueeze(0)
         print("xn shape:", xn.shape)
         debug = False
         if debug:
