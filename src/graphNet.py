@@ -605,7 +605,7 @@ class graphNetwork_nodesOnly(nn.Module):
 
         #xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
         xn = self.KNclose(xn.permute(0,2,1))
-        #xn = xn.squeeze().t()
+        xn = xn.squeeze() #.t()
 
         if self.dropout:
             # for cora
