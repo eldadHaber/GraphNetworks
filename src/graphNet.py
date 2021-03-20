@@ -478,9 +478,9 @@ class graphNetwork_nodesOnly(nn.Module):
         x = K1(x)
         x = F.layer_norm(x, x.shape)
         x = torch.tanh(x)
-        #if self.dropout:
+        if self.dropout:
             #print("self.training:", self.training)
-            #x = F.dropout(x, p=0.6, training=self.training)
+            x = F.dropout(x, p=0.6, training=self.training)
         x = K2(x)
 
         return x
