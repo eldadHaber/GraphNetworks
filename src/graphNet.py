@@ -11,6 +11,7 @@ from src import graphOps as GO
 from src.batchGraphOps import getConnectivity
 from mpl_toolkits.mplot3d import Axes3D
 from src.utils import saveMesh
+from torch_geometric.nn.conv.gcn_conv import gcn_norm
 
 
 def conv2(X, Kernel):
@@ -595,7 +596,12 @@ class graphNetwork_nodesOnly(nn.Module):
             I = Graph.iInd
             J = Graph.jInd
             w = D[I, J]
-            Graph = GO.graph(I, J, N,  pos=None, faces=None)
+            edge_index = torch.cat([I, J], dim=0)
+            print("edge index :", edge_index.shape)
+            [edge_index, edge_weights] = gcn_norm(edge_index)  # Pre-process GCN normalization.
+            I = edge_index[:, 0]
+            J = edge_index[:, 1]
+            Graph = GO.graph(I, J, N, W= edge_weights,pos=None, faces=None)
 
             gradX = Graph.nodeGrad(xn.permute((0, 2, 1)))
             intX = Graph.nodeAve(xn.permute((0, 2, 1)))
