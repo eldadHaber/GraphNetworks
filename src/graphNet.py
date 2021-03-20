@@ -531,7 +531,8 @@ class graphNetwork_nodesOnly(nn.Module):
             xn = F.dropout(xn, p=0.6, training=self.training)
         #xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
         print("xn shgape:", xn.shape)
-        xn = F.tanh(F.layer_norm(self.K1Nopen(xn)))
+        xn = self.K1Nopen(xn)
+        xn = F.tanh(F.layer_norm(xn, xn.shape ))
         xn = self.K2Nopen(xn)
 
         if self.dropout:
