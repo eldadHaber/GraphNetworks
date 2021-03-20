@@ -537,8 +537,8 @@ class graphNetwork_nodesOnly(nn.Module):
             if edgeSpace:
                 operators.append(x)
 
-            # if i == order - 1:
-            #    break
+            if i == order - 1:
+               break
 
             x = Graph.edgeDiv(x)
             if not edgeSpace:
