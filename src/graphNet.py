@@ -644,8 +644,11 @@ class graphNetwork_nodesOnly(nn.Module):
 
             if self.wave:
                 # xn = xn + self.h * dxn
-                xn = 2 * xn - xn_old - (self.h ** 2) * F.relu(self.convs[i](F.dropout(xn.permute(0, 2, 1), p=0.6), x0.permute(0, 2, 1),
-                                                                     edge_index, Graph.W).permute(0, 2, 1))  # * dxn
+                #xn = 2 * xn - xn_old - (self.h ** 2) * F.relu(self.convs[i](F.dropout(xn.permute(0, 2, 1), p=0.6), x0.permute(0, 2, 1),
+                #                                                     edge_index, Graph.W).permute(0, 2, 1))  # * dxn
+
+                xn =  F.relu(self.convs[i](F.dropout(xn.permute(0, 2, 1), p=0.6), x0.permute(0, 2, 1),
+                                                                     edge_index, Graph.W).permute(0, 2, 1))
                 xn_old = tmp_xn
 
             else:
