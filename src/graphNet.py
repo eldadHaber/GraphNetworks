@@ -418,7 +418,7 @@ class graphNetwork_nodesOnly(nn.Module):
 
     def __init__(self, nNin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=False, wave=True,
                  diffOrder=1, num_output=1024, dropOut=False):
-        super(graphNetwork_try, self).__init__()
+        super(graphNetwork_nodesOnly, self).__init__()
         self.wave = wave
         if not wave:
             self.heat = True
