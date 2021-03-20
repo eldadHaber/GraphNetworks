@@ -483,6 +483,8 @@ class graphNetwork_nodesOnly(nn.Module):
             x = F.dropout(x, p=0.6, training=self.training)
         x = K2(x)
 
+        return x
+
     def doubleLayer(self, x, K1, K2):
         x = self.edgeConv(x, K1)
         if self.dropout:
