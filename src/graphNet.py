@@ -583,7 +583,7 @@ class graphNetwork_nodesOnly(nn.Module):
                 Graph = GO.graph(I, J, N)
             xn_old = xn.clone()
 
-            features = xn.squeeze()
+            features = xn.squeeze().t()
             D = torch.relu(torch.sum(features ** 2, dim=0, keepdim=True) + \
                            torch.sum(features ** 2, dim=0, keepdim=True).t() - \
                            2 * features.t() @ features)
