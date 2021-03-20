@@ -606,8 +606,7 @@ class graphNetwork_nodesOnly(nn.Module):
         xn_old = xn.clone()
         for i in range(nlayers):
 
-            if self.dropout:
-                xn = F.dropout(xn, p=0.6, training=self.training)
+
 
             if i % 200 == 199:  # update graph
                 I, J = getConnectivity(xn.squeeze(0))
@@ -630,7 +629,8 @@ class graphNetwork_nodesOnly(nn.Module):
             else:
                 dxn = torch.cat([xn, intX, gradX], dim=1)
 
-
+            if self.dropout:
+                dxn = F.dropout(dxn, p=0.6, training=self.training)
             dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
             if self.wave:
                 # xn = xn + self.h * dxn
