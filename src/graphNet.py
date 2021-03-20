@@ -13,6 +13,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from src.utils import saveMesh
 from torch_geometric.nn.conv.gcn_conv import gcn_norm
 from src.inits import glorot
+from torch_geometric.nn import GCN2Conv
 
 
 def conv2(X, Kernel):
@@ -460,6 +461,15 @@ class graphNetwork_nodesOnly(nn.Module):
         self.KN1 = nn.Parameter(torch.rand(nlayer, nhid, Nfeatures) * stdvp)
         self.KN2 = nn.Parameter(torch.rand(nlayer, nopen, nhid) * stdvp)
 
+        self.convs = torch.nn.ModuleList()
+        alpha = 0.1
+        theta = 0.5
+        shared_weights = True
+        for layer in range(self.nlayers):
+            self.convs.append(
+                GCN2Conv(nhid, alpha, theta, layer + 1,
+                         shared_weights, normalize=False))
+
         self.lin1 = torch.nn.Linear(nopen, nopen)
         self.lin2 = torch.nn.Linear(nopen, num_output)
 
@@ -631,11 +641,11 @@ class graphNetwork_nodesOnly(nn.Module):
 
             if self.dropout:
                 dxn = F.dropout(dxn, p=0.6, training=self.training)
-            dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
+            #dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
 
             if self.wave:
                 # xn = xn + self.h * dxn
-                xn = 2 * xn - xn_old - (self.h ** 2) * dxn
+                xn = 2 * xn - xn_old - (self.h ** 2) * self.convs[i](xn) #* dxn
                 xn_old = tmp_xn
 
             else:
