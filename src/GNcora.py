@@ -106,8 +106,8 @@ model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense
                  diffOrder=1, num_output=dataset.num_classes, dropOut=True)
 model.reset_parameters()
 model.to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0.0001)
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer=optimizer, step_size=1, gamma=0.99)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.0001, weight_decay=0.0001)
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer=optimizer, step_size=1, gamma=1.05,last_epoch=100)
 def train():
     model.train()
     optimizer.zero_grad()
