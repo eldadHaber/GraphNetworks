@@ -12,7 +12,7 @@ from src.batchGraphOps import getConnectivity
 from mpl_toolkits.mplot3d import Axes3D
 from src.utils import saveMesh
 from torch_geometric.nn.conv.gcn_conv import gcn_norm
-
+from src.inits import glorot
 
 def conv2(X, Kernel):
     return F.conv2d(X, Kernel, padding=int((Kernel.shape[-1] - 1) / 2))
@@ -434,33 +434,42 @@ class graphNetwork_nodesOnly(nn.Module):
         self.nlayers = nlayer
         stdv = 1e-3
         stdvp = 1e-3
-        # self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
-        self.K1Nopen = torch.nn.Linear(nNin, nopen)
-        # self.K2Nopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
-        self.K2Nopen = torch.nn.Linear(nopen, nopen)
-        # self.KNclose = nn.Parameter(torch.randn(nNclose, nopen) * stdv)
-        self.KNclose = torch.nn.Linear(nopen, nNclose)
+        self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
+        # self.K1Nopen = torch.nn.Linear(nNin, nopen)
+        self.K2Nopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
+        # self.K2Nopen = torch.nn.Linear(nopen, nopen)
+        self.KNclose = nn.Parameter(torch.randn(nNclose, nopen) * stdv)
+        #self.KNclose = torch.nn.Linear(nopen, nNclose)
 
         if varlet:
             Nfeatures = 2 * nopen
         else:
             Nfeatures = 3 * nopen
 
-        self.KN1 = torch.nn.ModuleList()
-        self.KN2 = torch.nn.ModuleList()
+        # self.KN1 = torch.nn.ModuleList()
+        # self.KN2 = torch.nn.ModuleList()
+        #
+        # for i in torch.arange(0, nlayer):
+        #     conv1 = torch.nn.Conv1d(Nfeatures, nhid, kernel_size=1)
+        #     conv2 = torch.nn.Conv1d(nhid, nopen, kernel_size=1)
+        #
+        #     self.KN1.append(conv1)
+        #     self.KN2.append(conv2)
 
-        for i in torch.arange(0, nlayer):
-            conv1 = torch.nn.Conv1d(Nfeatures, nhid, kernel_size=1)
-            conv2 = torch.nn.Conv1d(nhid, nopen, kernel_size=1)
-
-            self.KN1.append(conv1)
-            self.KN2.append(conv2)
-
-        # self.KN1 = nn.Parameter(torch.rand(nlayer, nhid, Nfeatures) * stdvp)
-        # self.KN2 = nn.Parameter(torch.rand(nlayer, nopen, nhid) * stdvp)
+        self.KN1 = nn.Parameter(torch.rand(nlayer, nhid, Nfeatures) * stdvp)
+        self.KN2 = nn.Parameter(torch.rand(nlayer, nopen, nhid) * stdvp)
 
         self.lin1 = torch.nn.Linear(nopen, nopen)
         self.lin2 = torch.nn.Linear(nopen, num_output)
+
+    def reset_parameters(self):
+        glorot(self.KN1)
+        glorot(self.KN2)
+        glorot(self.lin1)
+        glorot(self.lin2)
+        glorot(self.K1Nopen)
+        glorot(self.K2Nopen)
+        glorot(self.KNclose)
 
     def edgeConv(self, xe, K):
         if xe.dim() == 4:
@@ -545,21 +554,14 @@ class graphNetwork_nodesOnly(nn.Module):
         plt.close()
 
     def forward(self, xn, Graph):
-
         # Opening layer
         # xn = [B, C, N]
         # xe = [B, C, N, N] or [B, C, E]
         # Opening layer
         if self.dropout:
             xn = F.dropout(xn, p=0.6, training=self.training)
-        # xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
-        #print("xn shgape:", xn.shape)
-        xn = xn.unsqueeze(0)
-        xn = self.K1Nopen(xn)
-        xn = F.tanh(F.layer_norm(xn, xn.shape))
-        xn = self.K2Nopen(xn)
-        #print("xn shape:", xn.shape)
-        # xn = xn.permute((0, 2, 1))
+        xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
+
         if self.dropout:
             xn = F.dropout(xn, p=0.6, training=self.training)
         debug = False
@@ -586,7 +588,7 @@ class graphNetwork_nodesOnly(nn.Module):
                 Graph = GO.graph(I, J, N)
             tmp_xn = xn.clone()
 
-            features = xn.squeeze().t()
+            features = xn.squeeze()
             D = torch.relu(torch.sum(features ** 2, dim=0, keepdim=True) + \
                            torch.sum(features ** 2, dim=0, keepdim=True).t() - \
                            2 * features.t() @ features)
@@ -602,27 +604,24 @@ class graphNetwork_nodesOnly(nn.Module):
             J = edge_index[1, :]
             Graph = GO.graph(I, J, N, W=edge_weights, pos=None, faces=None)
 
-            gradX = Graph.nodeGrad(xn.permute((0, 2, 1)))
-            intX = Graph.nodeAve(xn.permute((0, 2, 1)))
+            gradX = Graph.nodeGrad(xn)
+            intX = Graph.nodeAve(xn)
 
-            nodalGradX = Graph.edgeAve(gradX).permute((0, 2, 1))
-            lapX = Graph.nodeLap(xn.permute((0, 2, 1))).permute((0, 2, 1))
+            nodalGradX = Graph.edgeAve(gradX)
+            lapX = Graph.nodeLap(xn)
             #operators = self.nodeDeriv(xn, Graph, order=self.diffOrder, edgeSpace=True)
             #if debug and image:
             #    self.saveOperatorImages(operators)
             #print("xn shape:", xn.shape)
             if self.varlet:
-                dxn = torch.cat([xn, lapX], dim=2).permute((0, 2, 1))
+                dxn = torch.cat([xn, lapX], dim=2)
             else:
                 dxn = torch.cat([xn, intX, gradX], dim=1)
-            #print("dxn shape:", dxn.shape)
-            # dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
-            #print("self.KN1[i]:", self.KN1[i])
-            dxn = self.newDoubleLayer(dxn, self.KN1[i], self.KN2[i])
-            #print("dxn:", dxn)
+
+            dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
             if self.wave:
                 # xn = xn + self.h * dxn
-                xn = 2 * xn - xn_old - (self.h ** 2) * dxn.permute((0, 2, 1))
+                xn = 2 * xn - xn_old - (self.h ** 2) * dxn
                 xn_old = tmp_xn
 
             else:
@@ -634,9 +633,8 @@ class graphNetwork_nodesOnly(nn.Module):
                 else:
                     saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, i + 1)
 
-        # xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
-        xn = self.KNclose(xn)
-        xn = xn.squeeze()  # .t()
+        xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
+        xn = xn.squeeze().t()
 
         if self.dropout:
             # for cora
