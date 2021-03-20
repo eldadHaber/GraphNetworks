@@ -493,6 +493,11 @@ class graphNetwork_nodesOnly(nn.Module):
                 xe = conv1(xe, K)
         return xe
 
+    def singleLayer(self, x, K):
+        x = self.edgeConv(x, K)
+        x = F.layer_norm(x, x.shape)
+        x = F.relu(x)
+
     def newDoubleLayer(self, x, K1, K2):
         x = K1(x)
         # x = F.layer_norm(x, x.shape)
@@ -595,8 +600,8 @@ class graphNetwork_nodesOnly(nn.Module):
         # Opening layer
         if self.dropout:
             xn = F.dropout(xn, p=0.6, training=self.training)
-        xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
-
+        #xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
+        xn = self.singleLayer(xn, self.K1Nopen)
         debug = False
         if debug:
             image = False
@@ -641,8 +646,8 @@ class graphNetwork_nodesOnly(nn.Module):
 
             if self.dropout:
                 dxn = F.dropout(dxn, p=0.6, training=self.training)
-            dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
-
+            #dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
+            dxn = self.singleLayer(dxn, self.KN1[i])
             if self.wave:
                 # xn = xn + self.h * dxn
                 xn = 2 * xn - xn_old - (self.h ** 2) * dxn
