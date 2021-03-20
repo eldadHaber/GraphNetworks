@@ -642,7 +642,7 @@ class graphNetwork_nodesOnly(nn.Module):
             # for cora
 
             x = F.relu(self.lin1(xn))
-            x = F.dropout(xn, p=0.6, training=self.training)
+            x = F.dropout(x, p=0.6, training=self.training)
         else:
             # for faust
             x = F.elu(self.lin1(xn))
