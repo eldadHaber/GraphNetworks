@@ -599,9 +599,9 @@ class graphNetwork_nodesOnly(nn.Module):
             edge_index = torch.cat([I.unsqueeze(0), J.unsqueeze(0)], dim=0)
             print("edge index :", edge_index.shape)
             [edge_index, edge_weights] = gcn_norm(edge_index)  # Pre-process GCN normalization.
-            I = edge_index[:, 0]
-            J = edge_index[:, 1]
-            Graph = GO.graph(I, J, N, W= edge_weights,pos=None, faces=None)
+            I = edge_index[0, :]
+            J = edge_index[1, :]
+            Graph = GO.graph(I, J, N, W=edge_weights, pos=None, faces=None)
 
             gradX = Graph.nodeGrad(xn.permute((0, 2, 1)))
             intX = Graph.nodeAve(xn.permute((0, 2, 1)))
