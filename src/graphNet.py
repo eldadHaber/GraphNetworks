@@ -14,6 +14,7 @@ from src.utils import saveMesh
 from torch_geometric.nn.conv.gcn_conv import gcn_norm
 from src.inits import glorot
 
+
 def conv2(X, Kernel):
     return F.conv2d(X, Kernel, padding=int((Kernel.shape[-1] - 1) / 2))
 
@@ -439,7 +440,7 @@ class graphNetwork_nodesOnly(nn.Module):
         self.K2Nopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
         # self.K2Nopen = torch.nn.Linear(nopen, nopen)
         self.KNclose = nn.Parameter(torch.randn(nNclose, nopen) * stdv)
-        #self.KNclose = torch.nn.Linear(nopen, nNclose)
+        # self.KNclose = torch.nn.Linear(nopen, nNclose)
 
         if varlet:
             Nfeatures = 2 * nopen
@@ -484,10 +485,10 @@ class graphNetwork_nodesOnly(nn.Module):
 
     def newDoubleLayer(self, x, K1, K2):
         x = K1(x)
-        #x = F.layer_norm(x, x.shape)
+        # x = F.layer_norm(x, x.shape)
         x = torch.tanh(x)
         if self.dropout:
-            #print("self.training:", self.training)
+            # print("self.training:", self.training)
             x = F.dropout(x, p=0.6, training=self.training)
         x = K2(x)
 
@@ -551,6 +552,26 @@ class graphNetwork_nodesOnly(nn.Module):
         plt.savefig('plots/img_xn_norm_layer_heat' + str(i) + 'order_nodeDeriv' + str(self.diffOrder) + '.jpg')
         plt.close()
 
+    def updateGraph(self, Graph, features):
+        features = xn.squeeze().t()
+        D = torch.relu(torch.sum(features ** 2, dim=0, keepdim=True) + \
+                       torch.sum(features ** 2, dim=0, keepdim=True).t() - \
+                       2 * features.t() @ features)
+
+        D = D / D.std()
+        D = torch.exp(-2 * D)
+        I = Graph.iInd
+        J = Graph.jInd
+        N = Graph.nnodes
+        w = D[I, J]
+        edge_index = torch.cat([I.unsqueeze(0), J.unsqueeze(0)], dim=0)
+        [edge_index, edge_weights] = gcn_norm(edge_index)  # Pre-process GCN normalization.
+        I = edge_index[0, :]
+        J = edge_index[1, :]
+        Graph = GO.graph(I, J, N, W=edge_weights, pos=None, faces=None)
+
+        return Graph
+
     def forward(self, xn, Graph):
         # Opening layer
         # xn = [B, C, N]
@@ -586,31 +607,17 @@ class graphNetwork_nodesOnly(nn.Module):
                 Graph = GO.graph(I, J, N)
             tmp_xn = xn.clone()
 
-            features = xn.squeeze()
-            D = torch.relu(torch.sum(features ** 2, dim=0, keepdim=True) + \
-                           torch.sum(features ** 2, dim=0, keepdim=True).t() - \
-                           2 * features.t() @ features)
-
-            D = D / D.std()
-            D = torch.exp(-2 * D)
-            I = Graph.iInd
-            J = Graph.jInd
-            w = D[I, J]
-            edge_index = torch.cat([I.unsqueeze(0), J.unsqueeze(0)], dim=0)
-            [edge_index, edge_weights] = gcn_norm(edge_index)  # Pre-process GCN normalization.
-            I = edge_index[0, :]
-            J = edge_index[1, :]
-            Graph = GO.graph(I, J, N, W=edge_weights, pos=None, faces=None)
+            Graph = self.updateGraph(Graph, xn)
 
             gradX = Graph.nodeGrad(xn)
             intX = Graph.nodeAve(xn)
 
             nodalGradX = Graph.edgeAve(gradX)
             lapX = Graph.nodeLap(xn)
-            #operators = self.nodeDeriv(xn, Graph, order=self.diffOrder, edgeSpace=True)
-            #if debug and image:
+            # operators = self.nodeDeriv(xn, Graph, order=self.diffOrder, edgeSpace=True)
+            # if debug and image:
             #    self.saveOperatorImages(operators)
-            #print("xn shape:", xn.shape)
+            # print("xn shape:", xn.shape)
             if self.varlet:
                 dxn = torch.cat([xn, lapX], dim=2)
             else:
@@ -642,8 +649,8 @@ class graphNetwork_nodesOnly(nn.Module):
         else:
             # for faust
             x = F.elu(self.lin1(xn))
-        #if self.dropout:
-            #x = F.dropout(x, p=0.6, training=self.training)
+        # if self.dropout:
+        # x = F.dropout(x, p=0.6, training=self.training)
         x = self.lin2(x)
 
         return F.log_softmax(x, dim=1)
