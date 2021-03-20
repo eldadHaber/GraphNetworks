@@ -617,7 +617,7 @@ class graphNetwork_nodesOnly(nn.Module):
             print("dxn:", dxn)
             if self.wave:
                 # xn = xn + self.h * dxn
-                xn = 2 * xn - xn_old - (self.h ** 2) * dxn
+                xn = 2 * xn - xn_old - (self.h ** 2) * dxn.permute((0, 2, 1))
             else:
                 xn = xn + self.h * dxn
 
