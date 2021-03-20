@@ -605,7 +605,7 @@ class graphNetwork_nodesOnly(nn.Module):
             #    self.saveOperatorImages(operators)
 
             if self.varlet:
-                dxn = torch.cat([xn, lapX], dim=2)
+                dxn = torch.cat([xn, lapX], dim=2).squeeze()
             else:
                 dxn = torch.cat([xn, intX, gradX], dim=1)
             print("dxn shape:", dxn.shape)
