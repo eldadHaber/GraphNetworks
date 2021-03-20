@@ -41,7 +41,7 @@ nopen = 16
 nhid = 64
 nNclose = 16
 nlayer = 100
-h = 1/nlayer
+h = 3/nlayer
 
 batchSize = 32
 
