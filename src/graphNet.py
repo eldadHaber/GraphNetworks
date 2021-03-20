@@ -465,8 +465,6 @@ class graphNetwork_nodesOnly(nn.Module):
     def reset_parameters(self):
         glorot(self.KN1)
         glorot(self.KN2)
-        glorot(self.lin1)
-        glorot(self.lin2)
         glorot(self.K1Nopen)
         glorot(self.K2Nopen)
         glorot(self.KNclose)
