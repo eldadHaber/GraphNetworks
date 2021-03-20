@@ -139,10 +139,11 @@ def train():
 
     #out = model(xn, xe, G)
     out = model(xn, G)
-    tvreg = torch.norm(G.nodeGrad(out), p=1) / I.shape[1]
     print("out shape:", out.shape)
+
+    tvreg = torch.norm(G.nodeGrad(out.unsqueeze(0)), p=1) / I.shape[1]
     #out = model(data.x, data.adj_t)
-    loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask])
+    loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask]) + tvreg
     loss.backward()
     optimizer.step()
     return float(loss)
