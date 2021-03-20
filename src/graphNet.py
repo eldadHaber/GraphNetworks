@@ -641,7 +641,7 @@ class graphNetwork_nodesOnly(nn.Module):
 
             if self.dropout:
                 dxn = F.dropout(dxn, p=0.6, training=self.training)
-            # dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
+            dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
 
             if self.wave:
                 # xn = xn + self.h * dxn
