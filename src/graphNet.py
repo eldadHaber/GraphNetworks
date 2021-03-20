@@ -546,7 +546,7 @@ class graphNetwork_nodesOnly(nn.Module):
                 saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, 0)
 
         N = Graph.nnodes
-        nlayers = self.KE1.shape[0]
+        nlayers = self.KN1.shape[0]
         xn_old = xn.clone()
         for i in range(nlayers):
             if i % 200 == 199:  # update graph
