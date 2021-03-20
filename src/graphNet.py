@@ -430,13 +430,14 @@ class graphNetwork_nodesOnly(nn.Module):
         self.diffOrder = diffOrder
         self.num_output = num_output
         self.dropout = dropOut
+        self.nlayers = nlayer
         stdv = 1e-3
         stdvp = 1e-3
-        #self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
+        # self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
         self.K1Nopen = torch.nn.Linear(nNin, nopen)
-        #self.K2Nopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
+        # self.K2Nopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
         self.K2Nopen = torch.nn.Linear(nopen, nopen)
-        #self.KNclose = nn.Parameter(torch.randn(nNclose, nopen) * stdv)
+        # self.KNclose = nn.Parameter(torch.randn(nNclose, nopen) * stdv)
         self.KNclose = torch.nn.Linear(nopen, nNclose)
 
         if varlet:
@@ -444,8 +445,18 @@ class graphNetwork_nodesOnly(nn.Module):
         else:
             Nfeatures = 3 * nopen
 
-        self.KN1 = nn.Parameter(torch.rand(nlayer, nhid, Nfeatures) * stdvp)
-        self.KN2 = nn.Parameter(torch.rand(nlayer, nopen, nhid) * stdvp)
+        self.KN1 = torch.nn.ModuleList()
+        self.KN2 = torch.nn.ModuleList()
+
+        for i in torch.arange(0, nlayer):
+            conv1 = torch.nn.Conv1d(Nfeatures, nhid, kernel_size=1)
+            conv2 = torch.nn.Conv1d(nhid, nopen, kernel_size=1)
+
+            self.KN1.append(conv1)
+            self.KN2.append(conv2)
+
+        # self.KN1 = nn.Parameter(torch.rand(nlayer, nhid, Nfeatures) * stdvp)
+        # self.KN2 = nn.Parameter(torch.rand(nlayer, nopen, nhid) * stdvp)
 
         self.lin1 = torch.nn.Linear(nopen, 256)
         self.lin2 = torch.nn.Linear(256, num_output)
@@ -462,6 +473,15 @@ class graphNetwork_nodesOnly(nn.Module):
             else:
                 xe = conv1(xe, K)
         return xe
+
+    def newDoubleLayer(self, x, K1, K2):
+        x = K1(x)
+        x = F.layer_norm(x, x.shape)
+        x = torch.tanh(x)
+        if self.dropout:
+            print("self.training:", self.training)
+            x = F.dropout(x, p=0.6, training=self.training)
+        x = K2(x)
 
     def doubleLayer(self, x, K1, K2):
         x = self.edgeConv(x, K1)
@@ -529,14 +549,14 @@ class graphNetwork_nodesOnly(nn.Module):
         # Opening layer
         if self.dropout:
             xn = F.dropout(xn, p=0.6, training=self.training)
-        #xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
+        # xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
         print("xn shgape:", xn.shape)
         xn = xn.unsqueeze(0)
         xn = self.K1Nopen(xn)
         xn = F.tanh(F.layer_norm(xn, xn.shape))
         xn = self.K2Nopen(xn)
         print("xn shape:", xn.shape)
-        xn = xn.permute((0, 2, 1))
+        # xn = xn.permute((0, 2, 1))
         if self.dropout:
             xn = F.dropout(xn, p=0.6, training=self.training)
         debug = False
@@ -555,7 +575,7 @@ class graphNetwork_nodesOnly(nn.Module):
                 saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, 0)
 
         N = Graph.nnodes
-        nlayers = self.KN1.shape[0]
+        nlayers = self.nlayers
         xn_old = xn.clone()
         for i in range(nlayers):
             if i % 200 == 199:  # update graph
@@ -589,7 +609,8 @@ class graphNetwork_nodesOnly(nn.Module):
             else:
                 dxn = torch.cat([xn, intX, gradX], dim=1)
 
-            dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
+            # dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
+            dxn = self.newDoubleLayer(dxn, self.KN1[i], self.KN2[i])
 
             if self.wave:
                 # xn = xn + self.h * dxn
@@ -603,9 +624,9 @@ class graphNetwork_nodesOnly(nn.Module):
                 else:
                     saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, i + 1)
 
-        #xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
-        xn = self.KNclose(xn.permute(0,2,1))
-        xn = xn.squeeze() #.t()
+        # xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
+        xn = self.KNclose(xn.permute(0, 2, 1))
+        xn = xn.squeeze()  # .t()
 
         if self.dropout:
             # for cora
