@@ -107,7 +107,6 @@ model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense
 model.reset_parameters()
 model.to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0.0001)
-scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=500)
 
 def train():
     model.train()
@@ -145,10 +144,9 @@ def train():
     tvreg = torch.norm(G.nodeGrad(out.t().unsqueeze(0)), p=1) / I.shape[0]
     print("tvreg:", tvreg)
     #out = model(data.x, data.adj_t)
-    loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask]) + 0.1*tvreg
+    loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask]) + 10*tvreg
     loss.backward()
     optimizer.step()
-    scheduler.step()
     return float(loss)
 
 @torch.no_grad()
