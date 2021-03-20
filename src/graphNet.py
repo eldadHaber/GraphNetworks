@@ -547,7 +547,7 @@ class graphNetwork_nodesOnly(nn.Module):
         if edgeSpace:
             out = x
         else:
-            out = Graph.edgeAve(x, method='ave')
+            out = Graph.edgeDiv(x)
         operators.append(out)
         return operators
 
@@ -637,12 +637,12 @@ class graphNetwork_nodesOnly(nn.Module):
             nodalGradX = Graph.edgeAve(gradX)
             lapX = Graph.nodeLap(xn)
 
-            # operators = self.nodeDeriv(xn, Graph, order=self.diffOrder, edgeSpace=True)
+            operators = self.nodeDeriv(xn, Graph, order=4, edgeSpace=False)
             # if debug and image:
             #    self.saveOperatorImages(operators)
             # print("xn shape:", xn.shape)
             if self.varlet:
-                dxn = torch.cat([xn, nodalGradX,lapX], dim=1)
+                dxn = torch.cat([xn, lapX, operators[-1]], dim=1)
             else:
                 dxn = torch.cat([xn, intX, gradX], dim=1)
 
