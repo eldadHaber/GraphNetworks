@@ -536,7 +536,7 @@ class graphNetwork_nodesOnly(nn.Module):
         xn = F.tanh(F.layer_norm(xn, xn.shape))
         xn = self.K2Nopen(xn)
         print("xn shape:", xn.shape)
-        xn = xn.permute((0,2,1))
+        xn = xn.permute((0, 2, 1))
         if self.dropout:
             xn = F.dropout(xn, p=0.6, training=self.training)
         debug = False
@@ -604,7 +604,7 @@ class graphNetwork_nodesOnly(nn.Module):
                     saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, i + 1)
 
         #xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
-        xn = self.KNclose(xn)
+        xn = self.KNclose(xn.permute(0,2,1))
         xn = xn.squeeze().t()
 
         if self.dropout:
