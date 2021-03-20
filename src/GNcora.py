@@ -103,7 +103,7 @@ model = GN.graphNetwork_try(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, den
                  diffOrder=1, num_output=dataset.num_classes, dropOut=True)
 
 model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=True,
-                 diffOrder=1, num_output=dataset.num_classes, dropOut=True)
+                 diffOrder=1, num_output=dataset.num_classes, dropOut=False)
 model.reset_parameters()
 model.to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0.00001)
@@ -142,8 +142,9 @@ def train():
     print("out shape:", out.shape)
 
     tvreg = torch.norm(G.nodeGrad(out.t().unsqueeze(0)), p=1) / I.shape[0]
+    print("tvreg:", tvreg)
     #out = model(data.x, data.adj_t)
-    loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask]) # + tvreg
+    loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask])  + tvreg
     loss.backward()
     optimizer.step()
     return float(loss)
