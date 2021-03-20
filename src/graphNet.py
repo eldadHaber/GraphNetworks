@@ -637,7 +637,7 @@ class graphNetwork_nodesOnly(nn.Module):
                 # xn = xn + self.h * dxn
                 xn = 2 * xn - xn_old - (self.h ** 2) * dxn
                 if self.dropout:
-                    xn = F.dropout(xn, p=0.6, training=self.training)
+                    xn = F.dropout(xn, p=0.2, training=self.training)
                 xn_old = tmp_xn
 
             else:
