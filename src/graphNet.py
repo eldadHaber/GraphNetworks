@@ -585,7 +585,7 @@ class graphNetwork_nodesOnly(nn.Module):
         J = edge_index[1, :]
         Graph = GO.graph(I, J, N, W=edge_weights, pos=None, faces=None)
 
-        return Graph
+        return Graph, edge_index
 
     def forward(self, xn, Graph):
         # Opening layer
@@ -614,6 +614,7 @@ class graphNetwork_nodesOnly(nn.Module):
         N = Graph.nnodes
         nlayers = self.nlayers
         xn_old = xn.clone()
+        x0 = xn.clone()
         for i in range(nlayers):
 
 
@@ -622,7 +623,7 @@ class graphNetwork_nodesOnly(nn.Module):
                 I, J = getConnectivity(xn.squeeze(0))
                 Graph = GO.graph(I, J, N)
             tmp_xn = xn.clone()
-            Graph = self.updateGraph(Graph, xn.clone())
+            Graph, edge_index = self.updateGraph(Graph, xn.clone())
 
             gradX = Graph.nodeGrad(xn)
             intX = Graph.nodeAve(xn)
@@ -645,7 +646,7 @@ class graphNetwork_nodesOnly(nn.Module):
 
             if self.wave:
                 # xn = xn + self.h * dxn
-                xn = 2 * xn - xn_old - (self.h ** 2) * self.convs[i](xn) #* dxn
+                xn = 2 * xn - xn_old - (self.h ** 2) * self.convs[i](xn, x0, edge_index) #* dxn
                 xn_old = tmp_xn
 
             else:
