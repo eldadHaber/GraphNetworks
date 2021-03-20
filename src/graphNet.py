@@ -499,7 +499,8 @@ class graphNetwork_nodesOnly(nn.Module):
         if self.dropout:
             x = F.dropout(x, p=0.6, training=self.training)
         x = F.layer_norm(x, x.shape)
-        x = torch.tanh(x)
+        #x = torch.tanh(x)
+        x = torch.relu(x)
         x = self.edgeConv(x, K2)
         if self.dropout:
             x = F.dropout(x, p=0.6, training=self.training)
@@ -641,9 +642,8 @@ class graphNetwork_nodesOnly(nn.Module):
 
         if self.dropout:
             # for cora
-
+            x = F.dropout(xn, p=0.6, training=self.training)
             x = F.relu(self.lin1(xn))
-            x = F.dropout(x, p=0.6, training=self.training)
         else:
             # for faust
             x = F.elu(self.lin1(xn))
