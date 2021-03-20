@@ -612,6 +612,7 @@ class graphNetwork_nodesOnly(nn.Module):
             # dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
             print("self.KN1[i]:", self.KN1[i])
             dxn = self.newDoubleLayer(dxn, self.KN1[i], self.KN2[i])
+            print("dxn:", dxn)
             if self.wave:
                 # xn = xn + self.h * dxn
                 xn = 2 * xn - xn_old - (self.h ** 2) * dxn
