@@ -162,7 +162,8 @@ def test():
     G = G.to(device)
     xn = data.x.t().unsqueeze(0)
     xe = torch.ones(1, 1, I.shape[0]).to(device)
-    out = model(xn, xe, G)
+    #out = model(xn, xe, G)
+    out = model(xn, G)
     pred, accs = out.argmax(dim=-1), []
     #pred, accs = model(data.x, data.adj_t).argmax(dim=-1), []
     for _, mask in data('train_mask', 'val_mask', 'test_mask'):
