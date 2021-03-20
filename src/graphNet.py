@@ -599,7 +599,7 @@ class graphNetwork_nodesOnly(nn.Module):
             intX = Graph.nodeAve(xn.permute((0, 2, 1)))
 
             nodalGradX = Graph.edgeAve(gradX)
-            lapX = Graph.nodeLap(xn.permute((0, 2, 1)))
+            lapX = Graph.nodeLap(xn.permute((0, 2, 1))).permute((0, 2, 1))
             #operators = self.nodeDeriv(xn, Graph, order=self.diffOrder, edgeSpace=True)
             #if debug and image:
             #    self.saveOperatorImages(operators)
