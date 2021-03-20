@@ -511,7 +511,7 @@ class graphNetwork_nodesOnly(nn.Module):
             x = torch.tanh(x)
         else:
             x = F.dropout(x, p=0.6, training=self.training)
-            x = F.layer_norm(x, x.shape)
+            #x = F.layer_norm(x, x.shape)
             x = torch.relu(x)
         x = self.edgeConv(x, K2)
         x = F.relu(x)
