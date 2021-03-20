@@ -504,9 +504,9 @@ class graphNetwork_nodesOnly(nn.Module):
             x = F.layer_norm(x, x.shape)
             x = torch.relu(x)
         x = self.edgeConv(x, K2)
-        if self.dropout:
+        #if self.dropout:
             #x = F.dropout(x, p=0.6, training=self.training)
-            x = F.layer_norm(x, x.shape)
+            #x = F.layer_norm(x, x.shape)
             #x = torch.relu(x)
         return x
 
