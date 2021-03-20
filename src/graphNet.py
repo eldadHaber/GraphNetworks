@@ -496,7 +496,7 @@ class graphNetwork_nodesOnly(nn.Module):
     def singleLayer(self, x, K):
         x = self.edgeConv(x, K)
         x = F.layer_norm(x, x.shape)
-        #x = F.relu(x)
+        x = F.relu(x)
 
         return x
 
