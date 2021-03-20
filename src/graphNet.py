@@ -582,7 +582,7 @@ class graphNetwork_nodesOnly(nn.Module):
         xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
 
         xn = xn.unsqueeze(0)
-
+        print("xn shape:", xn.shape)
         debug = False
         if debug:
             image = False
