@@ -514,10 +514,10 @@ class graphNetwork_nodesOnly(nn.Module):
             x = F.layer_norm(x, x.shape)
             x = torch.relu(x)
         x = self.edgeConv(x, K2)
-        #if self.dropout:
-            #x = F.dropout(x, p=0.6, training=self.training)
-            #x = F.layer_norm(x, x.shape)
-            #x = torch.relu(x)
+        # if self.dropout:
+        # x = F.dropout(x, p=0.6, training=self.training)
+        # x = F.layer_norm(x, x.shape)
+        # x = torch.relu(x)
         return x
 
     def nodeDeriv(self, features, Graph, order=1, edgeSpace=True):
@@ -617,8 +617,6 @@ class graphNetwork_nodesOnly(nn.Module):
         x0 = xn.clone()
         for i in range(nlayers):
 
-
-
             if i % 200 == 199:  # update graph
                 I, J = getConnectivity(xn.squeeze(0))
                 Graph = GO.graph(I, J, N)
@@ -642,11 +640,12 @@ class graphNetwork_nodesOnly(nn.Module):
 
             if self.dropout:
                 dxn = F.dropout(dxn, p=0.6, training=self.training)
-            #dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
+            # dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
 
             if self.wave:
                 # xn = xn + self.h * dxn
-                xn = 2 * xn - xn_old - (self.h ** 2) * self.convs[i](xn, x0, edge_index, Graph.W) #* dxn
+                xn = 2 * xn - xn_old - (self.h ** 2) * self.convs[i](xn.permute(0, 2, 1), x0.permute(0, 2, 1),
+                                                                     edge_index, Graph.W).permute(0,2,1)  # * dxn
                 xn_old = tmp_xn
 
             else:
@@ -663,7 +662,7 @@ class graphNetwork_nodesOnly(nn.Module):
 
         if self.dropout:
             # for cora
-            #x = F.dropout(xn, p=0.6, training=self.training)
+            # x = F.dropout(xn, p=0.6, training=self.training)
             x = F.relu(self.lin1(xn))
         else:
             # for faust
