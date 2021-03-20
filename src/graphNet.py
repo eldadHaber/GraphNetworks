@@ -646,7 +646,7 @@ class graphNetwork_nodesOnly(nn.Module):
 
             if self.wave:
                 # xn = xn + self.h * dxn
-                xn = 2 * xn - xn_old - (self.h ** 2) * self.convs[i](xn, x0, edge_index) #* dxn
+                xn = 2 * xn - xn_old - (self.h ** 2) * self.convs[i](xn, x0, edge_index, Graph.W) #* dxn
                 xn_old = tmp_xn
 
             else:
