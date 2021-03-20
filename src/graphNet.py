@@ -595,11 +595,11 @@ class graphNetwork_nodesOnly(nn.Module):
             w = D[I, J]
             Graph = GO.graph(I, J, N, W=w, pos=None, faces=None)
 
-            gradX = Graph.nodeGrad(xn)
-            intX = Graph.nodeAve(xn)
+            gradX = Graph.nodeGrad(xn.permute((0, 2, 1)))
+            intX = Graph.nodeAve(xn.permute((0, 2, 1)))
 
-            nodalGradX = Graph.edgeAve(gradX)
-            lapX = Graph.nodeLap(gradX)
+            nodalGradX = Graph.edgeAve(gradX.permute((0, 2, 1)))
+            lapX = Graph.nodeLap(gradX.permute((0, 2, 1)))
             operators = self.nodeDeriv(xn, Graph, order=self.diffOrder, edgeSpace=True)
             if debug and image:
                 self.saveOperatorImages(operators)
@@ -625,7 +625,7 @@ class graphNetwork_nodesOnly(nn.Module):
                     saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, i + 1)
 
         # xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
-        xn = self.KNclose(xn.permute(0, 2, 1))
+        xn = self.KNclose(xn)
         xn = xn.squeeze()  # .t()
 
         if self.dropout:
