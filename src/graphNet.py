@@ -608,7 +608,7 @@ class graphNetwork_nodesOnly(nn.Module):
                 dxn = torch.cat([xn, lapX], dim=0)
             else:
                 dxn = torch.cat([xn, intX, gradX], dim=1)
-
+            print("dxn shape:", dxn.shape)
             # dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
             dxn = self.newDoubleLayer(dxn, self.KN1[i], self.KN2[i])
 
