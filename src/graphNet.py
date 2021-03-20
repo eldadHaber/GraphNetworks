@@ -553,7 +553,7 @@ class graphNetwork_nodesOnly(nn.Module):
         plt.close()
 
     def updateGraph(self, Graph, features):
-        features = xn.squeeze().t()
+        features = features.squeeze().t()
         D = torch.relu(torch.sum(features ** 2, dim=0, keepdim=True) + \
                        torch.sum(features ** 2, dim=0, keepdim=True).t() - \
                        2 * features.t() @ features)
