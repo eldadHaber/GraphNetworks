@@ -603,7 +603,7 @@ class graphNetwork_nodesOnly(nn.Module):
             #operators = self.nodeDeriv(xn, Graph, order=self.diffOrder, edgeSpace=True)
             #if debug and image:
             #    self.saveOperatorImages(operators)
-
+            print("xn shape:", xn.shape)
             if self.varlet:
                 dxn = torch.cat([xn, lapX], dim=2).permute((0, 2, 1))
             else:
