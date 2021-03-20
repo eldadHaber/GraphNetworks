@@ -623,7 +623,7 @@ class graphNetwork_nodesOnly(nn.Module):
                 I, J = getConnectivity(xn.squeeze(0))
                 Graph = GO.graph(I, J, N)
             tmp_xn = xn.clone()
-            Graph, edge_index = self.updateGraph(Graph, xn.clone())
+            [Graph, edge_index] = self.updateGraph(Graph, xn.clone())
 
             gradX = Graph.nodeGrad(xn)
             intX = Graph.nodeAve(xn)
