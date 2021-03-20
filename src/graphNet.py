@@ -584,7 +584,7 @@ class graphNetwork_nodesOnly(nn.Module):
             if i % 200 == 199:  # update graph
                 I, J = getConnectivity(xn.squeeze(0))
                 Graph = GO.graph(I, J, N)
-            xn_old = xn.clone()
+            tmp_xn = xn.clone()
 
             features = xn.squeeze().t()
             D = torch.relu(torch.sum(features ** 2, dim=0, keepdim=True) + \
@@ -623,6 +623,8 @@ class graphNetwork_nodesOnly(nn.Module):
             if self.wave:
                 # xn = xn + self.h * dxn
                 xn = 2 * xn - xn_old - (self.h ** 2) * dxn.permute((0, 2, 1))
+                xn_old = tmp_xn
+
             else:
                 xn = xn + self.h * dxn
 
