@@ -591,7 +591,7 @@ class graphNetwork_nodesOnly(nn.Module):
         [edge_index, edge_weights] = gcn_norm(edge_index)  # Pre-process GCN normalization.
         I = edge_index[0, :]
         J = edge_index[1, :]
-        Graph = GO.graph(I, J, N, W=w, pos=None, faces=None)
+        Graph = GO.graph(I, J, N, W=edge_weights, pos=None, faces=None)
 
         return Graph, edge_index
 
