@@ -581,7 +581,6 @@ class graphNetwork_nodesOnly(nn.Module):
             xn = F.dropout(xn, p=0.6, training=self.training)
         xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
 
-        print("xn shape:", xn.shape)
         debug = False
         if debug:
             image = False
@@ -605,7 +604,6 @@ class graphNetwork_nodesOnly(nn.Module):
                 I, J = getConnectivity(xn.squeeze(0))
                 Graph = GO.graph(I, J, N)
             tmp_xn = xn.clone()
-            print("xn shape:", xn.shape)
             Graph = self.updateGraph(Graph, xn.clone())
 
             gradX = Graph.nodeGrad(xn)
@@ -613,8 +611,6 @@ class graphNetwork_nodesOnly(nn.Module):
 
             nodalGradX = Graph.edgeAve(gradX)
             lapX = Graph.nodeLap(xn)
-            print("lap x shape:", lapX.shape)
-            print("xn shape:", xn.shape)
 
             # operators = self.nodeDeriv(xn, Graph, order=self.diffOrder, edgeSpace=True)
             # if debug and image:
