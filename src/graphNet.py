@@ -498,6 +498,8 @@ class graphNetwork_nodesOnly(nn.Module):
         x = F.layer_norm(x, x.shape)
         x = F.relu(x)
 
+        return x
+
     def newDoubleLayer(self, x, K1, K2):
         x = K1(x)
         # x = F.layer_norm(x, x.shape)
@@ -516,7 +518,7 @@ class graphNetwork_nodesOnly(nn.Module):
             x = torch.tanh(x)
         else:
             x = F.dropout(x, p=0.6, training=self.training)
-            #x = F.layer_norm(x, x.shape)
+            # x = F.layer_norm(x, x.shape)
             x = torch.relu(x)
         x = self.edgeConv(x, K2)
         x = F.relu(x)
@@ -600,7 +602,7 @@ class graphNetwork_nodesOnly(nn.Module):
         # Opening layer
         if self.dropout:
             xn = F.dropout(xn, p=0.6, training=self.training)
-        #xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
+        # xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
         xn = self.singleLayer(xn, self.K1Nopen)
         debug = False
         if debug:
@@ -646,15 +648,15 @@ class graphNetwork_nodesOnly(nn.Module):
 
             if self.dropout:
                 dxn = F.dropout(dxn, p=0.6, training=self.training)
-            #dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
+            # dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
             dxn = self.singleLayer(dxn, self.KN1[i])
             if self.wave:
                 # xn = xn + self.h * dxn
                 xn = 2 * xn - xn_old - (self.h ** 2) * dxn
-                #F.relu(self.convs[i](F.dropout(xn.permute(0, 2, 1), p=0.6), x0.permute(0, 2, 1),
+                # F.relu(self.convs[i](F.dropout(xn.permute(0, 2, 1), p=0.6), x0.permute(0, 2, 1),
                 #                                                     edge_index, Graph.W).permute(0, 2, 1))  #
 
-                #xn =  F.relu(self.convs[i](F.dropout(xn.permute(0, 2, 1), p=0.6), x0.permute(0, 2, 1),
+                # xn =  F.relu(self.convs[i](F.dropout(xn.permute(0, 2, 1), p=0.6), x0.permute(0, 2, 1),
                 #                                                     edge_index, Graph.W).permute(0, 2, 1))
                 xn_old = tmp_xn
 
