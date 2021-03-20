@@ -586,7 +586,7 @@ class graphNetwork_nodesOnly(nn.Module):
                 # xn = xn + self.h * dxn
                 xn = 2 * xn - xn_old - (self.h ** 2) * dxn
             else:
-                xn = xn + dxn
+                xn = xn + self.h * dxn
 
             if debug:
                 if image:
