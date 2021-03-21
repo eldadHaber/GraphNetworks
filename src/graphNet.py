@@ -637,7 +637,7 @@ class graphNetwork_nodesOnly(nn.Module):
             nodalGradX = Graph.edgeAve(gradX)
             lapX = Graph.nodeLap(xn)
 
-            operators = self.nodeDeriv(xn, Graph, order=10, edgeSpace=False)
+            operators = self.nodeDeriv(xn, Graph, order=2, edgeSpace=False)
             # if debug and image:
             #    self.saveOperatorImages(operators)
             # print("xn shape:", xn.shape)
