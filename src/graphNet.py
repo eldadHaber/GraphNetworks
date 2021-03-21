@@ -495,10 +495,10 @@ class graphNetwork_nodesOnly(nn.Module):
 
     def singleLayer(self, x, K):
         x = self.edgeConv(x, K)
-        #x = F.layer_norm(x, x.shape)
+        x = F.layer_norm(x, x.shape)
         #x = F.relu(x)
-        x = F.instance_norm(x)
-        x = F.tanh(x)
+        #x = F.instance_norm(x)
+        x = F.elu(x)
         return x
 
     def newDoubleLayer(self, x, K1, K2):
