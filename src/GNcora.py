@@ -102,7 +102,7 @@ data = data.to(device)
 model = GN.graphNetwork_try(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=True, wave=True,
                             diffOrder=1, num_output=dataset.num_classes, dropOut=True)
 
-model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
+model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=True,
                                   diffOrder=1, num_output=dataset.num_classes, dropOut=True)
 model.reset_parameters()
 model.to(device)
@@ -136,8 +136,8 @@ def train():
     # out = model(xn, xe, G)
     [out, G] = model(xn, G)
     print("out shape:", out.shape)
-
-    tvreg = torch.norm(G.nodeGrad(out.t().unsqueeze(0)), p=1) / I.shape[0]
+    [valmax, argmax] = torch.max(out, dim=1)
+    tvreg = torch.norm(G.nodeGrad(argmax.unsqueeze(0).unsqueeze(0)), p=1) / I.shape[0]
     print("tvreg:", tvreg)
     loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask]) + 0.1 * tvreg
     loss.backward()
