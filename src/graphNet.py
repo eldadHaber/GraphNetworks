@@ -634,7 +634,7 @@ class graphNetwork_nodesOnly(nn.Module):
             gradX = Graph.nodeGrad(xn)
             intX = Graph.nodeAve(xn)
 
-            nodalGradX = Graph.edgeAve(gradX, method='max')
+            nodalGradX = Graph.edgeAve(gradX, method='ave')
             lapX = Graph.nodeLap(xn)
 
             operators = self.nodeDeriv(xn, Graph, order=2, edgeSpace=False)
