@@ -629,7 +629,7 @@ class graphNetwork_nodesOnly(nn.Module):
                 I, J = getConnectivity(xn.squeeze(0))
                 Graph = GO.graph(I, J, N)
             tmp_xn = xn.clone()
-            #[Graph, edge_index] = self.updateGraph(Graph, xn.clone())
+            [Graph, edge_index] = self.updateGraph(Graph, xn.clone())
 
             gradX = Graph.nodeGrad(xn)
             intX = Graph.nodeAve(xn)
@@ -637,7 +637,7 @@ class graphNetwork_nodesOnly(nn.Module):
             nodalGradX = Graph.edgeAve(gradX)
             lapX = Graph.nodeLap(xn)
 
-            operators = self.nodeDeriv(xn, Graph, order=4, edgeSpace=False)
+            operators = self.nodeDeriv(xn, Graph, order=10, edgeSpace=False)
             # if debug and image:
             #    self.saveOperatorImages(operators)
             # print("xn shape:", xn.shape)
