@@ -8,6 +8,7 @@ import torch_geometric.transforms as T
 from torch_geometric.nn import GCN2Conv
 from torch_geometric.nn.conv.gcn_conv import gcn_norm
 import sys
+
 if "s" in sys.argv:
     base_path = '/home/eliasof/pFold/data/'
     import graphOps as GO
@@ -41,21 +42,20 @@ nopen = 64
 nhid = 64
 nNclose = 64
 nlayer = 2
-h = 1/nlayer
+h = 1 / nlayer
 
 batchSize = 32
-
 
 dataset = 'Cora'
 path = '/home/cluster/users/erant_group/moshe/cora'
 transform = T.Compose([T.NormalizeFeatures()])
-#transform = T.Compose([T.NormalizeFeatures(), T.()])
+# transform = T.Compose([T.NormalizeFeatures(), T.()])
 
 dataset = Planetoid(path, dataset, transform=transform)
 data = dataset[0]
-#data.adj_t = gcn_norm(data.adj_t)  # Pre-process GCN normalization.
 
 
+# data.adj_t = gcn_norm(data.adj_t)  # Pre-process GCN normalization.
 
 
 class Net(torch.nn.Module):
@@ -100,13 +100,14 @@ optimizer = torch.optim.Adam([
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 data = data.to(device)
 model = GN.graphNetwork_try(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=True, wave=True,
-                 diffOrder=1, num_output=dataset.num_classes, dropOut=True)
+                            diffOrder=1, num_output=dataset.num_classes, dropOut=True)
 
 model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=True,
-                 diffOrder=1, num_output=dataset.num_classes, dropOut=True)
+                                  diffOrder=1, num_output=dataset.num_classes, dropOut=True)
 model.reset_parameters()
 model.to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0.0001)
+
 
 def train():
     model.train()
@@ -130,24 +131,19 @@ def train():
     G = GO.graph(I, J, N, W=w, pos=None, faces=None)
     G = G.to(device)
     xn = data.x.t().unsqueeze(0)
-    #xe = data.edge_attr.t().unsqueeze(0)
     xe = torch.ones(1, 1, I.shape[0]).to(device)
-    # print("I shape:", I.shape)
-    # print("edge index shape:", data.edge_index.shape)
-    # print("xn shape:", xn.shape)
-    # print("xe shape:", xe.shape)
 
-    #out = model(xn, xe, G)
+    # out = model(xn, xe, G)
     [out, G] = model(xn, G)
     print("out shape:", out.shape)
 
     tvreg = torch.norm(G.nodeGrad(out.t().unsqueeze(0)), p=1) / I.shape[0]
     print("tvreg:", tvreg)
-    #out = model(data.x, data.adj_t)
-    loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask]) + 0.1*tvreg
+    loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask]) + 0.2 * tvreg
     loss.backward()
     optimizer.step()
     return float(loss)
+
 
 @torch.no_grad()
 def test():
@@ -167,10 +163,10 @@ def test():
     G = G.to(device)
     xn = data.x.t().unsqueeze(0)
     xe = torch.ones(1, 1, I.shape[0]).to(device)
-    #out = model(xn, xe, G)
+    # out = model(xn, xe, G)
     [out, G] = model(xn, G)
     pred, accs = out.argmax(dim=-1), []
-    #pred, accs = model(data.x, data.adj_t).argmax(dim=-1), []
+    # pred, accs = model(data.x, data.adj_t).argmax(dim=-1), []
     for _, mask in data('train_mask', 'val_mask', 'test_mask'):
         accs.append(int((pred[mask] == data.y[mask]).sum()) / int(mask.sum()))
     return accs
