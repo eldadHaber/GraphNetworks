@@ -459,7 +459,7 @@ class graphNetwork_nodesOnly(nn.Module):
         #     self.KN2.append(conv2)
 
         self.KN1 = nn.Parameter(torch.rand(nlayer, nhid, Nfeatures) * stdvp)
-        self.KN2 = nn.Parameter(torch.rand(nlayer, nopen, nhid) * stdvp)
+        self.KN2 = nn.Parameter(torch.rand(nlayer, nopen, 2*nhid) * stdvp)
 
         self.convs = torch.nn.ModuleList()
         alpha = 0.1
@@ -643,7 +643,7 @@ class graphNetwork_nodesOnly(nn.Module):
             # print("xn shape:", xn.shape)
             if self.varlet:
                 dxn = torch.cat([xn, nodalGradX, lapX], dim=1)
-                dxn = torch.cat([xn,gradX, intX], dim=1)
+                dxe = torch.cat([gradX, intX], dim=1)
             else:
                 dxn = torch.cat([xn, intX, gradX], dim=1)
 
@@ -651,7 +651,8 @@ class graphNetwork_nodesOnly(nn.Module):
                 dxn = F.dropout(dxn, p=0.6, training=self.training)
             # dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
             dxn = self.singleLayer(dxn, self.KN1[i])
-            dxn = Graph.edgeAve(dxn)
+            dxe = self.singleLayer(dxn, self.KN2[i])
+            dxn = Graph.edgeAve(dxe) + dxn
             if self.wave:
                 # xn = xn + self.h * dxn
                 xn = 2 * xn - xn_old - (self.h ** 2) * dxn
