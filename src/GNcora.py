@@ -103,7 +103,7 @@ model = GN.graphNetwork_try(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, den
                             diffOrder=1, num_output=dataset.num_classes, dropOut=True)
 
 model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
-                                  diffOrder=1, num_output=dataset.num_classes, dropOut=False)
+                                  diffOrder=1, num_output=dataset.num_classes, dropOut=True)
 model.reset_parameters()
 model.to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0.0001)
