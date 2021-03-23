@@ -112,7 +112,7 @@ optimizer = torch.optim.Adam([
     dict(params=model.KN2, weight_decay=0.01),
     dict(params=model.K1Nopen, weight_decay=5e-4),
     dict(params=model.KNclose, weight_decay=5e-4)
-], lr=0.001)
+], lr=0.01)
 
 def train():
     model.train()
@@ -144,7 +144,7 @@ def train():
     [valmax, argmax] = torch.max(out, dim=1)
     tvreg = torch.norm(G.nodeGrad(out.t().unsqueeze(0)), p=1) / I.shape[0]
     print("tvreg:", tvreg)
-    loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask]) + 0.1 * tvreg
+    loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask]) + 0.01 * tvreg
     loss.backward()
     optimizer.step()
     return float(loss)
