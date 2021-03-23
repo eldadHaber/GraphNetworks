@@ -662,8 +662,6 @@ class graphNetwork_nodesOnly(nn.Module):
                 xn_old = tmp_xn
 
             else:
-                dxn = Graph.nodeGrad(dxn)
-                dxn = Graph.edgeDiv(dxn)
                 xn = xn - self.h * dxn
 
             if debug:
