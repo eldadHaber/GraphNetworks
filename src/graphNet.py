@@ -444,7 +444,7 @@ class graphNetwork_nodesOnly(nn.Module):
         # self.KNclose = torch.nn.Linear(nopen, nNclose)
 
         if varlet:
-            Nfeatures = 3 * nopen
+            Nfeatures = 2 * nopen
         else:
             Nfeatures = 3 * nopen
 
@@ -643,6 +643,7 @@ class graphNetwork_nodesOnly(nn.Module):
             # print("xn shape:", xn.shape)
             if self.varlet:
                 dxn = torch.cat([xn, nodalGradX, lapX], dim=1)
+                dxn = torch.cat([gradX, intX], dim=1)
             else:
                 dxn = torch.cat([xn, intX, gradX], dim=1)
 
@@ -650,7 +651,7 @@ class graphNetwork_nodesOnly(nn.Module):
                 dxn = F.dropout(dxn, p=0.6, training=self.training)
             # dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
             dxn = self.singleLayer(dxn, self.KN1[i])
-
+            dxn = Graph.edgeDiv(dxn)
             if self.wave:
                 # xn = xn + self.h * dxn
                 xn = 2 * xn - xn_old - (self.h ** 2) * dxn
