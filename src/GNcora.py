@@ -41,7 +41,7 @@ nEin = 1
 nopen = 64
 nhid = 64
 nNclose = 64
-nlayer = 12
+nlayer = 6
 h = 1 / nlayer
 
 batchSize = 32
@@ -107,7 +107,12 @@ model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense
 model.reset_parameters()
 model.to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0.0001)
-
+optimizer = torch.optim.Adam([
+    dict(params=model.KN1, weight_decay=0.01),
+    dict(params=model.KN2, weight_decay=0.01),
+    dict(params=model.K1Nopen, weight_decay=5e-4),
+    dict(params=model.KNclose, weight_decay=5e-4)
+], lr=0.01)
 
 def train():
     model.train()
