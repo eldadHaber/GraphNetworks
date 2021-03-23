@@ -444,7 +444,7 @@ class graphNetwork_nodesOnly(nn.Module):
         # self.KNclose = torch.nn.Linear(nopen, nNclose)
 
         if varlet:
-            Nfeatures = 2 * nopen
+            Nfeatures = 3 * nopen
         else:
             Nfeatures = 3 * nopen
 
