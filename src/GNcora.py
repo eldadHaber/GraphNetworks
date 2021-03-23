@@ -42,7 +42,7 @@ nopen = 64
 nhid = 64
 nNclose = 64
 nlayer = 20
-h = 1 / 2*nlayer
+h = 1 / nlayer
 
 batchSize = 32
 
@@ -112,7 +112,7 @@ optimizer = torch.optim.Adam([
     dict(params=model.KN2, weight_decay=0.01),
     dict(params=model.K1Nopen, weight_decay=5e-4),
     dict(params=model.KNclose, weight_decay=5e-4)
-], lr=0.01)
+], lr=0.1)
 
 def train():
     model.train()
