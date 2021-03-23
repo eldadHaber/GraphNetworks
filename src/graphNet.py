@@ -643,7 +643,7 @@ class graphNetwork_nodesOnly(nn.Module):
             # print("xn shape:", xn.shape)
             if self.varlet:
                 dxn = torch.cat([xn, nodalGradX, lapX], dim=1)
-                dxn = torch.cat([gradX, intX], dim=1)
+                dxn = torch.cat([xn,gradX, intX], dim=1)
             else:
                 dxn = torch.cat([xn, intX, gradX], dim=1)
 
