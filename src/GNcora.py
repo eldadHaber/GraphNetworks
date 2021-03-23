@@ -41,7 +41,7 @@ nEin = 1
 nopen = 64
 nhid = 64
 nNclose = 64
-nlayer = 16
+nlayer = 3
 h = 1 / nlayer
 
 batchSize = 32
@@ -139,7 +139,7 @@ def train():
     [valmax, argmax] = torch.max(out, dim=1)
     tvreg = torch.norm(G.nodeGrad(argmax.unsqueeze(0).unsqueeze(0)), p=1) / I.shape[0]
     print("tvreg:", tvreg)
-    loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask]) + 1 * tvreg
+    loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask]) #+ 1 * tvreg
     loss.backward()
     optimizer.step()
     return float(loss)
