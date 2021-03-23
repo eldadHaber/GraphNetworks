@@ -649,6 +649,7 @@ class graphNetwork_nodesOnly(nn.Module):
 
             if self.dropout:
                 dxn = F.dropout(dxn, p=0.6, training=self.training)
+                dxe = F.dropout(dxe, p=0.6, training=self.training)
             # dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
             dxn = self.singleLayer(dxn, self.KN1[i])
             dxe = self.singleLayer(dxe, self.KN2[i])
