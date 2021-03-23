@@ -137,7 +137,7 @@ def train():
     [out, G] = model(xn, G)
     print("out shape:", out.shape)
     [valmax, argmax] = torch.max(out, dim=1)
-    tvreg = torch.norm(G.nodeGrad(out.unsqueeze(0)), p=1) / I.shape[0]
+    tvreg = torch.norm(G.nodeGrad(out.t().unsqueeze(0)), p=1) / I.shape[0]
     print("tvreg:", tvreg)
     loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask]) + 0.1 * tvreg
     loss.backward()
