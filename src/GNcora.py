@@ -112,7 +112,7 @@ optimizer = torch.optim.Adam([
     dict(params=model.KN2, weight_decay=0.01),
     dict(params=model.K1Nopen, weight_decay=5e-4),
     dict(params=model.KNclose, weight_decay=5e-4)
-], lr=0.1)
+], lr=0.001)
 
 def train():
     model.train()
