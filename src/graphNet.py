@@ -628,36 +628,36 @@ class graphNetwork_nodesOnly(nn.Module):
         [Graph, edge_index] = self.updateGraph(Graph, xn.clone())
 
         for i in range(nlayers):
+            if 1 ==0:
+                if i % 200 == 199:  # update graph
+                    I, J = getConnectivity(xn.squeeze(0))
+                    Graph = GO.graph(I, J, N)
+                tmp_xn = xn.clone()
+                #[Graph, edge_index] = self.updateGraph(Graph, xn.clone())
 
-            if i % 200 == 199:  # update graph
-                I, J = getConnectivity(xn.squeeze(0))
-                Graph = GO.graph(I, J, N)
-            tmp_xn = xn.clone()
-            #[Graph, edge_index] = self.updateGraph(Graph, xn.clone())
+                gradX = Graph.nodeGrad(xn)
+                intX = Graph.nodeAve(xn)
 
-            gradX = Graph.nodeGrad(xn)
-            intX = Graph.nodeAve(xn)
+                nodalGradX = Graph.edgeAve(gradX, method='max')
+                lapX = Graph.nodeLap(xn)
 
-            nodalGradX = Graph.edgeAve(gradX, method='max')
-            lapX = Graph.nodeLap(xn)
+                operators = self.nodeDeriv(xn, Graph, order=2, edgeSpace=False)
+                # if debug and image:
+                #    self.saveOperatorImages(operators)
+                # print("xn shape:", xn.shape)
+                if self.varlet:
+                    dxn = torch.cat([xn, nodalGradX, lapX], dim=1)
+                    dxe = torch.cat([gradX, intX], dim=1)
+                else:
+                    dxn = torch.cat([xn, intX, gradX], dim=1)
 
-            operators = self.nodeDeriv(xn, Graph, order=2, edgeSpace=False)
-            # if debug and image:
-            #    self.saveOperatorImages(operators)
-            # print("xn shape:", xn.shape)
-            if self.varlet:
-                dxn = torch.cat([xn, nodalGradX, lapX], dim=1)
-                dxe = torch.cat([gradX, intX], dim=1)
-            else:
-                dxn = torch.cat([xn, intX, gradX], dim=1)
-
-            if self.dropout:
-                dxn = F.dropout(dxn, p=0.6, training=self.training)
-                dxe = F.dropout(dxe, p=0.6, training=self.training)
-            # dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
-            dxn = self.singleLayer(dxn, self.KN1[i])
-            dxe = self.singleLayer(dxe, self.KN2[i])
-            dxn = Graph.edgeDiv(dxe) + dxn
+                if self.dropout:
+                    dxn = F.dropout(dxn, p=0.6, training=self.training)
+                    dxe = F.dropout(dxe, p=0.6, training=self.training)
+                # dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
+                dxn = self.singleLayer(dxn, self.KN1[i])
+                dxe = self.singleLayer(dxe, self.KN2[i])
+                dxn = Graph.edgeDiv(dxe) + dxn
             if self.wave:
                 # xn = xn + self.h * dxn
                 xn = 2 * xn - xn_old - (self.h ** 2) * dxn
