@@ -38,7 +38,7 @@ class Net(torch.nn.Module):
 
         self.dropout = dropout
 
-    def forward(self, x, adj_t):
+    def forward(self, x, data, adj_t=None):
         x = F.dropout(x, self.dropout, training=self.training)
         x = x_0 = self.lins[0](x).relu()
 
@@ -68,7 +68,9 @@ optimizer = torch.optim.Adam([
 def train():
     model.train()
     optimizer.zero_grad()
-    out = model(data.x, data.adj_t)
+    #out = model(data.x, data.adj_t)
+    out = model(data.x, data)
+
     loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask])
     loss.backward()
     optimizer.step()
@@ -78,7 +80,9 @@ def train():
 @torch.no_grad()
 def test():
     model.eval()
-    pred, accs = model(data.x, data.adj_t).argmax(dim=-1), []
+    #pred, accs = model(data.x, data.adj_t).argmax(dim=-1), []
+    pred, accs = model(data.x, data).argmax(dim=-1), []
+
     for _, mask in data('train_mask', 'val_mask', 'test_mask'):
         accs.append(int((pred[mask] == data.y[mask]).sum()) / int(mask.sum()))
     return accs
