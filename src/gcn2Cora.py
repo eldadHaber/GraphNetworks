@@ -44,7 +44,9 @@ class Net(torch.nn.Module):
 
         for conv in self.convs:
             x = F.dropout(x, self.dropout, training=self.training)
-            x = conv(x, x_0, adj_t)
+            #x = conv(x, x_0, adj_t)
+            x = conv(x, x_0, data.edge_index, data.edge_weights)
+
             x = x.relu()
 
         x = F.dropout(x, self.dropout, training=self.training)
