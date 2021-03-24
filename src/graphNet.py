@@ -459,7 +459,7 @@ class graphNetwork_nodesOnly(nn.Module):
         #     self.KN2.append(conv2)
 
         self.KN1 = nn.Parameter(torch.rand(nlayer, nhid, Nfeatures) * stdvp)
-        self.KN2 = nn.Parameter(torch.rand(nlayer, nopen, 2*nhid) * stdvp)
+        self.KN2 = nn.Parameter(torch.rand(nlayer, nopen, 2 * nhid) * stdvp)
 
         self.convs = torch.nn.ModuleList()
         alpha = 0.1
@@ -497,7 +497,7 @@ class graphNetwork_nodesOnly(nn.Module):
         x = self.edgeConv(x, K)
         x = F.layer_norm(x, x.shape)
         x = F.relu(x)
-        #x = F.elu(x)
+        # x = F.elu(x)
         return x
 
     def newDoubleLayer(self, x, K1, K2):
@@ -538,7 +538,7 @@ class graphNetwork_nodesOnly(nn.Module):
                 operators.append(x)
 
             if i == order - 1:
-               break
+                break
 
             x = Graph.edgeDiv(x)
             if not edgeSpace:
@@ -665,10 +665,10 @@ class graphNetwork_nodesOnly(nn.Module):
                 xn_old = tmp_xn
 
             else:
-                xn = xn - self.h * dxn
+                #xn = xn - self.h * dxn
 
-                xn =  F.relu(self.convs[i](F.dropout(xn.permute(0, 2, 1), p=0.6), x0.permute(0, 2, 1),
-                                                                    edge_index, Graph.W).permute(0, 2, 1))
+                xn = F.relu(self.convs[i](F.dropout(xn.permute(0, 2, 1), p=0.6), x0.permute(0, 2, 1),
+                                          edge_index, Graph.W).permute(0, 2, 1))
 
             if debug:
                 if image:
