@@ -13,6 +13,8 @@ from torch_geometric.nn.conv.gcn_conv import gcn_norm
 dataset = 'Cora'
 path = '/home/cluster/users/erant_group/moshe/cora'
 transform = T.Compose([T.NormalizeFeatures(), T.ToSparseTensor()])
+transform = T.Compose([T.NormalizeFeatures()])
+
 dataset = Planetoid(path, dataset, transform=transform)
 data = dataset[0]
 data.adj_t = gcn_norm(data.adj_t)  # Pre-process GCN normalization.
