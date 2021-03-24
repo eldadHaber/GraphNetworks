@@ -604,7 +604,8 @@ class graphNetwork_nodesOnly(nn.Module):
             xn = F.dropout(xn, p=0.6, training=self.training)
         # xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
         #xn = self.singleLayer(xn, self.K1Nopen)
-        xn = self.K1Nopen(xn).relu()
+        xn = self.K1Nopen(xn.permute(0, 2, 1)).relu()
+        xn = xn.permute(0, 2, 1)
         debug = False
         if debug:
             image = False
@@ -681,8 +682,8 @@ class graphNetwork_nodesOnly(nn.Module):
 
         xn = F.dropout(xn, p=0.6, training=self.training)
         #xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
-        xn = self.KNclose(xn)
-        xn = xn.squeeze().t()
+        xn = self.KNclose(xn.permute(0, 2, 1))
+        #xn = xn.squeeze().t()
         return F.log_softmax(xn, dim=1), Graph
         if self.dropout:
             # for cora
