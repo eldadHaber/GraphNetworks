@@ -115,7 +115,7 @@ optimizer = torch.optim.Adam([
 ], lr=0.01)
 
 optimizer = torch.optim.Adam([
-    dict(params=model.convs, weight_decay=0.01),
+    dict(params=model.convs.parameters(), weight_decay=0.01),
     dict(params=model.K1Nopen, weight_decay=5e-4),
     dict(params=model.KNclose, weight_decay=5e-4)
 ], lr=0.01)
