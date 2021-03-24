@@ -436,12 +436,12 @@ class graphNetwork_nodesOnly(nn.Module):
         self.nlayers = nlayer
         stdv = 1e-3
         stdvp = 1e-3
-        #self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
-        self.K1Nopen = torch.nn.Linear(nNin, nopen)
+        self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
+        #self.K1Nopen = torch.nn.Linear(nNin, nopen)
         self.K2Nopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
         # self.K2Nopen = torch.nn.Linear(nopen, nopen)
-        #self.KNclose = nn.Parameter(torch.randn(num_output, nopen) * stdv)
-        self.KNclose = torch.nn.Linear(nopen, nNclose)
+        self.KNclose = nn.Parameter(torch.randn(num_output, nopen) * stdv)
+        #self.KNclose = torch.nn.Linear(nopen, nNclose)
 
         if varlet:
             Nfeatures = 3 * nopen
@@ -603,9 +603,8 @@ class graphNetwork_nodesOnly(nn.Module):
         if self.dropout:
             xn = F.dropout(xn, p=0.6, training=self.training)
         # xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
-        #xn = self.singleLayer(xn, self.K1Nopen)
-        xn = self.K1Nopen(xn.permute(0, 2, 1)).relu()
-        xn = xn.permute(0, 2, 1)
+        xn = self.singleLayer(xn, self.K1Nopen)
+        #xn = self.K1Nopen(xn).relu()
         debug = False
         if debug:
             image = False
@@ -681,8 +680,8 @@ class graphNetwork_nodesOnly(nn.Module):
                     saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, i + 1)
 
         xn = F.dropout(xn, p=0.6, training=self.training)
-        #xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
-        xn = self.KNclose(xn.permute(0, 2, 1))
+        xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
+        #xn = self.KNclose(xn.permute(0, 2, 1))
         #xn = xn.squeeze().t()
         return F.log_softmax(xn, dim=1), Graph
         if self.dropout:
