@@ -623,13 +623,15 @@ class graphNetwork_nodesOnly(nn.Module):
         nlayers = self.nlayers
         xn_old = xn.clone()
         x0 = xn.clone()
+        [Graph, edge_index] = self.updateGraph(Graph, xn.clone())
+
         for i in range(nlayers):
 
             if i % 200 == 199:  # update graph
                 I, J = getConnectivity(xn.squeeze(0))
                 Graph = GO.graph(I, J, N)
             tmp_xn = xn.clone()
-            [Graph, edge_index] = self.updateGraph(Graph, xn.clone())
+            #[Graph, edge_index] = self.updateGraph(Graph, xn.clone())
 
             gradX = Graph.nodeGrad(xn)
             intX = Graph.nodeAve(xn)
