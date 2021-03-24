@@ -682,7 +682,7 @@ class graphNetwork_nodesOnly(nn.Module):
         xn = F.dropout(xn, p=0.6, training=self.training)
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
         #xn = self.KNclose(xn.permute(0, 2, 1))
-        #xn = xn.squeeze().t()
+        xn = xn.squeeze().t()
         return F.log_softmax(xn, dim=1), Graph
         if self.dropout:
             # for cora
