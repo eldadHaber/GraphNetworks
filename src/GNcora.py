@@ -151,7 +151,7 @@ def train():
     tvreg = torch.norm(G.nodeGrad(out.t().unsqueeze(0)), p=1) / I.shape[0]
     #print("tvreg:", tvreg)
     #out = out.squeeze()
-    loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask]) #+ 0.2 * tvreg
+    loss =  0.2 * tvreg # F.nll_loss(out[data.train_mask], data.y[data.train_mask]) +
     loss.backward()
     optimizer.step()
     return float(loss)
