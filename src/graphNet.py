@@ -627,7 +627,7 @@ class graphNetwork_nodesOnly(nn.Module):
         [Graph, edge_index] = self.updateGraph(Graph, xn.clone())
 
         for i in range(nlayers):
-            if 1 ==0:
+            if 1 == 1:
                 if i % 200 == 199:  # update graph
                     I, J = getConnectivity(xn.squeeze(0))
                     Graph = GO.graph(I, J, N)
@@ -668,10 +668,10 @@ class graphNetwork_nodesOnly(nn.Module):
                 xn_old = tmp_xn
 
             else:
-                #xn = xn - self.h * dxn
+                xn = xn - self.h * dxn
 
-                xn = F.relu(self.convs[i](F.dropout(xn.permute(0, 2, 1), p=0.6), x0.permute(0, 2, 1),
-                                          edge_index, Graph.W).permute(0, 2, 1))
+                #xn = F.relu(self.convs[i](F.dropout(xn.permute(0, 2, 1), p=0.6), x0.permute(0, 2, 1),
+                #                          edge_index, Graph.W).permute(0, 2, 1))
 
             if debug:
                 if image:
