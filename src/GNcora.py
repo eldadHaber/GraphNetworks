@@ -120,7 +120,7 @@ optimizer = torch.optim.Adam([
 #     dict(params=model.K1Nopen, weight_decay=5e-4),
 #     dict(params=model.KNclose, weight_decay=5e-4)
 # ], lr=0.01)
-scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.1, patience=20)
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=200, gamma=0.1)
 def train():
     model.train()
     optimizer.zero_grad()
