@@ -660,7 +660,7 @@ class graphNetwork_nodesOnly(nn.Module):
                 dxe = self.singleLayer(dxe, self.KN2[i], relu=False)
                 #dxn = F.tanh(Graph.edgeDiv(dxe) + dxn)
                 #dxn = F.tanh(dxn)
-                dxn = Graph.edgeDiv(dxe) + dxn
+                dxn = Graph.edgeDiv(F.tanh(dxe)) + F.tanh(dxn)
             if self.wave:
                 # xn = xn + self.h * dxn
                 xn = 2 * xn - xn_old - (self.h ** 2) * dxn
