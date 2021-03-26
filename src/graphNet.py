@@ -495,7 +495,7 @@ class graphNetwork_nodesOnly(nn.Module):
 
     def singleLayer(self, x, K, relu=True):
         x = self.edgeConv(x, K)
-        #x = F.layer_norm(x, x.shape)
+        x = F.layer_norm(x, x.shape)
         if not relu:
             return x
         x = F.relu(x)
@@ -605,7 +605,8 @@ class graphNetwork_nodesOnly(nn.Module):
         if self.dropout:
             xn = F.dropout(xn, p=0.6, training=self.training)
         # xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
-        xn = self.singleLayer(xn, self.K1Nopen)
+        xn = self.singleLayer(xn, self.K1Nopen, relu=False)
+        xn = F.tanh(xn)
         #xn = self.K1Nopen(xn).relu()
         debug = False
         if debug:
