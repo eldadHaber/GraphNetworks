@@ -46,7 +46,7 @@ h = 1 / nlayer
 
 batchSize = 32
 
-dataset = 'Citesteer'
+dataset = 'CiteSeer'
 path = '/home/cluster/users/erant_group/moshe/citesteer/'
 transform = T.Compose([T.NormalizeFeatures()])
 # transform = T.Compose([T.NormalizeFeatures(), T.()])
