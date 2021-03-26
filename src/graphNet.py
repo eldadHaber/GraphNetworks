@@ -603,7 +603,7 @@ class graphNetwork_nodesOnly(nn.Module):
         # xe = [B, C, N, N] or [B, C, E]
         # Opening layer
         if self.dropout:
-            xn = F.dropout(xn, p=0.6, training=self.training)
+            xn = F.dropout(xn, p=0.7, training=self.training)
         # xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
         xn = self.singleLayer(xn, self.K1Nopen, relu=True)
         #xn = self.K1Nopen(xn).relu()
@@ -653,8 +653,8 @@ class graphNetwork_nodesOnly(nn.Module):
                     dxn = torch.cat([xn, intX, gradX], dim=1)
 
                 if self.dropout:
-                    dxn = F.dropout(dxn, p=0.6, training=self.training)
-                    dxe = F.dropout(dxe, p=0.6, training=self.training)
+                    dxn = F.dropout(dxn, p=0.7, training=self.training)
+                    dxe = F.dropout(dxe, p=0.7, training=self.training)
                 # dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
                 dxn = self.singleLayer(dxn, self.KN1[i], relu=False)
                 dxe = self.singleLayer(dxe, self.KN2[i], relu=False)
@@ -686,7 +686,7 @@ class graphNetwork_nodesOnly(nn.Module):
                 else:
                     saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, i + 1)
 
-        xn = F.dropout(xn, p=0.6, training=self.training)
+        xn = F.dropout(xn, p=0.7, training=self.training)
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
         #xn = self.KNclose(xn.permute(0, 2, 1))
         xn = xn.squeeze().t()
