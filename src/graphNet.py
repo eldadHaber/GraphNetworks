@@ -10,7 +10,7 @@ import torch.optim as optim
 from src import graphOps as GO
 from src.batchGraphOps import getConnectivity
 from mpl_toolkits.mplot3d import Axes3D
-from src.utils import saveMesh
+from src.utils import saveMesh, h_swish
 from torch_geometric.nn.conv.gcn_conv import gcn_norm
 from src.inits import glorot
 from torch_geometric.nn import GCN2Conv
@@ -673,7 +673,7 @@ class graphNetwork_nodesOnly(nn.Module):
             else:
                 #xn = xn + self.h * dxn
                 #xn = F.relu(xn - self.h * Graph.edgeDiv(F.tanh(dxe)))
-                xn = F.tanh(xn + self.h * dxn)
+                xn = h_swish()(xn + self.h * dxn)
                 #xn = F.relu(self.convs[i](F.dropout(xn.permute(0, 2, 1), p=0.6), x0.permute(0, 2, 1),
                 #                          edge_index, Graph.W).permute(0, 2, 1))
 

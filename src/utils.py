@@ -11,6 +11,7 @@ import torch.nn.functional as F
 import trimesh
 import matplotlib.pyplot as plt
 
+
 class list2np(object):
     def __init__(self):
         pass
@@ -205,7 +206,7 @@ def dRMSD(X, Xobs, M):
 
     ML = (M * Dl - M * Dobs) > 0
 
-    MS = Dobs < 8*(3.8)
+    MS = Dobs < 8 * (3.8)
     M = M > 0
     M = (M & ML & MS) * 1.0
     R = torch.triu(D - Dobs, 2)
@@ -244,7 +245,7 @@ def saveMesh(xn, faces, pos, i=0):
     colors[colors > 1.0] = 1.0
     add = np.array([[1.0], [0.0]], dtype=np.float).squeeze()
     vect_col_map2 = trimesh.visual.color.interpolate(colors,
-                                                    color_map='jet')
+                                                     color_map='jet')
 
     colors = np.concatenate((add, colors), axis=0)
     vect_col_map = trimesh.visual.color.interpolate(colors,
@@ -261,6 +262,19 @@ def saveMesh(xn, faces, pos, i=0):
                                             i) + ".ply", "ply")
 
 
+class h_sigmoid(nn.Module):
+    def __init__(self, inplace=True):
+        super(h_sigmoid, self).__init__()
+        self.relu = nn.ReLU6(inplace=inplace)
+
+    def forward(self, x):
+        return self.relu(x + 3) / 6
 
 
+class h_swish(nn.Module):
+    def __init__(self, inplace=True):
+        super(h_swish, self).__init__()
+        self.sigmoid = h_sigmoid(inplace=inplace)
 
+    def forward(self, x):
+        return x * self.sigmoid(x)
