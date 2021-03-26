@@ -661,7 +661,7 @@ class graphNetwork_nodesOnly(nn.Module):
                 #dxn = F.tanh(Graph.edgeDiv(dxe) + dxn)
                 #dxn = F.tanh(dxn)
                 #dxn = F.tanh(Graph.edgeDiv(F.tanh(dxe)) + F.tanh(dxn))
-                dxn = F.tanh(F.tanh(dxn) + Graph.edgeDiv(F.tanh(dxe)) + Graph.edgeAve(F.tanh(dxe), method='max'))
+                dxn = F.tanh(F.tanh(dxn) + Graph.edgeAve(F.tanh(dxe), method='max'))
 
             if self.wave:
                 # xn = xn + self.h * dxn
