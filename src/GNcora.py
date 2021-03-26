@@ -41,7 +41,7 @@ nEin = 1
 nopen = 64
 nhid = 64
 nNclose = 64
-nlayer = 16
+nlayer = 8
 h = 1 / nlayer
 
 batchSize = 32
@@ -155,7 +155,7 @@ def train():
     loss = 0.5 * tvreg + F.nll_loss(out[data.train_mask], data.y[data.train_mask])
     loss.backward()
     optimizer.step()
-    scheduler.step()
+    #scheduler.step()
     return float(loss)
 
 
