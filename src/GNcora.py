@@ -120,7 +120,7 @@ optimizer = torch.optim.Adam([
 #     dict(params=model.K1Nopen, weight_decay=5e-4),
 #     dict(params=model.KNclose, weight_decay=5e-4)
 # ], lr=0.01)
-
+scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.1, patience=20)
 def train():
     model.train()
     optimizer.zero_grad()
@@ -155,6 +155,7 @@ def train():
     loss = 0.1 * tvreg + F.nll_loss(out[data.train_mask], data.y[data.train_mask])
     loss.backward()
     optimizer.step()
+    scheduler.step()
     return float(loss)
 
 
