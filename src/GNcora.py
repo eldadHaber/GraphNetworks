@@ -36,7 +36,7 @@ else:
     from src import pnetArch as PNA
 
 # Setup the network and its parameters
-nNin = 500 #3703 #1433
+nNin = 3703 #1433
 nEin = 1
 nopen = 64
 nhid = 64
@@ -47,7 +47,7 @@ h = 1 / nlayer
 batchSize = 32
 
 dataset = 'PubMed'
-path = '/home/cluster/users/erant_group/moshe/PubMed/'
+path = '/home/cluster/users/erant_group/moshe/CiteSeer/'
 transform = T.Compose([T.NormalizeFeatures()])
 # transform = T.Compose([T.NormalizeFeatures(), T.()])
 
