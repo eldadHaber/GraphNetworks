@@ -605,8 +605,7 @@ class graphNetwork_nodesOnly(nn.Module):
         if self.dropout:
             xn = F.dropout(xn, p=0.6, training=self.training)
         # xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
-        xn = self.singleLayer(xn, self.K1Nopen, relu=False)
-        xn = F.leaky_relu(xn, negative_slope=0.2)
+        xn = self.singleLayer(xn, self.K1Nopen, relu=True)
         #xn = self.K1Nopen(xn).relu()
         debug = False
         if debug:
