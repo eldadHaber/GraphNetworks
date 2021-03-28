@@ -105,7 +105,7 @@ optimizer = torch.optim.Adam([
 ], lr=0.01)
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 data = data.to(device)
-model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
+model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=True,
                                   diffOrder=1, num_output=dataset.num_classes, dropOut=0.6)
 model.reset_parameters()
 model.to(device)
