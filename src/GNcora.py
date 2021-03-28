@@ -157,7 +157,7 @@ def train():
     g = G.nodeGrad(out.t().unsqueeze(0))
     eps = 1e-4
     print("g shape:", g.shape)
-    absg = torch.sqrt(torch.sum(g ** 2, dim=2) + eps)
+    absg = torch.sqrt(torch.sum(g ** 2, dim=1) + eps)
     tvreg = absg.mean()
     # tvreg = torch.norm(G.nodeGrad(out.t().unsqueeze(0)), p=1) / I.shape[0]
     print("tvreg:", tvreg)
