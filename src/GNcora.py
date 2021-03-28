@@ -36,7 +36,7 @@ else:
     from src import pnetArch as PNA
 
 # Setup the network and its parameters
-dataset = 'PubMed'
+dataset = 'Cora'
 
 if dataset == 'Cora':
     nNin = 1433
