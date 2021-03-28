@@ -105,9 +105,6 @@ optimizer = torch.optim.Adam([
 ], lr=0.01)
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 data = data.to(device)
-model = GN.graphNetwork_try(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=True, wave=True,
-                            diffOrder=1, num_output=dataset.num_classes, dropOut=True)
-
 model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
                                   diffOrder=1, num_output=dataset.num_classes, dropOut=0.6)
 model.reset_parameters()
@@ -164,7 +161,7 @@ def train():
     # tvreg = torch.norm(G.nodeGrad(out.t().unsqueeze(0)), p=1) / I.shape[0]
     print("tvreg:", tvreg)
     # out = out.squeeze()
-    loss = 0.1 * tvreg + F.nll_loss(out[data.train_mask], data.y[data.train_mask])
+    loss = 0.0 * tvreg + F.nll_loss(out[data.train_mask], data.y[data.train_mask])
     loss.backward()
     optimizer.step()
     # scheduler.step()
