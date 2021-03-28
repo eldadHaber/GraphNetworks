@@ -159,10 +159,10 @@ def train():
     print("g shape:", g.shape)
     absg = torch.sum(g.abs(), dim=1)
     tvreg = absg.mean()
-    # tvreg = torch.norm(G.nodeGrad(out.t().unsqueeze(0)), p=1) / I.shape[0]
+    tvreg = torch.norm(G.nodeGrad(out.t().unsqueeze(0)), p=1) / I.shape[0]
     print("tvreg:", tvreg)
     # out = out.squeeze()
-    loss = 0.001 * tvreg + F.nll_loss(out[data.train_mask], data.y[data.train_mask])
+    loss = 0.01 * tvreg + F.nll_loss(out[data.train_mask], data.y[data.train_mask])
     loss.backward()
     optimizer.step()
     # scheduler.step()
