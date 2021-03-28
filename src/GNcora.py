@@ -36,7 +36,7 @@ else:
     from src import pnetArch as PNA
 
 # Setup the network and its parameters
-dataset = 'Cora'
+dataset = 'CiteSeer'
 
 if dataset == 'Cora':
     nNin = 1433
