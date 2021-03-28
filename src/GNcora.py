@@ -36,7 +36,7 @@ else:
     from src import pnetArch as PNA
 
 # Setup the network and its parameters
-nNin = 3703 #1433
+nNin = 1433 #3703 #
 nEin = 1
 nopen = 64
 nhid = 64
