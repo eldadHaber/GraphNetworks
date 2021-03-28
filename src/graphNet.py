@@ -620,7 +620,7 @@ class graphNetwork_nodesOnly(nn.Module):
         nlayers = self.nlayers
         xn_old = xn.clone()
         x0 = xn.clone()
-        [Graph, edge_index] = self.updateGraph(Graph, xn.clone())
+        [Graph, edge_index] = self.updateGraph(Graph)
 
         for i in range(nlayers):
             if 1 == 1:
