@@ -647,15 +647,15 @@ class graphNetwork_nodesOnly(nn.Module):
                     dxn = torch.cat([xn, intX, gradX], dim=1)
 
                 if self.dropout:
-                    dxn = F.dropout(dxn, p=0.7, training=self.training)
-                    dxe = F.dropout(dxe, p=0.7, training=self.training)
+                    dxn = F.dropout(dxn, p=self.dropout, training=self.training)
+                    dxe = F.dropout(dxe, p=self.dropout, training=self.training)
                 # dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
                 dxn = self.singleLayer(dxn, self.KN1[i], relu=False)
                 dxe = self.singleLayer(dxe, self.KN2[i], relu=False)
-                dxn = F.tanh(Graph.edgeDiv(dxe) + dxn)
+                # dxn = F.tanh(Graph.edgeDiv(dxe) + dxn)
                 # dxn = F.tanh(dxn)
                 # dxn = F.tanh(Graph.edgeDiv(F.tanh(dxe)) + F.tanh(dxn))
-                #dxn = F.tanh(F.tanh(dxn) + Graph.edgeDiv(F.tanh(dxe)) + Graph.edgeAve(F.tanh(dxe), method='max'))
+                dxn = F.tanh(F.tanh(dxn) + Graph.edgeDiv(F.tanh(dxe)) + Graph.edgeAve(F.tanh(dxe), method='max'))
                 # dxn = F.tanh(Graph.edgeDiv(F.tanh(dxe)))
             if self.wave:
                 # xn = xn + self.h * dxn
