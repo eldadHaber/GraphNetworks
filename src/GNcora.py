@@ -36,7 +36,14 @@ else:
     from src import pnetArch as PNA
 
 # Setup the network and its parameters
-nNin = 1433 #3703 #
+dataset = 'Cora'
+
+if dataset == 'Cora':
+    nNin = 1433
+elif dataset == 'CiteSeer':
+    nNin = 3703
+elif dataset == 'PubMed':
+    nNin = 500
 nEin = 1
 nopen = 64
 nhid = 64
@@ -46,8 +53,7 @@ h = 1 / nlayer
 
 batchSize = 32
 
-dataset = 'Cora'
-path = '/home/cluster/users/erant_group/moshe/cora/'
+path = '/home/cluster/users/erant_group/moshe/' + dataset
 transform = T.Compose([T.NormalizeFeatures()])
 # transform = T.Compose([T.NormalizeFeatures(), T.()])
 
@@ -114,13 +120,14 @@ optimizer = torch.optim.Adam([
     dict(params=model.KNclose, weight_decay=5e-4)
 ], lr=0.01)
 
-
 # optimizer = torch.optim.Adam([
 #     dict(params=model.convs.parameters(), weight_decay=0.01),
 #     dict(params=model.K1Nopen, weight_decay=5e-4),
 #     dict(params=model.KNclose, weight_decay=5e-4)
 # ], lr=0.01)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=200, gamma=0.1)
+
+
 def train():
     model.train()
     optimizer.zero_grad()
@@ -154,13 +161,13 @@ def train():
     eps = 1e-4
     absg = torch.sqrt(torch.sum(g ** 2, dim=2) + eps)
     tvreg = absg.mean()
-    #tvreg = torch.norm(G.nodeGrad(out.t().unsqueeze(0)), p=1) / I.shape[0]
+    # tvreg = torch.norm(G.nodeGrad(out.t().unsqueeze(0)), p=1) / I.shape[0]
     print("tvreg:", tvreg)
     # out = out.squeeze()
-    loss = 0.1 * tvreg + F.nll_loss(out[data.train_mask], data.y[data.train_mask])
+    loss = 0.01 * tvreg + F.nll_loss(out[data.train_mask], data.y[data.train_mask])
     loss.backward()
     optimizer.step()
-    #scheduler.step()
+    # scheduler.step()
     return float(loss)
 
 
