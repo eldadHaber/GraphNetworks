@@ -437,26 +437,16 @@ class graphNetwork_nodesOnly(nn.Module):
         stdv = 1e-3
         stdvp = 1e-3
         self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
-        #self.K1Nopen = torch.nn.Linear(nNin, nopen)
+        # self.K1Nopen = torch.nn.Linear(nNin, nopen)
         self.K2Nopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
         # self.K2Nopen = torch.nn.Linear(nopen, nopen)
         self.KNclose = nn.Parameter(torch.randn(num_output, nopen) * stdv)
-        #self.KNclose = torch.nn.Linear(nopen, nNclose)
+        # self.KNclose = torch.nn.Linear(nopen, nNclose)
 
         if varlet:
             Nfeatures = 3 * nopen
         else:
             Nfeatures = 3 * nopen
-
-        # self.KN1 = torch.nn.ModuleList()
-        # self.KN2 = torch.nn.ModuleList()
-        #
-        # for i in torch.arange(0, nlayer):
-        #     conv1 = torch.nn.Conv1d(Nfeatures, nhid, kernel_size=1)
-        #     conv2 = torch.nn.Conv1d(nhid, nopen, kernel_size=1)
-        #
-        #     self.KN1.append(conv1)
-        #     self.KN2.append(conv2)
 
         self.KN1 = nn.Parameter(torch.rand(nlayer, nhid, Nfeatures) * stdvp)
         self.KN2 = nn.Parameter(torch.rand(nlayer, nopen, 2 * nhid) * stdvp)
@@ -476,9 +466,9 @@ class graphNetwork_nodesOnly(nn.Module):
     def reset_parameters(self):
         glorot(self.KN1)
         glorot(self.KN2)
-        #glorot(self.K1Nopen)
+        glorot(self.K1Nopen)
         glorot(self.K2Nopen)
-        #glorot(self.KNclose)
+        glorot(self.KNclose)
 
     def edgeConv(self, xe, K):
         if xe.dim() == 4:
@@ -508,7 +498,7 @@ class graphNetwork_nodesOnly(nn.Module):
         x = torch.tanh(x)
         if self.dropout:
             # print("self.training:", self.training)
-            x = F.dropout(x, p=0.6, training=self.training)
+            x = F.dropout(x, p=self.dropout, training=self.training)
         x = K2(x)
 
         return x
@@ -519,7 +509,7 @@ class graphNetwork_nodesOnly(nn.Module):
             x = F.layer_norm(x, x.shape)
             x = torch.tanh(x)
         else:
-            x = F.dropout(x, p=0.6, training=self.training)
+            x = F.dropout(x, p=self.dropout, training=self.training)
             # x = F.layer_norm(x, x.shape)
             x = torch.relu(x)
         x = self.edgeConv(x, K2)
@@ -577,23 +567,27 @@ class graphNetwork_nodesOnly(nn.Module):
         plt.savefig('plots/img_xn_norm_layer_heat' + str(i) + 'order_nodeDeriv' + str(self.diffOrder) + '.jpg')
         plt.close()
 
-    def updateGraph(self, Graph, features):
-        features = features.squeeze()
-        D = torch.relu(torch.sum(features ** 2, dim=0, keepdim=True) + \
-                       torch.sum(features ** 2, dim=0, keepdim=True).t() - \
-                       2 * features.t() @ features)
-
-        D = D / D.std()
-        D = torch.exp(-2 * D)
+    def updateGraph(self, Graph, features=None):
+        # If features are given - update graph according to feaure space l2 distance
+        N = Graph.nnodes
         I = Graph.iInd
         J = Graph.jInd
-        N = Graph.nnodes
-        w = D[I, J]
         edge_index = torch.cat([I.unsqueeze(0), J.unsqueeze(0)], dim=0)
-        [edge_index, edge_weights] = gcn_norm(edge_index)  # Pre-process GCN normalization.
-        I = edge_index[0, :]
-        J = edge_index[1, :]
-        Graph = GO.graph(I, J, N, W=edge_weights, pos=None, faces=None)
+        if features is not None:
+            features = features.squeeze()
+            D = torch.relu(torch.sum(features ** 2, dim=0, keepdim=True) + \
+                           torch.sum(features ** 2, dim=0, keepdim=True).t() - \
+                           2 * features.t() @ features)
+            D = D / D.std()
+            D = torch.exp(-2 * D)
+            w = D[I, J]
+            Graph = GO.graph(I, J, N, W=w, pos=None, faces=None)
+
+        else:
+            [edge_index, edge_weights] = gcn_norm(edge_index)  # Pre-process GCN normalization.
+            I = edge_index[0, :]
+            J = edge_index[1, :]
+            Graph = GO.graph(I, J, N, W=edge_weights, pos=None, faces=None)
 
         return Graph, edge_index
 
@@ -603,10 +597,10 @@ class graphNetwork_nodesOnly(nn.Module):
         # xe = [B, C, N, N] or [B, C, E]
         # Opening layer
         if self.dropout:
-            xn = F.dropout(xn, p=0.7, training=self.training)
+            xn = F.dropout(xn, p=self.dropout, training=self.training)
         # xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
         xn = self.singleLayer(xn, self.K1Nopen, relu=True)
-        #xn = self.K1Nopen(xn).relu()
+        # xn = self.K1Nopen(xn).relu()
         debug = False
         if debug:
             image = False
@@ -634,7 +628,7 @@ class graphNetwork_nodesOnly(nn.Module):
                     I, J = getConnectivity(xn.squeeze(0))
                     Graph = GO.graph(I, J, N)
                 tmp_xn = xn.clone()
-                #[Graph, edge_index] = self.updateGraph(Graph, xn.clone())
+                # [Graph, edge_index] = self.updateGraph(Graph, xn.clone())
 
                 gradX = Graph.nodeGrad(xn)
                 intX = Graph.nodeAve(xn)
@@ -658,11 +652,11 @@ class graphNetwork_nodesOnly(nn.Module):
                 # dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
                 dxn = self.singleLayer(dxn, self.KN1[i], relu=False)
                 dxe = self.singleLayer(dxe, self.KN2[i], relu=False)
-                #dxn = F.tanh(Graph.edgeDiv(dxe) + dxn)
-                #dxn = F.tanh(dxn)
-                #dxn = F.tanh(Graph.edgeDiv(F.tanh(dxe)) + F.tanh(dxn))
+                # dxn = F.tanh(Graph.edgeDiv(dxe) + dxn)
+                # dxn = F.tanh(dxn)
+                # dxn = F.tanh(Graph.edgeDiv(F.tanh(dxe)) + F.tanh(dxn))
                 dxn = F.tanh(F.tanh(dxn) + Graph.edgeDiv(F.tanh(dxe)) + Graph.edgeAve(F.tanh(dxe), method='max'))
-                #dxn = F.tanh(Graph.edgeDiv(F.tanh(dxe)))
+                # dxn = F.tanh(Graph.edgeDiv(F.tanh(dxe)))
             if self.wave:
                 # xn = xn + self.h * dxn
                 xn = 2 * xn - xn_old - (self.h ** 2) * dxn
@@ -674,10 +668,10 @@ class graphNetwork_nodesOnly(nn.Module):
                 xn_old = tmp_xn
 
             else:
-                #xn = xn + self.h * dxn
-                #xn = F.relu(xn - self.h * Graph.edgeDiv(F.tanh(dxe)))
+                # xn = xn + self.h * dxn
+                # xn = F.relu(xn - self.h * Graph.edgeDiv(F.tanh(dxe)))
                 xn = F.tanh(xn + self.h * dxn)
-                #xn = F.relu(self.convs[i](F.dropout(xn.permute(0, 2, 1), p=0.6), x0.permute(0, 2, 1),
+                # xn = F.relu(self.convs[i](F.dropout(xn.permute(0, 2, 1), p=0.6), x0.permute(0, 2, 1),
                 #                          edge_index, Graph.W).permute(0, 2, 1))
 
             if debug:
@@ -686,14 +680,14 @@ class graphNetwork_nodesOnly(nn.Module):
                 else:
                     saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, i + 1)
 
-        xn = F.dropout(xn, p=0.7, training=self.training)
+        xn = F.dropout(xn, p=self.dropout, training=self.training)
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
-        #xn = self.KNclose(xn.permute(0, 2, 1))
+        # xn = self.KNclose(xn.permute(0, 2, 1))
         xn = xn.squeeze().t()
         return F.log_softmax(xn, dim=1), Graph
         if self.dropout:
             # for cora
-            x = F.dropout(xn, p=0.6, training=self.training)
+            x = F.dropout(xn, p=self.dropout, training=self.training)
             x = F.relu(self.lin1(xn))
         else:
             # for faust
