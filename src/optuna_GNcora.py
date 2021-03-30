@@ -48,12 +48,14 @@ def objective(trial):
     elif dataset == 'PubMed':
         nNin = 500
     nEin = 1
-    nopen = 64
-    nhid = 64
-    nNclose = 64
-    n_layers = trial.suggest_int('n_layers', 1, 3)
-    h = 1 / n_layers
+    n_channels = trial.suggest_int('n_layers', 16, 128)
+    nopen = n_channels
+    nhid = n_channels
+    nNclose = n_channels
+    n_layers = trial.suggest_int('n_layers', 1, 16)
 
+    #h = 1 / n_layers
+    h = trial.suggest_float('n_layers', 0, 1.0)
     batchSize = 32
 
     path = '/home/cluster/users/erant_group/moshe/' + dataset
@@ -94,25 +96,21 @@ def objective(trial):
 
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = Net(hidden_channels=64, num_layers=64, alpha=0.1, theta=0.5,
-                shared_weights=True, dropout=0.6).to(device)
-    optimizer = torch.optim.Adam([
-        dict(params=model.convs.parameters(), weight_decay=0.01),
-        dict(params=model.lins.parameters(), weight_decay=5e-4)
-    ], lr=0.01)
-    device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
     data = data.to(device)
+    dropout = trial.suggest_float('n_layers', 0, 1.0)
+    lr = trial.suggest_float("lr", 1e-5, 1e-1, log=True)
+    wd = trial.suggest_float("lr", 5e-5, 1e-2, log=True)
     model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, n_layers, h=h, dense=False, varlet=True, wave=False,
-                                      diffOrder=1, num_output=dataset.num_classes, dropOut=0.6)
+                                      diffOrder=1, num_output=dataset.num_classes, dropOut=dropout)
     model.reset_parameters()
     model.to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0.0001)
-    optimizer = torch.optim.Adam([
-        dict(params=model.KN1, weight_decay=0.01),
-        dict(params=model.KN2, weight_decay=0.01),
-        dict(params=model.K1Nopen, weight_decay=5e-4),
-        dict(params=model.KNclose, weight_decay=5e-4)
-    ], lr=0.01)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=wd)
+    # optimizer = torch.optim.Adam([
+    #     dict(params=model.KN1, weight_decay=0.01),
+    #     dict(params=model.KN2, weight_decay=0.01),
+    #     dict(params=model.K1Nopen, weight_decay=5e-4),
+    #     dict(params=model.KNclose, weight_decay=5e-4)
+    # ], lr=lr)
 
     # optimizer = torch.optim.Adam([
     #     dict(params=model.convs.parameters(), weight_decay=0.01),
@@ -125,9 +123,9 @@ def objective(trial):
     def train():
         model.train()
         optimizer.zero_grad()
-        print("data:", data)
-        print("dataset.num_classes:", dataset.num_classes)
-        print("dataset.num_features:", dataset.num_features)
+        #print("data:", data)
+        #print("dataset.num_classes:", dataset.num_classes)
+        #print("dataset.num_features:", dataset.num_features)
         I = data.edge_index[0, :]
         J = data.edge_index[1, :]
         N = data.y.shape[0]
@@ -148,16 +146,16 @@ def objective(trial):
 
         # out = model(xn, xe, G)
         [out, G] = model(xn, G)
-        print("out shape:", out.shape)
+        #print("out shape:", out.shape)
         [valmax, argmax] = torch.max(out, dim=1)
 
         g = G.nodeGrad(out.t().unsqueeze(0))
         eps = 1e-4
-        print("g shape:", g.shape)
+        #print("g shape:", g.shape)
         absg = torch.sum(g ** 2, dim=1)
         tvreg = absg.mean()
         # tvreg = torch.norm(G.nodeGrad(out.t().unsqueeze(0)), p=1) / I.shape[0]
-        print("tvreg:", tvreg)
+        #print("tvreg:", tvreg)
         # out = out.squeeze()
         loss = 0.1 * tvreg + F.nll_loss(out[data.train_mask], data.y[data.train_mask])
         loss.backward()
@@ -200,9 +198,11 @@ def objective(trial):
         if val_acc > best_val_acc:
             best_val_acc = val_acc
             test_acc = tmp_test_acc
-        print(f'Epoch: {epoch:04d}, Loss: {loss:.4f} Train: {train_acc:.4f}, '
-              f'Val: {val_acc:.4f}, Test: {tmp_test_acc:.4f}, '
-              f'Final Test: {test_acc:.4f}')
+            print(f'Epoch: {epoch:04d}, Loss: {loss:.4f} Train: {train_acc:.4f}, '
+                  f'Val: {val_acc:.4f}, Test: {tmp_test_acc:.4f}, '
+                  f'Final Test: {test_acc:.4f}')
+
+    return test_acc
 
 
 study = optuna.create_study(direction='maximize')
