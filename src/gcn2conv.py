@@ -76,6 +76,8 @@ class GCN2Conv(MessagePassing):
         if theta is not None or layer is not None:
             assert theta is not None and layer is not None
             self.beta = log(theta / layer + 1)
+        if theta < 0:
+            self.beta = 1.0
         self.cached = cached
         self.normalize = normalize
         self.add_self_loops = add_self_loops
