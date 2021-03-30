@@ -136,8 +136,8 @@ class GCN2Conv(MessagePassing):
 
         if self.weight2 is None:
             out = x.add_(x_0)
-            out = torch.addmm(out, out, self.weight1, beta=1. - self.beta,
-                              alpha=self.beta)
+            #out = torch.addmm(out, out, self.weight1, beta=1. - self.beta,
+            #                  alpha=self.beta)
         else:
             out = torch.addmm(x, x, self.weight1, beta=1. - self.beta,
                               alpha=self.beta)
