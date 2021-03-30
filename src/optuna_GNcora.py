@@ -48,14 +48,14 @@ def objective(trial):
     elif dataset == 'PubMed':
         nNin = 500
     nEin = 1
-    n_channels = trial.suggest_int('n_layers', 16, 128)
+    n_channels = trial.suggest_int('n_channels', 16, 128)
     nopen = n_channels
     nhid = n_channels
     nNclose = n_channels
     n_layers = trial.suggest_int('n_layers', 1, 16)
 
     #h = 1 / n_layers
-    h = trial.suggest_float('n_layers', 0, 1.0)
+    h = trial.suggest_float('h', 0, 1.0)
     batchSize = 32
 
     path = '/home/cluster/users/erant_group/moshe/' + dataset
@@ -97,9 +97,9 @@ def objective(trial):
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     data = data.to(device)
-    dropout = trial.suggest_float('n_layers', 0, 1.0)
+    dropout = trial.suggest_float('dropout', 0, 1.0)
     lr = trial.suggest_float("lr", 1e-5, 1e-1, log=True)
-    wd = trial.suggest_float("lr", 5e-5, 1e-2, log=True)
+    wd = trial.suggest_float("wd", 5e-5, 1e-2, log=True)
     model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, n_layers, h=h, dense=False, varlet=True, wave=False,
                                       diffOrder=1, num_output=dataset.num_classes, dropOut=dropout)
     model.reset_parameters()
