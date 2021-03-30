@@ -10,7 +10,7 @@ from torch_sparse import SparseTensor, matmul
 from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.nn.conv.gcn_conv import gcn_norm
 
-from ..inits import glorot
+from src.inits import glorot
 
 
 class GCN2Conv(MessagePassing):
