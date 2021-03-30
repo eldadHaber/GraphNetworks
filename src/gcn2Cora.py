@@ -60,6 +60,9 @@ class Net(torch.nn.Module):
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = Net(hidden_channels=64, num_layers=64, alpha=0.1, theta=0.5,
             shared_weights=True, dropout=0.6).to(device)
+
+model = Net(hidden_channels=64, num_layers=64, alpha=0.0, theta=0.0,
+            shared_weights=True, dropout=0.6).to(device)
 data = data.to(device)
 optimizer = torch.optim.Adam([
     dict(params=model.convs.parameters(), weight_decay=0.01),
