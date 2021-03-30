@@ -674,7 +674,7 @@ class graphNetwork_nodesOnly(nn.Module):
             else:
                 # xn = xn + self.h * dxn
                 # xn = F.relu(xn - self.h * Graph.edgeDiv(F.tanh(dxe)))
-                xn = F.tanh(xn - self.h * dxn)
+                xn = F.tanh(xn + self.h * dxn)
                 # xn = F.relu(self.convs[i](F.dropout(xn.permute(0, 2, 1), p=0.6), x0.permute(0, 2, 1),
                 #                          edge_index, Graph.W).permute(0, 2, 1))
 

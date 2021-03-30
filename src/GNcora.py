@@ -7,6 +7,8 @@ from torch_geometric.datasets import Planetoid
 import torch_geometric.transforms as T
 from torch_geometric.nn import GCN2Conv
 from torch_geometric.nn.conv.gcn_conv import gcn_norm
+import optuna
+
 import sys
 
 if "s" in sys.argv:
@@ -159,7 +161,7 @@ def train():
     print("g shape:", g.shape)
     absg = torch.sum(g ** 2, dim=1)
     tvreg = absg.mean()
-    #tvreg = torch.norm(G.nodeGrad(out.t().unsqueeze(0)), p=1) / I.shape[0]
+    # tvreg = torch.norm(G.nodeGrad(out.t().unsqueeze(0)), p=1) / I.shape[0]
     print("tvreg:", tvreg)
     # out = out.squeeze()
     loss = 0.1 * tvreg + F.nll_loss(out[data.train_mask], data.y[data.train_mask])
