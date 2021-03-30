@@ -55,7 +55,7 @@ def objective(trial):
     n_layers = trial.suggest_int('n_layers', 1, 16)
 
     #h = 1 / n_layers
-    h = trial.suggest_float('h', 1 / 2*n_layers, 2 / n_layers)
+    h = trial.suggest_float('h', 1 / (2*n_layers), 2 / n_layers)
     batchSize = 32
 
     path = '/home/cluster/users/erant_group/moshe/' + dataset
