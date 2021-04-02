@@ -14,7 +14,7 @@ from src.utils import saveMesh, h_swish
 from torch_geometric.nn.conv.gcn_conv import gcn_norm
 from src.inits import glorot
 from torch_geometric.nn import GCN2Conv
-
+from torch_scatter import scatter_add
 
 def conv2(X, Kernel):
     return F.conv2d(X, Kernel, padding=int((Kernel.shape[-1] - 1) / 2))
@@ -432,24 +432,23 @@ class graphNetwork_nodesOnly(nn.Module):
         self.dense = dense
         self.diffOrder = diffOrder
         self.num_output = num_output
-        self.dropout = dropOut
+        if dropOut > 0.0:
+            self.dropout = dropOut
+        else:
+            self.dropout=False
         self.nlayers = nlayer
         stdv = 1e-3
         stdvp = 1e-3
         self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
-        # self.K1Nopen = torch.nn.Linear(nNin, nopen)
         self.K2Nopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
-        # self.K2Nopen = torch.nn.Linear(nopen, nopen)
         self.KNclose = nn.Parameter(torch.randn(num_output, nopen) * stdv)
-        # self.KNclose = torch.nn.Linear(nopen, nNclose)
-
         if varlet:
-            Nfeatures = 3 * nopen
+            Nfeatures = 1 * nopen
         else:
             Nfeatures = 3 * nopen
 
         self.KN1 = nn.Parameter(torch.rand(nlayer, nhid, Nfeatures) * stdvp)
-        self.KN2 = nn.Parameter(torch.rand(nlayer, nopen, 2 * nhid) * stdvp)
+        self.KN2 = nn.Parameter(torch.rand(nlayer, nopen, 1 * nhid) * stdvp)
 
         self.convs = torch.nn.ModuleList()
         alpha = 0.1
@@ -485,7 +484,7 @@ class graphNetwork_nodesOnly(nn.Module):
 
     def singleLayer(self, x, K, relu=True):
         x = self.edgeConv(x, K)
-        x = F.layer_norm(x, x.shape)
+        #x = F.layer_norm(x, x.shape)
         if not relu:
             return x
         x = F.relu(x)
@@ -587,24 +586,32 @@ class graphNetwork_nodesOnly(nn.Module):
             [edge_index, edge_weights] = gcn_norm(edge_index)  # Pre-process GCN normalization.
             I = edge_index[0, :]
             J = edge_index[1, :]
-            # print("edge_weights:", edge_weights)
-            # print("edge_weights std:", torch.std(edge_weights))
-            # print("edge_weights mean:", torch.mean(edge_weights))
-            # exit()
+            #deg = self.getDegreeMat(Graph)
             Graph = GO.graph(I, J, N, W=edge_weights, pos=None, faces=None)
 
         return Graph, edge_index
+
+    def getDegreeMat(self, Graph):
+        N = Graph.nnodes
+        I = Graph.iInd
+        J = Graph.jInd
+        edge_index = torch.cat([I.unsqueeze(0), J.unsqueeze(0)], dim=0)
+        edge_weight = torch.ones((edge_index.size(1),), dtype=torch.float,
+                                 device=edge_index.device)
+        deg = scatter_add(edge_weight, J, dim=0, dim_size=N)
+
+        return deg
 
     def forward(self, xn, Graph):
         # Opening layer
         # xn = [B, C, N]
         # xe = [B, C, N, N] or [B, C, E]
         # Opening layer
+
         if self.dropout:
             xn = F.dropout(xn, p=self.dropout, training=self.training)
-        # xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
         xn = self.singleLayer(xn, self.K1Nopen, relu=True)
-        # xn = self.K1Nopen(xn).relu()
+        x0 = xn.clone()
         debug = False
         if debug:
             image = False
@@ -620,33 +627,36 @@ class graphNetwork_nodesOnly(nn.Module):
             else:
                 saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, 0)
 
-        N = Graph.nnodes
-        nlayers = self.nlayers
-        xn_old = xn.clone()
-        x0 = xn.clone()
-        [Graph, edge_index] = self.updateGraph(Graph)
+        if 1==0:
+            deg = self.getDegreeMat(Graph)
+            print("deg:", deg)
+            print("deg shape:", deg.shape)
+            print("mean deg:", deg.mean())
+            print("std deg:", deg.std())
+            exit()
 
+        [Graph, edge_index] = self.updateGraph(Graph)
+        nlayers = self.nlayers
         for i in range(nlayers):
             if 1 == 1:
                 if i % 200 == 199:  # update graph
                     I, J = getConnectivity(xn.squeeze(0))
                     Graph = GO.graph(I, J, N)
                 tmp_xn = xn.clone()
-                # [Graph, edge_index] = self.updateGraph(Graph, xn.clone())
 
                 gradX = Graph.nodeGrad(xn)
                 intX = Graph.nodeAve(xn)
 
-                nodalGradX = Graph.edgeAve(gradX, method='max')
+                nodalGradX = Graph.edgeAve(gradX, method='ave')
                 lapX = Graph.nodeLap(xn)
 
                 operators = self.nodeDeriv(xn, Graph, order=2, edgeSpace=False)
                 # if debug and image:
                 #    self.saveOperatorImages(operators)
-                # print("xn shape:", xn.shape)
                 if self.varlet:
-                    dxn = torch.cat([xn, nodalGradX, lapX], dim=1)
-                    dxe = torch.cat([gradX, intX], dim=1)
+                    dxn = torch.cat([xn, nodalGradX], dim=1)
+                    dxn = nodalGradX
+                    dxe = torch.cat([intX], dim=1)
                 else:
                     dxn = torch.cat([xn, intX, gradX], dim=1)
 
@@ -654,30 +664,21 @@ class graphNetwork_nodesOnly(nn.Module):
                     dxn = F.dropout(dxn, p=self.dropout, training=self.training)
                     dxe = F.dropout(dxe, p=self.dropout, training=self.training)
                 # dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
-                dxn = self.singleLayer(dxn, self.KN1[i], relu=False)
-                dxe = self.singleLayer(dxe, self.KN2[i], relu=False)
-                # dxn = F.tanh(Graph.edgeDiv(dxe) + dxn)
-                # dxn = F.tanh(dxn)
+                #dxn = self.singleLayer(dxn, self.KN1[i], relu=False)
+                dxe = F.tanh(self.singleLayer(dxe, self.KN2[i], relu=False))
+                dxn = F.tanh(lapX + Graph.edgeAve(dxe, method='ave'))
+                #dxn = (lapX + Graph.edgeDiv(dxe))
+
+                # dxn = F.tanh(Graph.edgeAve(dxe, method='ave') + dxn)
+                #dxn = F.tanh(dxn)
                 # dxn = F.tanh(Graph.edgeDiv(F.tanh(dxe)) + F.tanh(dxn))
-                dxn = F.tanh(F.tanh(dxn) + Graph.edgeDiv(F.tanh(dxe)) + Graph.edgeAve(F.tanh(dxe), method='max'))
+                # dxn = F.tanh(F.tanh(dxn) + Graph.edgeDiv(F.tanh(dxe)) + Graph.edgeAve(F.tanh(dxe), method='max'))
                 # dxn = F.tanh(Graph.edgeDiv(F.tanh(dxe)))
             if self.wave:
-                # xn = xn + self.h * dxn
                 xn = 2 * xn - xn_old - (self.h ** 2) * dxn
-                # F.relu(self.convs[i](F.dropout(xn.permute(0, 2, 1), p=0.6), x0.permute(0, 2, 1),
-                #                                                     edge_index, Graph.W).permute(0, 2, 1))  #
-
-                # xn =  F.relu(self.convs[i](F.dropout(xn.permute(0, 2, 1), p=0.6), x0.permute(0, 2, 1),
-                #                                                     edge_index, Graph.W).permute(0, 2, 1))
                 xn_old = tmp_xn
-
             else:
-                # xn = xn + self.h * dxn
-                # xn = F.relu(xn - self.h * Graph.edgeDiv(F.tanh(dxe)))
-                xn = F.tanh(xn + self.h * dxn)
-                # xn = F.relu(self.convs[i](F.dropout(xn.permute(0, 2, 1), p=0.6), x0.permute(0, 2, 1),
-                #                          edge_index, Graph.W).permute(0, 2, 1))
-
+                xn = F.tanh(xn - self.h * dxn)
             if debug:
                 if image:
                     self.savePropagationImage(xn, Graph, i + 1)
@@ -686,7 +687,6 @@ class graphNetwork_nodesOnly(nn.Module):
 
         xn = F.dropout(xn, p=self.dropout, training=self.training)
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
-        # xn = self.KNclose(xn.permute(0, 2, 1))
         xn = xn.squeeze().t()
         return F.log_softmax(xn, dim=1), Graph
         if self.dropout:

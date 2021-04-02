@@ -67,13 +67,21 @@ class graph(nn.Module):
     def nodeGrad(self, x, W=[]):
         if len(W) == 0:
             W = self.W
-        g = W * (x[:, :, self.iInd] - x[:, :, self.jInd])
+        if W.shape[0] == x.shape[2]:
+            # if its degree matrix
+            g = W[self.iInd] * (x[:, :, self.iInd] - x[:, :, self.jInd])
+        else:
+            g = W * (x[:, :, self.iInd] - x[:, :, self.jInd])
+
         return g
 
     def nodeAve(self, x, W=[]):
         if len(W) == 0:
             W = self.W
-        g = W * (x[:, :, self.iInd] + x[:, :, self.jInd]) / 2.0
+        if W.shape[0] == x.shape[2]:
+            g = W[self.iInd] * (x[:, :, self.iInd] + x[:, :, self.jInd]) / 2.0
+        else:
+            g = W * (x[:, :, self.iInd] + x[:, :, self.jInd]) / 2.0
         return g
 
     def edgeDiv(self, g, W=[]):
@@ -85,9 +93,12 @@ class graph(nn.Module):
         #    x[:,:,self.iInd[i]]  += w*g[:,:,i]
         # for j in range(self.jInd.numel()):
         #    x[:,:,self.jInd[j]] -= w*g[:,:,j]
-
-        x.index_add_(2, self.iInd, W * g)
-        x.index_add_(2, self.jInd, -W * g)
+        if W.shape[0] != g.shape[2]:
+            x.index_add_(2, self.iInd, W[self.iInd] * g)
+            x.index_add_(2, self.iInd, W[self.jInd] * g)
+        else:
+            x.index_add_(2, self.iInd, W * g)
+            x.index_add_(2, self.jInd, -W * g)
 
         return x
 
@@ -96,9 +107,12 @@ class graph(nn.Module):
             W = self.W
         x1 = torch.zeros(g.shape[0], g.shape[1], self.nnodes, device=g.device)
         x2 = torch.zeros(g.shape[0], g.shape[1], self.nnodes, device=g.device)
-
-        x1.index_add_(2, self.iInd, W * g)
-        x2.index_add_(2, self.jInd, W * g)
+        if W.shape[0] != g.shape[2]:
+            x1.index_add_(2, self.iInd, W[self.iInd] * g)
+            x2.index_add_(2, self.jInd, W[self.jInd] * g)
+        else:
+            x1.index_add_(2, self.iInd, W * g)
+            x2.index_add_(2, self.jInd, W * g)
         if method == 'max':
             x = torch.max(x1, x2)
         elif method == 'ave':

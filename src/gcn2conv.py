@@ -129,15 +129,18 @@ class GCN2Conv(MessagePassing):
                     edge_index = cache
 
         # propagate_type: (x: Tensor, edge_weight: OptTensor)
+        x_old = x.clone()
         x = self.propagate(edge_index, x=x, edge_weight=edge_weight, size=None)
+        x.mul_(0.1)
+        #x.mul_(1 - self.alpha)
+        #x_0 = self.alpha * x_0[:x.size(0)]
+        #x_0 = x_0[:x.size(0)]
 
-        x.mul_(1 - self.alpha)
-        x_0 = self.alpha * x_0[:x.size(0)]
-
+        x_0 = x_old[:x.size(0)]
         if self.weight2 is None:
             out = x.add_(x_0)
-            #out = torch.addmm(out, out, self.weight1, beta=1. - self.beta,
-            #                  alpha=self.beta)
+            out = torch.addmm(out, out, self.weight1, beta=1. - self.beta,
+                             alpha=self.beta)
         else:
             out = torch.addmm(x, x, self.weight1, beta=1. - self.beta,
                               alpha=self.beta)
