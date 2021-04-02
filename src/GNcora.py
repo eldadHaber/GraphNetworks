@@ -50,8 +50,8 @@ nEin = 1
 nopen = 64
 nhid = 64
 nNclose = 64
-nlayer = 4
-h = 1 / nlayer
+nlayer = 16
+h = 5 / nlayer
 
 batchSize = 32
 
@@ -110,12 +110,11 @@ def train():
     absg = torch.sum(g ** 2, dim=1)
     tvreg = absg.mean()
     # tvreg = torch.norm(G.nodeGrad(out.t().unsqueeze(0)), p=1) / I.shape[0]
-    #print("tvreg:", tvreg)
     # out = out.squeeze()
     loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask])
     loss.backward()
     optimizer.step()
-    # scheduler.step()
+    #scheduler.step()
     return float(loss)
 
 

@@ -443,9 +443,9 @@ class graphNetwork_nodesOnly(nn.Module):
         self.K2Nopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
         self.KNclose = nn.Parameter(torch.randn(num_output, nopen) * stdv)
         if varlet:
-            Nfeatures = 1 * nopen
+            Nfeatures = 2 * nopen
         else:
-            Nfeatures = 3 * nopen
+            Nfeatures = 2 * nopen
 
         self.KN1 = nn.Parameter(torch.rand(nlayer, nhid, Nfeatures) * stdvp)
         self.KN2 = nn.Parameter(torch.rand(nlayer, nopen, 1 * nhid) * stdvp)
@@ -665,9 +665,10 @@ class graphNetwork_nodesOnly(nn.Module):
                     dxe = F.dropout(dxe, p=self.dropout, training=self.training)
                 # dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
                 #dxn = self.singleLayer(dxn, self.KN1[i], relu=False)
+
                 dxe = F.tanh(self.singleLayer(dxe, self.KN2[i], relu=False))
-                dxn = F.tanh(lapX + Graph.edgeAve(dxe, method='ave'))
-                #dxn = (lapX + Graph.edgeDiv(dxe))
+                dxn = F.tanh(lapX + Graph.edgeDiv(dxe))
+                #dxn = lapX + Graph.edgeAve(dxe, method='max')
 
                 # dxn = F.tanh(Graph.edgeAve(dxe, method='ave') + dxn)
                 #dxn = F.tanh(dxn)
@@ -678,7 +679,7 @@ class graphNetwork_nodesOnly(nn.Module):
                 xn = 2 * xn - xn_old - (self.h ** 2) * dxn
                 xn_old = tmp_xn
             else:
-                xn = F.tanh(xn - self.h * dxn)
+                xn = (xn - self.h * dxn)
             if debug:
                 if image:
                     self.savePropagationImage(xn, Graph, i + 1)
