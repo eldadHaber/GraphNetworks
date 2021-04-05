@@ -51,7 +51,7 @@ def objective(trial):
     nopen = n_channels
     nhid = n_channels
     nNclose = n_channels
-    n_layers = 2
+    n_layers = 4
 
     #h = 1 / n_layers
     h = trial.suggest_float('h', 1 / (2*n_layers), 2 / n_layers)

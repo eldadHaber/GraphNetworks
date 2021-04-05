@@ -47,11 +47,11 @@ elif dataset == 'CiteSeer':
 elif dataset == 'PubMed':
     nNin = 500
 nEin = 1
-nopen = 64
-nhid = 64
-nNclose = 64
-nlayer = 8
-h = 20 / nlayer
+nopen = 256
+nhid = 256
+nNclose = 256
+nlayer = 4
+h = 10 / nlayer
 
 #h = 20 / nlayer
 
@@ -64,13 +64,13 @@ data = dataset[0]
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 data = data.to(device)
 model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
-                                  diffOrder=1, num_output=dataset.num_classes, dropOut=0.6)
+                                  diffOrder=1, num_output=dataset.num_classes, dropOut=0.5)
 model.reset_parameters()
 model.to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0.0001)
 optimizer = torch.optim.Adam([
-    dict(params=model.KN1, weight_decay=0.001),
-    dict(params=model.KN2, weight_decay=0.001),
+    dict(params=model.KN1, weight_decay=0.01),
+    dict(params=model.KN2, weight_decay=0.01),
     dict(params=model.K1Nopen, weight_decay=5e-4),
     dict(params=model.KNclose, weight_decay=5e-4)
 ], lr=0.01)
