@@ -51,7 +51,7 @@ nopen = 256
 nhid = 256
 nNclose = 256
 nlayer = 32
-h = 40 / nlayer
+h = 50 / nlayer
 dropout = 0.5
 #h = 20 / nlayer
 print("dataset:", dataset)

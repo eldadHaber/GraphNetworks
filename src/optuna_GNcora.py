@@ -63,7 +63,7 @@ for nlayers in num_layers:
         n_layers = nlayers
 
         # h = 1 / n_layers
-        h = trial.trial.suggest_discrete_uniform('h', 1 / (n_layers), 3, q=1 / (n_layers))
+        h = trial.suggest_discrete_uniform('h', 1 / (n_layers), 3, q=1 / (n_layers))
         batchSize = 32
 
         path = '/home/cluster/users/erant_group/moshe/' + dataset
