@@ -15,7 +15,7 @@ try:
     from src.inits import glorot
 except:
     import graphOps as GO
-    import getConnectivity
+    from batchGraphOps import getConnectivity
     from mpl_toolkits.mplot3d import Axes3D
     from utils import saveMesh, h_swish
     from inits import glorot
