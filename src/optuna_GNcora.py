@@ -61,12 +61,15 @@ for nlayers in num_layers:
         nhid = n_channels
         nNclose = n_channels
         n_layers = nlayers
-
+        print("DATA SET IS:", dataset)
         # h = 1 / n_layers
         h = trial.suggest_discrete_uniform('h', 1 / (n_layers), 3, q=1 / (n_layers))
         batchSize = 32
 
-        path = '/home/cluster/users/erant_group/moshe/' + dataset
+        if "s" in sys.argv:
+            path = '/home/eliasof/GraphNetworks/data/' + dataset
+        else:
+            path = '/home/cluster/users/erant_group/moshe/' + dataset
         transform = T.Compose([T.NormalizeFeatures()])
         dataset = Planetoid(path, dataset, transform=transform)
         data = dataset[0]
