@@ -50,9 +50,9 @@ nEin = 1
 nopen = 256
 nhid = 256
 nNclose = 256
-nlayer = 32
-h = 60 / nlayer
-dropout = 0.4
+nlayer = 64
+h = 40 / nlayer
+dropout = 0.3
 #h = 20 / nlayer
 print("dataset:", dataset)
 print("n channels:", nopen)
