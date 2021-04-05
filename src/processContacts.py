@@ -84,7 +84,7 @@ import numpy as np
 import math
 try:
     from src import utils
-catch:
+except:
     import utils
 
 def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
