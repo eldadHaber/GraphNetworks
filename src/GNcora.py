@@ -38,7 +38,7 @@ else:
     from src import pnetArch as PNA
 
 # Setup the network and its parameters
-dataset = 'Cora'
+dataset = 'CiteSeer'
 
 if dataset == 'Cora':
     nNin = 1433
@@ -47,11 +47,11 @@ elif dataset == 'CiteSeer':
 elif dataset == 'PubMed':
     nNin = 500
 nEin = 1
-nopen = 64
-nhid = 64
-nNclose = 64
-nlayer = 64
-h = 10 / nlayer
+nopen = 256
+nhid = 256
+nNclose = 256
+nlayer = 4
+h = 4 / nlayer
 
 #h = 20 / nlayer
 
@@ -67,7 +67,7 @@ data = dataset[0]
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 data = data.to(device)
 model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
-                                  diffOrder=1, num_output=dataset.num_classes, dropOut=0.6)
+                                  diffOrder=1, num_output=dataset.num_classes, dropOut=0.5)
 model.reset_parameters()
 model.to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0.0001)
@@ -116,7 +116,7 @@ def train():
     tvreg = absg.mean()
     # tvreg = torch.norm(G.nodeGrad(out.t().unsqueeze(0)), p=1) / I.shape[0]
     # out = out.squeeze()
-    loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask]) + 0.1*tvreg
+    loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask]) #+ 0.1*tvreg
     loss.backward()
     optimizer.step()
     #scheduler.step()
