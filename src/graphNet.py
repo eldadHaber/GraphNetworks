@@ -668,6 +668,9 @@ class graphNetwork_nodesOnly(nn.Module):
 
                 dxe = F.tanh(self.singleLayer(dxe, self.KN2[i], relu=False))
                 dxn = F.tanh(lapX + Graph.edgeDiv(dxe))
+
+                #dxe = F.relu(self.singleLayer(dxe, self.KN2[i], relu=False))
+                #dxn = F.tanh(lapX + Graph.edgeDiv(dxe))
                 #dxn = lapX + Graph.edgeAve(dxe, method='max')
 
                 # dxn = F.tanh(Graph.edgeAve(dxe, method='ave') + dxn)

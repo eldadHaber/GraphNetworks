@@ -38,7 +38,7 @@ else:
     from src import pnetArch as PNA
 
 # Setup the network and its parameters
-dataset = 'PubMed'
+dataset = 'Cora'
 
 if dataset == 'Cora':
     nNin = 1433
@@ -47,11 +47,11 @@ elif dataset == 'CiteSeer':
 elif dataset == 'PubMed':
     nNin = 500
 nEin = 1
-nopen = 256
-nhid = 256
-nNclose = 256
-nlayer = 2
-h = 5 / nlayer
+nopen = 64
+nhid = 64
+nNclose = 64
+nlayer = 16
+h = 10 / nlayer
 
 #h = 20 / nlayer
 
@@ -64,7 +64,7 @@ data = dataset[0]
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 data = data.to(device)
 model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
-                                  diffOrder=1, num_output=dataset.num_classes, dropOut=0.5)
+                                  diffOrder=1, num_output=dataset.num_classes, dropOut=0.6)
 model.reset_parameters()
 model.to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0.0001)

@@ -82,8 +82,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 import math
-from src import utils
-
+try:
+    from src import utils
+catch:
+    import utils
 
 def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
     scale = 1e-2
