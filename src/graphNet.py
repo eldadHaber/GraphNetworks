@@ -7,12 +7,21 @@ import math
 import matplotlib.pyplot as plt
 import torch.optim as optim
 ## r=1
-from src import graphOps as GO
-from src.batchGraphOps import getConnectivity
-from mpl_toolkits.mplot3d import Axes3D
-from src.utils import saveMesh, h_swish
+try:
+    from src import graphOps as GO
+    from src.batchGraphOps import getConnectivity
+    from mpl_toolkits.mplot3d import Axes3D
+    from src.utils import saveMesh, h_swish
+    from src.inits import glorot
+except:
+    import graphOps as GO
+    import getConnectivity
+    from mpl_toolkits.mplot3d import Axes3D
+    from utils import saveMesh, h_swish
+    from inits import glorot
+
+
 from torch_geometric.nn.conv.gcn_conv import gcn_norm
-from src.inits import glorot
 from torch_geometric.nn import GCN2Conv
 from torch_scatter import scatter_add
 
@@ -443,7 +452,7 @@ class graphNetwork_nodesOnly(nn.Module):
         self.K2Nopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
         self.KNclose = nn.Parameter(torch.randn(num_output, nopen) * stdv)
         if varlet:
-            Nfeatures = 2 * nopen
+            Nfeatures = 1 * nopen
         else:
             Nfeatures = 2 * nopen
 
@@ -664,7 +673,10 @@ class graphNetwork_nodesOnly(nn.Module):
                     dxn = F.dropout(dxn, p=self.dropout, training=self.training)
                     dxe = F.dropout(dxe, p=self.dropout, training=self.training)
                 # dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
-                #dxn = self.singleLayer(dxn, self.KN1[i], relu=False)
+                #dxe = F.tanh(self.singleLayer(dxe, self.KN2[i], relu=False))
+                #dxe = Graph.edgeDiv(dxe)
+                #dxn = (self.singleLayer(lapX, self.KN1[i], relu=False))
+                #dxn = F.tanh(F.tanh(lapX) + dxe)
 
                 dxe = F.tanh(self.singleLayer(dxe, self.KN2[i], relu=False))
                 dxn = F.tanh(lapX + Graph.edgeDiv(dxe))

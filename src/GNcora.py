@@ -50,8 +50,8 @@ nEin = 1
 nopen = 64
 nhid = 64
 nNclose = 64
-nlayer = 16
-h = 10 / nlayer
+nlayer = 64
+h = 20 / nlayer
 
 #h = 20 / nlayer
 
