@@ -39,8 +39,7 @@ else:
 
 # Setup the network and its parameters
 def objective(trial):
-    dataset = 'Cora'
-
+    dataset = 'PubMed'
     if dataset == 'Cora':
         nNin = 1433
     elif dataset == 'CiteSeer':
@@ -52,7 +51,7 @@ def objective(trial):
     nopen = n_channels
     nhid = n_channels
     nNclose = n_channels
-    n_layers = trial.suggest_int('n_layers', 1, 16)
+    n_layers = 2
 
     #h = 1 / n_layers
     h = trial.suggest_float('h', 1 / (2*n_layers), 2 / n_layers)
@@ -97,7 +96,7 @@ def objective(trial):
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     data = data.to(device)
-    dropout = trial.suggest_float('dropout', 0.5, 0.8)
+    dropout = trial.suggest_float('dropout', 0.0, 0.8)
     lr = trial.suggest_float("lr", 1e-2, 1e-1, log=True)
     wd = trial.suggest_float("wd", 5e-5, 1e-2, log=True)
     model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, n_layers, h=h, dense=False, varlet=True, wave=False,
@@ -123,9 +122,7 @@ def objective(trial):
     def train():
         model.train()
         optimizer.zero_grad()
-        #print("data:", data)
-        #print("dataset.num_classes:", dataset.num_classes)
-        #print("dataset.num_features:", dataset.num_features)
+
         I = data.edge_index[0, :]
         J = data.edge_index[1, :]
         N = data.y.shape[0]
@@ -146,18 +143,12 @@ def objective(trial):
 
         # out = model(xn, xe, G)
         [out, G] = model(xn, G)
-        #print("out shape:", out.shape)
         [valmax, argmax] = torch.max(out, dim=1)
-
         g = G.nodeGrad(out.t().unsqueeze(0))
         eps = 1e-4
-        #print("g shape:", g.shape)
         absg = torch.sum(g ** 2, dim=1)
         tvreg = absg.mean()
-        # tvreg = torch.norm(G.nodeGrad(out.t().unsqueeze(0)), p=1) / I.shape[0]
-        #print("tvreg:", tvreg)
-        # out = out.squeeze()
-        loss = 0.1 * tvreg + F.nll_loss(out[data.train_mask], data.y[data.train_mask])
+        loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask]) #0.1 * tvreg +
         loss.backward()
         optimizer.step()
         # scheduler.step()
@@ -182,10 +173,8 @@ def objective(trial):
         G = G.to(device)
         xn = data.x.t().unsqueeze(0)
         xe = torch.ones(1, 1, I.shape[0]).to(device)
-        # out = model(xn, xe, G)
         [out, G] = model(xn, G)
         pred, accs = out.argmax(dim=-1), []
-        # pred, accs = model(data.x, data.adj_t).argmax(dim=-1), []
         for _, mask in data('train_mask', 'val_mask', 'test_mask'):
             accs.append(int((pred[mask] == data.y[mask]).sum()) / int(mask.sum()))
         return accs
