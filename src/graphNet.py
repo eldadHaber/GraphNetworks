@@ -672,7 +672,7 @@ class graphNetwork_nodesOnly(nn.Module):
                 if self.dropout:
                     dxn = F.dropout(dxn, p=self.dropout, training=self.training)
                     dxe = F.dropout(dxe, p=self.dropout, training=self.training)
-                    lapX = F.dropout(lapX, p=self.dropout, training=self.training)
+                    #lapX = F.dropout(lapX, p=self.dropout, training=self.training)
                 # dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
                 #dxe = F.tanh(self.singleLayer(dxe, self.KN2[i], relu=False))
                 #dxe = Graph.edgeDiv(dxe)
@@ -680,6 +680,7 @@ class graphNetwork_nodesOnly(nn.Module):
                 #dxn = F.tanh(F.tanh(lapX) + dxe)
 
                 dxe = F.tanh(self.singleLayer(dxe, self.KN2[i], relu=False))
+
                 dxn = F.tanh(lapX + Graph.edgeDiv(dxe))
 
                 #dxe = F.relu(self.singleLayer(dxe, self.KN2[i], relu=False))
