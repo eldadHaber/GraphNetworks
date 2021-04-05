@@ -12,7 +12,7 @@ import optuna
 import sys
 
 if "s" in sys.argv:
-    base_path = '/home/eliasof/pFold/data/'
+    base_path = '/home/eliasof/pdeGraphs/data/'
     import graphOps as GO
     import processContacts as prc
     import utils
@@ -50,8 +50,8 @@ nEin = 1
 nopen = 256
 nhid = 256
 nNclose = 256
-nlayer = 4
-h = 10 / nlayer
+nlayer = 2
+h = 5 / nlayer
 
 #h = 20 / nlayer
 
