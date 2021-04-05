@@ -51,7 +51,7 @@ nopen = 64
 nhid = 64
 nNclose = 64
 nlayer = 64
-h = 20 / nlayer
+h = 10 / nlayer
 
 #h = 20 / nlayer
 
@@ -116,7 +116,7 @@ def train():
     tvreg = absg.mean()
     # tvreg = torch.norm(G.nodeGrad(out.t().unsqueeze(0)), p=1) / I.shape[0]
     # out = out.squeeze()
-    loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask])
+    loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask]) + 0.1*tvreg
     loss.backward()
     optimizer.step()
     #scheduler.step()
@@ -159,4 +159,4 @@ for epoch in range(1, 1001):
         test_acc = tmp_test_acc
     print(f'Epoch: {epoch:04d}, Loss: {loss:.4f} Train: {train_acc:.4f}, '
           f'Val: {val_acc:.4f}, Test: {tmp_test_acc:.4f}, '
-          f'Final Test: {test_acc:.4f}')
+          f'Final Test: {test_acc:.4f}', flush=True)
