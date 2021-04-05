@@ -57,7 +57,10 @@ h = 20 / nlayer
 
 batchSize = 32
 
-path = '/home/cluster/users/erant_group/moshe/' + dataset
+if "s" in sys.argv:
+    path = '/home/eliasof/GraphNetworks/data/' + dataset
+else:
+    path = '/home/cluster/users/erant_group/moshe/' + dataset
 transform = T.Compose([T.NormalizeFeatures()])
 dataset = Planetoid(path, dataset, transform=transform)
 data = dataset[0]
