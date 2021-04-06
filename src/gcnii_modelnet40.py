@@ -50,10 +50,11 @@ class Net(torch.nn.Module):
         x = data.pos
         x = F.dropout(x, self.dropout, training=self.training)
         x = x_0 = self.lins[0](x).relu()
-
+        edge_weights = torch.ones_like(data.edge_index.shape[0]).cuda()
         for conv in self.convs:
             x = F.dropout(x, self.dropout, training=self.training)
-            x = conv(x, x_0, data.edge_index)
+            print("data.edge_index:", data.edge_index.shape)
+            x = conv(x, x_0, data.edge_index, edge_weights)
             x = x.relu()
 
         x = F.dropout(x, self.dropout, training=self.training)
