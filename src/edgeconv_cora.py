@@ -111,7 +111,6 @@ data = data.to(device)
 #                                  diffOrder=1, num_output=dataset.num_classes, dropOut=dropout)
 
 model = Net(out_channels=dataset.num_classes, nIn=nNin)
-model.reset_parameters()
 model.to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0.0001)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=200, gamma=0.1)
