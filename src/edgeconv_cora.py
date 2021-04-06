@@ -89,9 +89,15 @@ class Net(torch.nn.Module):
 
     def forward(self, data):
         xn = data.x
+        xn = F.dropout(xn, p=0.6, training=self.training)
         xn = self.lin0(xn)
+        xn = F.dropout(xn, p=0.6, training=self.training)
+
         xn = self.conv1(xn, data.edge_index)
+        xn = F.dropout(xn, p=0.6, training=self.training)
+
         xn = self.conv2(xn, data.edge_index)
+        xn = F.dropout(xn, p=0.6, training=self.training)
 
         out = self.lin1(torch.cat([xn], dim=1))
         #out = global_max_pool(out, batch)
