@@ -74,7 +74,8 @@ class Net(torch.nn.Module):
     def __init__(self, out_channels, nIn,k=10, aggr='max'):
         super().__init__()
         self.numlayers = 100
-        self.conv1 = EdgeConv(MLP([2 * nIn, 64]), aggr)
+        self.lin0 = MLP([nIn, 64])
+        self.conv1 = EdgeConv(MLP([2 * 64, 64]), aggr)
         self.conv2 = EdgeConv(MLP([2 * 64, 64]), aggr)
         #self.Layers = torch.nn.ModuleList()
         #for i in torch.arange(0, self.numlayers):
@@ -88,7 +89,7 @@ class Net(torch.nn.Module):
 
     def forward(self, data):
         xn = data.x
-
+        xn = self.lin0(xn)
         xn = self.conv1(xn, data.edge_index)
         xn = self.conv2(xn, data.edge_index)
 
