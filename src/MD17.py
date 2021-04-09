@@ -121,7 +121,7 @@ epochs = 1000
 
 bestModel = model
 hist = torch.zeros(epochs)
-
+eps = 1e-10
 for epoch in range(epochs):
     aloss = 0.0
     MAE = 0.0
@@ -142,18 +142,33 @@ for epoch in range(epochs):
         optimizer.zero_grad()
 
         xnOut, xeOut = model(xn, xe, G)
-        F_true = Fi.t()[None,:,:]
-        loss = F.mse_loss(xnOut, F_true)
-        MAEi = torch.mean(torch.abs(xnOut - F_true)).detach()
+        #Something funky with xeOut, I don't think it is quite right, NeClose is not being used by the network to give this one the correct dimension
+        fpred = xeOut[0,0,:].reshape(nNodes,nNodes)
+
+
+        #We treat xeOut as pairwise force magnitudes, and combine them with the coordinates to create pairwise force coordinates
+        # We start by creating the normalized pair vectors
+        Rij = (Ri[None,:,:] - Ri[:,None,:]).to(dtype=torch.float32)
+        tmp = torch.sqrt(torch.sum(Rij**2+eps,dim=2))
+        Rij /= tmp[:,:,None]
+
+        F_pred_pairs = Rij * fpred[:,:,None]
+        F_pred = torch.sum(F_pred_pairs,dim=1)[None,:,:]
+
+
+
+        F_true = Fi[None,:,:]
+        loss = F.mse_loss(F_pred, F_true)
+        MAEi = torch.mean(torch.abs(F_pred - F_true)).detach()
         MAE += MAEi
         loss.backward()
 
         aloss += loss.detach()
-        gN = model.KNclose.grad.norm().item()
-        gE1 = model.KE1.grad.norm().item()
-        gE2 = model.KE2.grad.norm().item()
-        gO = model.KN1.grad.norm().item()
-        gC = model.KN2.grad.norm().item()
+        # gN = model.KNclose.grad.norm().item()
+        # gE1 = model.KE1.grad.norm().item()
+        # gE2 = model.KE2.grad.norm().item()
+        # gO = model.KN1.grad.norm().item()
+        # gC = model.KN2.grad.norm().item()
 
         optimizer.step()
         nprnt = 10
