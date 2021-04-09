@@ -64,7 +64,7 @@ natoms = z.shape[0]
 print('Number of data: {:}, Number of atoms {:}'.format(ndata, natoms))
 
 # Following Equivariant paper, we select 1000 configurations from these as our training set, 1000 as our validation set, and the rest are used as test data.
-n_train = 1000
+n_train = 10
 n_val = 1000
 
 ndata_rand = np.arange(ndata)
@@ -153,7 +153,7 @@ for epoch in range(epochs):
         Rij /= tmp[:,:,None]
 
         F_pred_pairs = Rij * fpred[:,:,None]
-        F_pred = torch.sum(F_pred_pairs,dim=1)[None,:,:]
+        F_pred = torch.sum(F_pred_pairs,dim=1)[None,:,:]*10 #Not really scaled that well, so adding a factor of 10, just to help with the initial scaling
 
 
 
@@ -171,7 +171,7 @@ for epoch in range(epochs):
         # gC = model.KN2.grad.norm().item()
 
         optimizer.step()
-        nprnt = 100
+        nprnt = 10
         if (i + 1) % nprnt == 0:
             aloss /= nprnt
             MAE /= nprnt
