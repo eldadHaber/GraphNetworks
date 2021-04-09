@@ -14,14 +14,20 @@ from torch.nn import Sequential as Seq, Linear as Lin, ReLU, BatchNorm1d as BN, 
 from torch_cluster import knn
 from torch_geometric.typing import PairTensor
 
+from src import graphOps as GO
+from src import processContacts as prc
+from src import utils
+from src import graphNet as GN
+from src import pnetArch as PNA
+
 path = '/home/cluster/users/erant_group/ModelNet10'
 pre_transform, transform = T.NormalizeScale(), T.SamplePoints(1024)
 train_dataset = ModelNet(path, '10', True, transform, pre_transform)
 test_dataset = ModelNet(path, '10', False, transform, pre_transform)
 train_loader = DataLoader(
-    train_dataset, batch_size=8, shuffle=True, num_workers=6)
+    train_dataset, batch_size=16, shuffle=True, num_workers=6)
 test_loader = DataLoader(
-    test_dataset, batch_size=8, shuffle=False, num_workers=6)
+    test_dataset, batch_size=16, shuffle=False, num_workers=6)
 
 def MLP(channels, batch_norm=True):
     return Seq(*[
@@ -70,16 +76,22 @@ class Net(torch.nn.Module):
         return x.log_softmax(dim=-1)
 
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-model = Net(hidden_channels=64, num_layers=4, alpha=0.1, theta=0.5,
-            shared_weights=True, dropout=0.6).to(device)
 
-model = Net(hidden_channels=64, num_layers=4, alpha=0.1, theta=0.5,
-            shared_weights=True, dropout=0.0).to(device)
-optimizer = torch.optim.Adam([
-    dict(params=model.convs.parameters(), weight_decay=0.01),
-    dict(params=model.lins.parameters(), weight_decay=5e-4)
-], lr=0.001)
+nEin = 1
+nopen = 64
+nNin = 3
+nhid = 64
+nNclose = 64
+nlayer = 6
+h = 1 / nlayer
+dropout = 0.0
+
+model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
+                                  diffOrder=1, num_output=nopen, dropOut=dropout)
+
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+model = model.to(device)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
 
 
@@ -88,9 +100,21 @@ def train():
 
     total_loss = 0
     for data in train_loader:
+        xtmp: PairTensor = (data.pos, data.pos)
+        b = (data.batch, data.batch)
+        k = 10
+        edge_index = knn(xtmp[0], xtmp[1], k, b[0], b[1],
+                         num_workers=3)
+        edge_index = edge_index.to(device)
+        I = edge_index[0, :]
+        J = edge_index[1, :]
+        N = data.pos.shape[0]
+        G = GO.graph(I, J, N, pos=None, faces=None)
+        G = G.to(device)
         data = data.to(device)
         optimizer.zero_grad()
-        out = model(data)
+        xn = data.pos.t().unsqueeze(0).cuda()
+        out = model(xn, G, data=data)
         loss = F.nll_loss(out, data.y)
         loss.backward()
         total_loss += loss.item() * data.num_graphs
@@ -104,8 +128,22 @@ def test(loader):
     correct = 0
     for data in loader:
         data = data.to(device)
+        xtmp: PairTensor = (data.pos, data.pos)
+        b = (data.batch, data.batch)
+        k = 10
+        edge_index = knn(xtmp[0], xtmp[1], k, b[0], b[1],
+                         num_workers=3)
+        edge_index = edge_index.to(device)
+        I = edge_index[0, :]
+        J = edge_index[1, :]
+        N = data.pos.shape[0]
+        G = GO.graph(I, J, N, pos=None, faces=None)
+        G = G.to(device)
+        data = data.to(device)
+        optimizer.zero_grad()
+        xn = data.pos.t().unsqueeze(0).cuda()
         with torch.no_grad():
-            pred = model(data).max(dim=1)[1]
+            pred = model(xn, G, data=data).max(dim=1)[1]
         correct += pred.eq(data.y).sum().item()
     return correct / len(loader.dataset)
 
