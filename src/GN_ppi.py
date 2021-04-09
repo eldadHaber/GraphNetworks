@@ -1,6 +1,8 @@
 import os.path as osp
 
 import torch
+print(torch.cuda.get_device_name(0))
+
 from torch.nn import Linear
 import torch.nn.functional as F
 from sklearn.metrics import f1_score
@@ -167,7 +169,6 @@ def test(loader):
     y, pred = torch.cat(ys, dim=0).numpy(), torch.cat(preds, dim=0).numpy()
     return f1_score(y, pred, average='micro') if pred.sum() > 0 else 0
 
-print(orch.cuda.get_device_name(0))
 for epoch in range(1, 2001):
     loss = train()
     train_f1 = test(train_dataset)
