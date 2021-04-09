@@ -176,5 +176,5 @@ for epoch in range(1, 2001):
     val_f1 = test(val_loader)
     test_f1 = test(test_loader)
     print('Epoch: {:02d}, Loss: {:.4f}, Val: {:.4f}, Test: {:.4f}'.format(
-        epoch, loss, val_f1, test_f1))
+        epoch, loss, val_f1, test_f1),  flush=True)
     print("Train F1:", train_f1, flush=True)
