@@ -95,9 +95,9 @@ dataset = 'ppi'
 
 nNin = train_dataset.num_features
 nEin = 1
-nopen = 2048
-nhid = 2048
-nNclose = 2048
+nopen = 1024
+nhid = 1024
+nNclose = 1024
 nlayer = 8
 h = 1 / nlayer
 dropout = 0.2
@@ -107,6 +107,7 @@ print("n channels:", nopen)
 print("n layers:", nlayer)
 print("h step:", h)
 print("dropout:", dropout)
+print("with edges!!")
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
