@@ -92,7 +92,7 @@ nNclose = 3
 nEclose = 1
 nlayer = 6
 
-model = GN.graphNetwork(nNin, nEin, nNopen, nEhid, nNclose, nlayer, h=.1, dense=False)
+model = GN.graphNetwork(nNin, nEin, nNopen, nEhid, nNclose, nEclose, nlayer, h=.1, dense=False)
 model.to(device)
 
 total_params = sum(p.numel() for p in model.parameters())
@@ -171,7 +171,7 @@ for epoch in range(epochs):
         # gC = model.KN2.grad.norm().item()
 
         optimizer.step()
-        nprnt = 10
+        nprnt = 100
         if (i + 1) % nprnt == 0:
             aloss /= nprnt
             MAE /= nprnt

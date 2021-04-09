@@ -45,7 +45,7 @@ def doubleLayer(x, K1, K2):
 
 class graphNetwork(nn.Module):
 
-    def __init__(self, nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=False):
+    def __init__(self, nNin, nEin, nopen, nhid, nNclose, nEclose, nlayer, h=0.1, dense=False, varlet=False):
         super(graphNetwork, self).__init__()
 
         self.h = h
@@ -63,7 +63,7 @@ class graphNetwork(nn.Module):
             self.K2Eopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
 
         self.KNclose = nn.Parameter(torch.randn(nNclose, nopen) * stdv)
-
+        self.KEclose = nn.Parameter(torch.randn(nEclose, nopen) * stdv)
         if varlet:
             Nfeatures = 2 * nopen
         else:
@@ -142,6 +142,7 @@ class graphNetwork(nn.Module):
                 xe = xe + self.h * dxe
 
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
+        xe = F.conv1d(xe, self.KEclose.unsqueeze(-1))
 
         return xn, xe
 
