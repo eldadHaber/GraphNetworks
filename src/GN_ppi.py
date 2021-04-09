@@ -9,7 +9,12 @@ import torch_geometric.transforms as T
 from torch_geometric.nn import GCN2Conv
 from torch_geometric.data import DataLoader
 
-path = '/home/cluster/users/erant_group/moshe/ppi/'
+dataset = "ppi"
+import sys
+if "s" in sys.argv:
+    path = '/home/eliasof/GraphNetworks/data/' + dataset
+else:
+    path = '/home/cluster/users/erant_group/moshe/' + dataset
 pre_transform = T.Compose([T.GCNNorm(), T.ToSparseTensor()])
 pre_transform = T.Compose([T.GCNNorm()])
 
@@ -100,10 +105,6 @@ print("n layers:", nlayer)
 print("h step:", h)
 print("dropout:", dropout)
 
-if "s" in sys.argv:
-    path = '/home/eliasof/GraphNetworks/data/' + dataset
-else:
-    path = '/home/cluster/users/erant_group/moshe/' + dataset
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = Net(hidden_channels=2048, num_layers=9, alpha=0.5, theta=1.0,
