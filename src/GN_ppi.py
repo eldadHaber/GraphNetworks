@@ -2,6 +2,7 @@ import os.path as osp
 
 import torch
 print(torch.cuda.get_device_name(0))
+print(torch.cuda.get_device_properties('cuda:0'))
 
 from torch.nn import Linear
 import torch.nn.functional as F
