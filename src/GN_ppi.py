@@ -113,7 +113,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = Net(hidden_channels=2048, num_layers=9, alpha=0.5, theta=1.0,
             shared_weights=False, dropout=0.2).to(device)
 
-model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=False, wave=False,
+model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
                                   diffOrder=1, num_output=train_dataset.num_classes, dropOut=dropout, PPI=True)
 model.reset_parameters()
 model.to(device)
