@@ -119,7 +119,7 @@ optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO},
 
 
 alossBest = 1e6
-epochs = 1000
+epochs = 100000
 
 bestModel = model
 hist = torch.zeros(epochs)
@@ -127,6 +127,8 @@ eps = 1e-10
 t0 = time.time()
 for epoch in range(epochs):
     aloss = 0.0
+    aloss_E = 0.0
+    aloss_F = 0.0
     MAE = 0.0
     for i in range(n_train):
         # Get the data
@@ -176,6 +178,8 @@ for epoch in range(epochs):
         loss.backward()
 
         aloss += loss.detach()
+        aloss_E += loss_E.detach()
+        aloss_F += loss_F.detach()
         # gN = model.KNclose.grad.norm().item()
         # gE1 = model.KE1.grad.norm().item()
         # gE2 = model.KE2.grad.norm().item()
@@ -183,15 +187,17 @@ for epoch in range(epochs):
         # gC = model.KN2.grad.norm().item()
 
         optimizer.step()
-        nprnt = 2
+        nprnt = 100
         if (i + 1) % nprnt == 0:
             aloss /= nprnt
             MAE /= nprnt
             # print("%2d.%1d   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E" %
             #       (j, i, aloss, gO, gN, gE1, gE2, gC), flush=True)
 
-            print(f'{epoch:2d}.{i:4d}  Loss: {aloss:.2f}  MAE: {MAE:.2f} Time taken: {time.time()-t0:.2f}s')
+            print(f'{epoch:2d}.{i:4d}  Loss: {aloss:.2f}  Loss_E: {aloss_E:.2f} Loss_F: {aloss_F:.2f}  MAE: {MAE:.2f} Time taken: {time.time()-t0:.2f}s')
             aloss = 0.0
+            aloss_E = 0.0
+            aloss_F = 0.0
             MAE = 0.0
 
     if aloss < alossBest:
