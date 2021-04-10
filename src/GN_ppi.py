@@ -95,10 +95,10 @@ dataset = 'ppi'
 
 nNin = train_dataset.num_features
 nEin = 1
-nopen = 512
-nhid = 512
-nNclose = 512
-nlayer = 8
+nopen = 2048
+nhid = 2048
+nNclose = 2048
+nlayer = 4
 h = 1 / nlayer
 dropout = 0.2
 # h = 20 / nlayer
@@ -107,7 +107,7 @@ print("n channels:", nopen)
 print("n layers:", nlayer)
 print("h step:", h)
 print("dropout:", dropout)
-print("without edges!!")
+print("with edges!!")
 
 file2Open = "src/GN_ppi.py"
 f = open(file2Open, "r")
@@ -119,7 +119,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = Net(hidden_channels=2048, num_layers=9, alpha=0.5, theta=1.0,
             shared_weights=False, dropout=0.2).to(device)
 
-model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=False, wave=False,
+model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
                                   diffOrder=1, num_output=train_dataset.num_classes, dropOut=dropout, PPI=True)
 model.reset_parameters()
 model.to(device)
