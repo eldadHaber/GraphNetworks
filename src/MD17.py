@@ -190,6 +190,8 @@ for epoch in range(epochs):
         nprnt = 100
         if (i + 1) % nprnt == 0:
             aloss /= nprnt
+            aloss_E /= nprnt
+            aloss_F /= nprnt
             MAE /= nprnt
             # print("%2d.%1d   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E" %
             #       (j, i, aloss, gO, gN, gE1, gE2, gC), flush=True)
