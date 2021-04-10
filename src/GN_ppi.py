@@ -98,7 +98,7 @@ nEin = 1
 nopen = 2048
 nhid = 2048
 nNclose = 2048
-nlayer = 4
+nlayer = 3
 h = 1 / nlayer
 dropout = 0.2
 # h = 20 / nlayer
@@ -116,8 +116,7 @@ for line in f:
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-model = Net(hidden_channels=2048, num_layers=9, alpha=0.5, theta=1.0,
-            shared_weights=False, dropout=0.2).to(device)
+
 
 model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
                                   diffOrder=1, num_output=train_dataset.num_classes, dropOut=dropout, PPI=True)

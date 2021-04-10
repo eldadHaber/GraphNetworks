@@ -664,7 +664,7 @@ class graphNetwork_nodesOnly(nn.Module):
             print("std deg:", deg.std())
             exit()
 
-
+        xn_old = x0
         [Graph, edge_index] = self.updateGraph(Graph)
         nlayers = self.nlayers
         for i in range(nlayers):
