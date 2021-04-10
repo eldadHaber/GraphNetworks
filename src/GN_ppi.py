@@ -98,7 +98,7 @@ nEin = 1
 nopen = 2048
 nhid = 2048
 nNclose = 2048
-nlayer = 3
+nlayer = 8
 h = 1 / nlayer
 dropout = 0.2
 # h = 20 / nlayer
@@ -107,8 +107,8 @@ print("n channels:", nopen)
 print("n layers:", nlayer)
 print("h step:", h)
 print("dropout:", dropout)
-print("with edges!!")
-
+print("without edges!!")
+print("wave eq. !")
 file2Open = "src/GN_ppi.py"
 f = open(file2Open, "r")
 for line in f:
@@ -118,7 +118,7 @@ for line in f:
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
-model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
+model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=False, wave=True,
                                   diffOrder=1, num_output=train_dataset.num_classes, dropOut=dropout, PPI=True)
 model.reset_parameters()
 model.to(device)
