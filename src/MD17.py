@@ -1,4 +1,5 @@
 import os, sys
+import time
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -12,6 +13,7 @@ from src import graphOps as GO
 from src import processContacts as prc
 from src import utils
 from src import graphNet as GN
+from torch.autograd import grad
 
 
 def getIterData_MD17(Coords, device='cpu'):
@@ -19,8 +21,8 @@ def getIterData_MD17(Coords, device='cpu'):
     D = torch.relu(torch.sum(Coords ** 2, dim=0, keepdim=True) + \
                    torch.sum(Coords ** 2, dim=0, keepdim=True).t() - \
                    2 * Coords.t() @ Coords)
-    D = D / D.std()
-    D = torch.exp(-2 * D)
+    # D = D / D.std()
+    # D = torch.exp(-2 * D)
 
     nsparse = Coords.shape[-1]
     vals, indices = torch.topk(D, k=min(nsparse, D.shape[0]), dim=1)
@@ -41,7 +43,7 @@ def getIterData_MD17(Coords, device='cpu'):
     I = I.to(device=device, non_blocking=True)
     J = J.to(device=device, non_blocking=True)
     xe = xe.to(device=device, non_blocking=True)
-    D = D.to(device=device, non_blocking=True)
+    D = D.to(device=device, non_blocking=True, dtype=torch.float32)
 
     return Coords.unsqueeze(0), I, J, xe, D
 
@@ -64,7 +66,7 @@ natoms = z.shape[0]
 print('Number of data: {:}, Number of atoms {:}'.format(ndata, natoms))
 
 # Following Equivariant paper, we select 1000 configurations from these as our training set, 1000 as our validation set, and the rest are used as test data.
-n_train = 10
+n_train = 100
 n_val = 1000
 
 ndata_rand = np.arange(ndata)
@@ -88,7 +90,7 @@ nEin = 1
 nNopen = 128
 nEopen = 64
 nEhid = 64
-nNclose = 3
+nNclose = 1
 nEclose = 1
 nlayer = 6
 
@@ -122,6 +124,7 @@ epochs = 1000
 bestModel = model
 hist = torch.zeros(epochs)
 eps = 1e-10
+t0 = time.time()
 for epoch in range(epochs):
     aloss = 0.0
     MAE = 0.0
@@ -129,36 +132,45 @@ for epoch in range(epochs):
         # Get the data
         Ri = R_train[i,:]
         Fi = F_train[i,:].to(dtype=torch.float32)
-        Ei = E_train[i,:]
+        Ei = E_train[i,:].to(dtype=torch.float32,device=device)
 
-        Coords, I, J, xe, Ds = getIterData_MD17(Ri.t())
-
+        Coords, I, J, xe, Ds = getIterData_MD17(Ri.t(),device=device)
+        Ds.requires_grad_(True)
         nNodes = Ds.shape[0]
-        w = Ds[I, J].to(dtype=torch.float32)
+        w = Ds[I, J].to(device=device,dtype=torch.float32)
         G = GO.graph(I, J, nNodes, w)
-        xn = torch.from_numpy(z).to(dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+        xn = torch.from_numpy(z).to(device=device,dtype=torch.float32).unsqueeze(0).unsqueeze(0)
         xe = w.unsqueeze(0).unsqueeze(0)
 
         optimizer.zero_grad()
 
         xnOut, xeOut = model(xn, xe, G)
-        #Something funky with xeOut, I don't think it is quite right, NeClose is not being used by the network to give this one the correct dimension
-        fpred = xeOut[0,0,:].reshape(nNodes,nNodes)
 
+        E_pred = torch.sum(xnOut)
+        F_pred_pairwise = -  grad(E_pred, Ds, create_graph=True)[0].requires_grad_(True)
+        F_pred_pairwise.fill_diagonal_(0)
+
+        # E_pred.retain_grad()
+
+
+        #Something funky with xeOut, I don't think it is quite right, NeClose is not being used by the network to give this one the correct dimension
+        # fpred = xeOut[0,0,:].reshape(nNodes,nNodes)
 
         #We treat xeOut as pairwise force magnitudes, and combine them with the coordinates to create pairwise force coordinates
         # We start by creating the normalized pair vectors
-        Rij = (Ri[None,:,:] - Ri[:,None,:]).to(dtype=torch.float32)
+        Rij = (Ri[None,:,:] - Ri[:,None,:]).to(device=device,dtype=torch.float32)
         tmp = torch.sqrt(torch.sum(Rij**2+eps,dim=2))
         Rij /= tmp[:,:,None]
 
-        F_pred_pairs = Rij * fpred[:,:,None]
-        F_pred = torch.sum(F_pred_pairs,dim=1)[None,:,:]*10 #Not really scaled that well, so adding a factor of 10, just to help with the initial scaling
+        F_pred_pairs = Rij * F_pred_pairwise[:,:,None]
+        F_pred = torch.sum(F_pred_pairs,dim=1)[None,:,:] #Not really scaled that well, so adding a factor of 10, just to help with the initial scaling
 
 
 
-        F_true = Fi[None,:,:]
-        loss = F.mse_loss(F_pred, F_true)
+        F_true = Fi[None,:,:].to(device=device)
+        loss_F = F.mse_loss(F_pred, F_true)
+        loss_E = F.mse_loss(E_pred, Ei)
+        loss = loss_E + loss_F
         MAEi = torch.mean(torch.abs(F_pred - F_true)).detach()
         MAE += MAEi
         loss.backward()
@@ -171,14 +183,14 @@ for epoch in range(epochs):
         # gC = model.KN2.grad.norm().item()
 
         optimizer.step()
-        nprnt = 10
+        nprnt = 2
         if (i + 1) % nprnt == 0:
             aloss /= nprnt
             MAE /= nprnt
             # print("%2d.%1d   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E" %
             #       (j, i, aloss, gO, gN, gE1, gE2, gC), flush=True)
 
-            print(f'{epoch:2d}.{i:4d}  Loss: {aloss:.2f}  MAE: {MAE:.2f} ')
+            print(f'{epoch:2d}.{i:4d}  Loss: {aloss:.2f}  MAE: {MAE:.2f} Time taken: {time.time()-t0:.2f}s')
             aloss = 0.0
             MAE = 0.0
 
