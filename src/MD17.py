@@ -132,12 +132,12 @@ for epoch in range(epochs):
     MAE = 0.0
     for i in range(n_train):
         # Get the data
-        Ri = R_train[i,:]
+        Ri = R_train[i,:].to(dtype=torch.float32, device=device)
         Fi = F_train[i,:].to(dtype=torch.float32)
         Ei = E_train[i,:].to(dtype=torch.float32,device=device)
+        Ri.requires_grad_(True)
 
         Coords, I, J, xe, Ds = getIterData_MD17(Ri.t(),device=device)
-        Ds.requires_grad_(True)
         nNodes = Ds.shape[0]
         w = Ds[I, J].to(device=device,dtype=torch.float32)
         G = GO.graph(I, J, nNodes, w)
@@ -149,36 +149,17 @@ for epoch in range(epochs):
         xnOut, xeOut = model(xn, xe, G)
 
         E_pred = torch.sum(xnOut)
-        F_pred_pairwise = -  grad(E_pred, Ds, create_graph=True)[0].requires_grad_(True)
-        F_pred_pairwise.fill_diagonal_(0)
-
-        # E_pred.retain_grad()
-
-
-        #Something funky with xeOut, I don't think it is quite right, NeClose is not being used by the network to give this one the correct dimension
-        # fpred = xeOut[0,0,:].reshape(nNodes,nNodes)
-
-        #We treat xeOut as pairwise force magnitudes, and combine them with the coordinates to create pairwise force coordinates
-        # We start by creating the normalized pair vectors
-        Rij = (Ri[None,:,:] - Ri[:,None,:]).to(device=device,dtype=torch.float32)
-        tmp = torch.sqrt(torch.sum(Rij**2+eps,dim=2))
-        Rij /= tmp[:,:,None]
-
-        F_pred_pairs = Rij * F_pred_pairwise[:,:,None]
-        F_pred = torch.sum(F_pred_pairs,dim=1)[None,:,:] #Not really scaled that well, so adding a factor of 10, just to help with the initial scaling
-
-
-
+        F_pred = -grad(E_pred, Ri, create_graph=True)[0].requires_grad_(True)
         F_true = Fi[None,:,:].to(device=device)
         loss_F = F.mse_loss(F_pred, F_true)
-        loss_E = F.mse_loss(E_pred, Ei)
-        loss = loss_E + loss_F
+        # loss_E = F.mse_loss(E_pred, Ei)
+        loss = loss_F
         MAEi = torch.mean(torch.abs(F_pred - F_true)).detach()
         MAE += MAEi
         loss.backward()
 
         aloss += loss.detach()
-        aloss_E += loss_E.detach()
+        # aloss_E += loss_E.detach()
         aloss_F += loss_F.detach()
         # gN = model.KNclose.grad.norm().item()
         # gE1 = model.KE1.grad.norm().item()
