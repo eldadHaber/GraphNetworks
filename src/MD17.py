@@ -17,11 +17,13 @@ from torch.autograd import grad
 
 
 def getIterData_MD17(Coords, device='cpu'):
-
+    eps = 1e-9
     D = torch.relu(torch.sum(Coords ** 2, dim=0, keepdim=True) + \
                    torch.sum(Coords ** 2, dim=0, keepdim=True).t() - \
                    2 * Coords.t() @ Coords)
     # D = D / D.std()
+    D = 1 / D
+    D.fill_diagonal_(0)
     # D = torch.exp(-2 * D)
 
     nsparse = Coords.shape[-1]
@@ -130,10 +132,12 @@ for epoch in range(epochs):
     aloss_E = 0.0
     aloss_F = 0.0
     MAE = 0.0
+    Fps = 0.0
+    Fts = 0.0
     for i in range(n_train):
         # Get the data
         Ri = R_train[i,:].to(dtype=torch.float32, device=device)
-        Fi = F_train[i,:].to(dtype=torch.float32)
+        Fi = F_train[i,:].to(dtype=torch.float32, device=device)
         Ei = E_train[i,:].to(dtype=torch.float32,device=device)
         Ri.requires_grad_(True)
 
@@ -150,11 +154,12 @@ for epoch in range(epochs):
 
         E_pred = torch.sum(xnOut)
         F_pred = -grad(E_pred, Ri, create_graph=True)[0].requires_grad_(True)
-        F_true = Fi[None,:,:].to(device=device)
-        loss_F = F.mse_loss(F_pred, F_true)
+        loss_F = F.mse_loss(F_pred, Fi)
         # loss_E = F.mse_loss(E_pred, Ei)
         loss = loss_F
-        MAEi = torch.mean(torch.abs(F_pred - F_true)).detach()
+        Fps += torch.mean(torch.sqrt(torch.sum(F_pred.detach()**2,dim=1)))
+        Fts += torch.mean(torch.sqrt(torch.sum(Fi**2,dim=1)))
+        MAEi = torch.mean(torch.abs(F_pred - Fi)).detach()
         MAE += MAEi
         loss.backward()
 
@@ -174,13 +179,17 @@ for epoch in range(epochs):
             aloss_E /= nprnt
             aloss_F /= nprnt
             MAE /= nprnt
+            Fps /= nprnt
+            Fts /= nprnt
             # print("%2d.%1d   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E" %
             #       (j, i, aloss, gO, gN, gE1, gE2, gC), flush=True)
 
-            print(f'{epoch:2d}.{i:4d}  Loss: {aloss:.2f}  Loss_E: {aloss_E:.2f} Loss_F: {aloss_F:.2f}  MAE: {MAE:.2f} Time taken: {time.time()-t0:.2f}s')
+            print(f'{epoch:2d}.{i:4d}  Loss: {aloss:.2f}  Loss_E: {aloss_E:.2f} Loss_F: {aloss_F:.2f}  MAE: {MAE:.2f}  |F_pred|: {Fps:.4f}  |F_true|: {Fts:.4f} Time taken: {time.time()-t0:.2f}s')
             aloss = 0.0
             aloss_E = 0.0
             aloss_F = 0.0
+            Fps = 0.0
+            Fts = 0.0
             MAE = 0.0
 
     if aloss < alossBest:
