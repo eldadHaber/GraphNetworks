@@ -42,7 +42,7 @@ class Net(torch.nn.Module):
         for layer in range(num_layers):
             self.convs.append(
                 GCN2Conv(hidden_channels, alpha, theta, layer + 1,
-                         shared_weights, normalize=True))
+                         shared_weights, normalize=False))
 
         self.dropout = dropout
         self.mlp = Seq(
@@ -71,10 +71,10 @@ class Net(torch.nn.Module):
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-model = Net(hidden_channels=64, num_layers=4, alpha=0.1, theta=0.5,
+model = Net(hidden_channels=64, num_layers=8, alpha=0.1, theta=0.5,
             shared_weights=True, dropout=0.6).to(device)
 
-model = Net(hidden_channels=64, num_layers=4, alpha=0.1, theta=0.5,
+model = Net(hidden_channels=64, num_layers=8, alpha=0.1, theta=0.5,
             shared_weights=True, dropout=0.0).to(device)
 optimizer = torch.optim.Adam([
     dict(params=model.convs.parameters(), weight_decay=0.01),
