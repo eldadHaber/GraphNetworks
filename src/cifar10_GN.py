@@ -82,7 +82,7 @@ edge_index = edge_index.to(device)
 print("Edge index:", edge_index, "shape:", edge_index.shape)
 I = edge_index[0, :]
 J = edge_index[1, :]
-N = pos.shape[1]
+N = pos.shape[0]
 img_graph = GO.graph(I, J, N, pos=None, faces=None)
 img_graph = img_graph.to(device)
 
