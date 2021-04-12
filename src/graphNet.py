@@ -711,8 +711,8 @@ class graphNetwork_nodesOnly(nn.Module):
                     dxe = F.tanh(self.singleLayer(dxe, self.KN2[i], relu=False))
                     dxn = F.tanh(lapX + Graph.edgeDiv(dxe))
                 elif self.varlet and self.gated:
-                    W = F.sigmoid(Graph.nodeGrad(self.singleLayer(xn, self.KN2[i], relu=False)))
-                    dxn = F.tanh(lapX + Graph.edgeDiv(W*Graph.nodeGrad(xn)))
+                    W = F.tanh(Graph.nodeGrad(self.singleLayer(xn, self.KN2[i], relu=False)))
+                    dxn = F.sigmoid(lapX + Graph.edgeDiv(W*Graph.nodeGrad(xn)))
                 else:
                     dxn = (self.singleLayer(lapX, self.KN1[i], relu=False))
                     dxn = F.tanh(dxn)
