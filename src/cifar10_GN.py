@@ -33,12 +33,14 @@ transform_train = transforms.Compose([
     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)), ])
 transform_test = transforms.Compose(
     [transforms.ToTensor(), transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)), ])
+
+batch_size = 2
 trainset = torchvision.datasets.CIFAR10(root=data_path, train=True,
                                         download=True, transform=transform_train)
-trainloader = torch.utils.data.DataLoader(trainset, batch_size=1,
+trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size,
                                           shuffle=True, num_workers=6)
 testset = torchvision.datasets.CIFAR10(root=data_path, train=False, download=True, transform=transform_test)
-testloader = torch.utils.data.DataLoader(testset, batch_size=1, shuffle=False,
+testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False,
                                          num_workers=6)
 
 
@@ -79,6 +81,10 @@ edge_index = knn(xtmp[0], xtmp[1], k, b[0], b[1],
 edge_index = knn(xtmp[0], xtmp[1], k, b[0], b[1],
                  num_workers=6)
 edge_index = edge_index.to(device)
+for i in range(1, batch_size):
+    edge_index_new = edge_index + i*pos.shape[0]
+    edge_index_batch = torch.cat([edge_index_batch, edge_index_new], dim=0)
+    batch = torch.cat([batch, i*torch.ones(pos.shape[0], dtype=torch.int64)], dim=0)
 batch = batch.to(device)
 print("Edge index:", edge_index, "shape:", edge_index.shape)
 I = edge_index[0, :]
