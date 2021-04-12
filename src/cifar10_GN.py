@@ -59,7 +59,7 @@ h = 1 / nlayer
 dropout = 0.0
 
 model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
-                                  diffOrder=1, num_output=nopen, dropOut=dropout)
+                                  diffOrder=1, num_output=64, dropOut=dropout, modelnet=True)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = model.to(device)
@@ -91,7 +91,9 @@ def train():
     total_loss = 0
     for (data, target) in trainloader:
         data = data.to(device)
+
         xn = data.view(-1, 3).t().unsqueeze(0).cuda()
+        print("xn shape:", xn.shape)
         optimizer.zero_grad()
         out = model(xn, img_graph, data=data)
         loss = F.nll_loss(out, target)
