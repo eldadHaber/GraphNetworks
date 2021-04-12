@@ -436,6 +436,13 @@ def MLP(channels, batch_norm=True):
         for i in range(1, len(channels))
     ])
 
+def MLP(channels, batch_norm=True):
+    return Seq(*[
+        Seq(Lin(channels[i - 1], channels[i]), ReLU())
+        for i in range(1, len(channels))
+    ])
+
+
 
 class graphNetwork_nodesOnly(nn.Module):
 
