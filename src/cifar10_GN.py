@@ -91,7 +91,7 @@ def train():
     model.train()
 
     total_loss = 0
-    for (data, target) in trainloader:
+    for i,(data, target) in enumerate(trainloader):
         data = data.to(device)
         target = target.to(device)
         data.batch = batch
@@ -103,6 +103,8 @@ def train():
         loss.backward()
         total_loss += loss.item()
         optimizer.step()
+        if i%1000 == 999:
+            print("Train loss:", total_loss / i)
     return total_loss / len(trainset)
 
 
@@ -110,24 +112,14 @@ def test(loader):
     model.eval()
 
     correct = 0
-    for data in loader:
+    for (data, target) in loader:
         data = data.to(device)
-        xtmp: PairTensor = (data.pos, data.pos)
-        b = (data.batch, data.batch)
-        k = 10
-        edge_index = knn(xtmp[0], xtmp[1], k, b[0], b[1],
-                         num_workers=3)
-        edge_index = edge_index.to(device)
-        I = edge_index[0, :]
-        J = edge_index[1, :]
-        N = data.pos.shape[0]
-        G = GO.graph(I, J, N, pos=None, faces=None)
-        G = G.to(device)
-        data = data.to(device)
+        target = target.to(device)
         optimizer.zero_grad()
-        xn = data.pos.t().unsqueeze(0).cuda()
+        xn = data.view(-1, 3).t().unsqueeze(0).cuda()
+        data.batch = batch
         with torch.no_grad():
-            pred = model(xn, G, data=data).max(dim=1)[1]
+            pred = model(xn, img_graph, data=data).max(dim=1)[1]
         correct += pred.eq(data.y).sum().item()
     return correct / len(loader.dataset)
 
