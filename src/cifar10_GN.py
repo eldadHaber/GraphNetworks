@@ -90,6 +90,8 @@ for i in range(1, batch_size):
 batch = batch.to(device)
 print("Edge index:", edge_index, "shape:", edge_index.shape)
 edge_index = edge_index_batch
+print("Edge index batch:", edge_index, "shape:", edge_index.shape)
+
 I = edge_index[0, :]
 J = edge_index[1, :]
 N = pos.shape[0]
