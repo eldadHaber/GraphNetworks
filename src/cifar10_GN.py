@@ -69,9 +69,9 @@ scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
 xs = torch.arange(0, nImg)
 ys = torch.arange(0, nImg)
 pos = torch.meshgrid([xs, ys])
-pos = torch.stack(pos).view(-1, 2).to(device)
+pos = torch.stack(pos).view(-1, 2)
 xtmp: PairTensor = (pos, pos)
-batch = torch.zeros(pos.shape[0], dtype=torch.int64).to(device)
+batch = torch.zeros(pos.shape[0], dtype=torch.int64)
 b = (batch, batch)
 k = 9
 edge_index = knn(xtmp[0], xtmp[1], k, b[0], b[1],
@@ -79,6 +79,7 @@ edge_index = knn(xtmp[0], xtmp[1], k, b[0], b[1],
 edge_index = knn(xtmp[0], xtmp[1], k, b[0], b[1],
                  num_workers=6)
 edge_index = edge_index.to(device)
+batch = batch.to(device)
 print("Edge index:", edge_index, "shape:", edge_index.shape)
 I = edge_index[0, :]
 J = edge_index[1, :]
