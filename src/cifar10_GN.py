@@ -91,7 +91,7 @@ def train():
     total_loss = 0
     for (data, target) in trainloader:
         data = data.to(device)
-        xn = data.view[-1, 3].unsqueeze(0).cuda()
+        xn = data.view(-1, 2).unsqueeze(0).cuda()
         optimizer.zero_grad()
         out = model(xn, img_graph, data=data)
         loss = F.nll_loss(out, target)
