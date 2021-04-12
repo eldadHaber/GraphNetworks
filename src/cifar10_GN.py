@@ -85,7 +85,7 @@ edge_index_batch = edge_index.clone()
 for i in range(1, batch_size):
     edge_index_new = edge_index + i*pos.shape[0]
 
-    edge_index_batch = torch.cat([edge_index_batch, edge_index_new], dim=0)
+    edge_index_batch = torch.cat([edge_index_batch, edge_index_new], dim=1)
     batch = torch.cat([batch, i*torch.ones(pos.shape[0], dtype=torch.int64)], dim=0)
 batch = batch.to(device)
 print("Edge index:", edge_index, "shape:", edge_index.shape)
