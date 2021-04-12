@@ -10,11 +10,14 @@ from torch_geometric.nn.conv.gcn_conv import gcn_norm
 from torch_geometric.nn import DynamicEdgeConv, global_max_pool, EdgeConv, GCNConv
 from torch.nn import Sequential as Seq, Linear as Lin, ReLU, BatchNorm1d as BN, LeakyReLU as LRU
 
+
 def MLP(channels, batch_norm=True):
     return Seq(*[
         Seq(Lin(channels[i - 1], channels[i]), BN(channels[i]), ReLU())
         for i in range(1, len(channels))
     ])
+
+
 import optuna
 
 import sys
@@ -46,7 +49,7 @@ else:
     from src import pnetArch as PNA
 
 # Setup the network and its parameters
-dataset = 'CiteSeer'
+dataset = 'Cora'
 
 if dataset == 'Cora':
     nNin = 1433
@@ -61,7 +64,7 @@ nNclose = 256
 nlayer = 64
 h = 40 / nlayer
 dropout = 0.3
-#h = 20 / nlayer
+# h = 20 / nlayer
 print("dataset:", dataset)
 print("n channels:", nopen)
 print("n layers:", nlayer)
@@ -69,16 +72,22 @@ print("h step:", h)
 print("dropout:", dropout)
 batchSize = 32
 
+h = 0.1
+
 
 class Net(torch.nn.Module):
-    def __init__(self, out_channels, nIn,k=10, aggr='max'):
+    def __init__(self, out_channels, nIn, k=10, aggr='max'):
         super().__init__()
         self.numlayers = 100
         self.lin0 = MLP([nIn, 64])
         self.conv1 = EdgeConv(MLP([2 * 64, 64]), aggr)
         self.conv2 = EdgeConv(MLP([2 * 64, 64]), aggr)
-        #self.Layers = torch.nn.ModuleList()
-        #for i in torch.arange(0, self.numlayers):
+        self.conv3 = EdgeConv(MLP([2 * 64, 64]), aggr)
+        self.conv4 = EdgeConv(MLP([2 * 64, 64]), aggr)
+        self.conv5 = EdgeConv(MLP([2 * 64, 64]), aggr)
+
+        # self.Layers = torch.nn.ModuleList()
+        # for i in torch.arange(0, self.numlayers):
         #    self.Layers.append(EdgeConv(in_channels=3, out_channels=3))
 
         self.lin1 = MLP([64, 64])
@@ -93,15 +102,25 @@ class Net(torch.nn.Module):
         xn = self.lin0(xn)
         xn = F.dropout(xn, p=0.6, training=self.training)
 
-        xn = self.conv1(xn, data.edge_index)
+        out = self.conv1(xn, data.edge_index)
+        xn = xn - (h * out)
         xn = F.dropout(xn, p=0.6, training=self.training)
 
-        xn = self.conv2(xn, data.edge_index)
+        out = self.conv2(xn, data.edge_index)
+        xn = xn - (h * out)
+        xn = F.dropout(xn, p=0.6, training=self.training)
+
+        out = self.conv3(xn, data.edge_index)
+        xn = xn - (h * out)
+        xn = F.dropout(xn, p=0.6, training=self.training)
+
+        out = self.conv4(xn, data.edge_index)
+        xn = xn - (h * out)
         xn = F.dropout(xn, p=0.6, training=self.training)
 
         out = self.lin1(torch.cat([xn], dim=1))
-        #out = global_max_pool(out, batch)
-        #out = self.mlp(out)
+        # out = global_max_pool(out, batch)
+        # out = self.mlp(out)
         return F.log_softmax(out, dim=1)
 
 
@@ -114,7 +133,7 @@ dataset = Planetoid(path, dataset, transform=transform)
 data = dataset[0]
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 data = data.to(device)
-#model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
+# model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
 #                                  diffOrder=1, num_output=dataset.num_classes, dropOut=dropout)
 
 model = Net(out_channels=dataset.num_classes, nIn=nNin)
@@ -127,10 +146,10 @@ def train():
     model.train()
     optimizer.zero_grad()
     out = model.forward(data)
-    loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask]) #+ 0.1*tvreg
+    loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask])  # + 0.1*tvreg
     loss.backward()
     optimizer.step()
-    #scheduler.step()
+    # scheduler.step()
     return float(loss)
 
 
