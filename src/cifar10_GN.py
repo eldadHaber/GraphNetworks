@@ -15,6 +15,7 @@ from torch_cluster import knn
 from torch_geometric.typing import PairTensor
 import torchvision.transforms as transforms
 import torchvision
+from torch_geometric.data import Data
 
 from src import graphOps as GO
 from src import processContacts as prc
@@ -68,7 +69,7 @@ scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
 xs = torch.arange(0, nImg)
 ys = torch.arange(0, nImg)
 pos = torch.meshgrid([xs, ys])
-pos = torch.stack(pos).view(2, -1)
+pos = torch.stack(pos).view(-1, 2)
 xtmp: PairTensor = (pos, pos)
 batch = torch.zeros(pos.shape[1])
 b = (batch, batch)
