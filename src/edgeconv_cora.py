@@ -77,7 +77,7 @@ h = 0.1
 
 
 class Net(torch.nn.Module):
-    def __init__(self, out_channels, nIn, k=10, aggr='mean'):
+    def __init__(self, out_channels, nIn, k=10, aggr='max'):
         super().__init__()
         self.numlayers = 100
         self.lin0 = MLP([nIn, 64])
