@@ -38,7 +38,7 @@ else:
     from src import pnetArch as PNA
 
 # Setup the network and its parameters
-dataset = 'CiteSeer'
+dataset = 'Cora'
 
 if dataset == 'Cora':
     nNin = 1433
@@ -50,8 +50,8 @@ nEin = 1
 nopen = 256
 nhid = 256
 nNclose = 256
-nlayer = 64
-h = 40 / nlayer
+nlayer = 8
+h = 15 / nlayer
 dropout = 0.3
 #h = 20 / nlayer
 print("dataset:", dataset)

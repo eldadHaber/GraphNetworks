@@ -441,7 +441,7 @@ def MLP(channels, batch_norm=True):
 class graphNetwork_nodesOnly(nn.Module):
 
     def __init__(self, nNin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=False, wave=True,
-                 diffOrder=1, num_output=1024, dropOut=False, modelnet=False, faust=False, GCNII=False, graphUpdate=None, PPI=False):
+                 diffOrder=1, num_output=1024, dropOut=False, modelnet=False, faust=False, GCNII=False, graphUpdate=None, PPI=False, gated=False):
         super(graphNetwork_nodesOnly, self).__init__()
         self.wave = wave
         if not wave:
@@ -454,6 +454,7 @@ class graphNetwork_nodesOnly(nn.Module):
         self.diffOrder = diffOrder
         self.num_output = num_output
         self.graphUpdate = graphUpdate
+        self.gated = gated
         if dropOut > 0.0:
             self.dropout = dropOut
         else:
@@ -706,9 +707,12 @@ class graphNetwork_nodesOnly(nn.Module):
 
 
                 #that's the best for cora etc
-                if self.varlet:
+                if self.varlet and not self.gated:
                     dxe = F.tanh(self.singleLayer(dxe, self.KN2[i], relu=False))
                     dxn = F.tanh(lapX + Graph.edgeDiv(dxe))
+                elif self.varlet and self.gated:
+                    W = F.tanh(G.nodeGrad(self.singleLayer(xn, self.KN2[i], relu=False)))
+                    dxn = G.edgeDiv(W*G.nodeGrad(xn))
                 else:
                     dxn = (self.singleLayer(lapX, self.KN1[i], relu=False))
                     dxn = F.tanh(dxn)
