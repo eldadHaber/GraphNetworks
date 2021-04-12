@@ -72,7 +72,7 @@ print("h step:", h)
 print("dropout:", dropout)
 batchSize = 32
 
-h = 0.1
+h = 1
 
 
 class Net(torch.nn.Module):
