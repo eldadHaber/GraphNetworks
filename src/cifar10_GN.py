@@ -79,6 +79,7 @@ edge_index = knn(xtmp[0], xtmp[1], k, b[0], b[1],
 edge_index = knn(xtmp[0], xtmp[1], k, b[0], b[1],
                  num_workers=6)
 edge_index = edge_index.to(device)
+print("Edge index:", edge_index, "shape:", edge_index.shape)
 I = edge_index[0, :]
 J = edge_index[1, :]
 N = pos.shape[1]
