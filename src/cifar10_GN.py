@@ -22,7 +22,7 @@ from src import utils
 from src import graphNet as GN
 from src import pnetArch as PNA
 
-data_path = '/home/cluser/users/erant_group_moshe/cifar_10'
+data_path = '/home/cluster/users/erant_group/moshe/cifar_10'
 nImg = 32
 nClasses = 10
 transform_train = transforms.Compose([
