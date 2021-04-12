@@ -37,7 +37,7 @@ else:
     from src import graphNet as GN
     from src import pnetArch as PNA
 
-num_layers = [8,16, 32, 64]
+num_layers = [2, 4, 8, 16, 32, 64]
 
 # Setup the network and its parameters
 for nlayers in num_layers:
@@ -48,7 +48,7 @@ for nlayers in num_layers:
 
 
     def objective(trial):
-        dataset = 'PubMed'
+        dataset = 'Cora'
         if dataset == 'Cora':
             nNin = 1433
         elif dataset == 'CiteSeer':
@@ -56,7 +56,7 @@ for nlayers in num_layers:
         elif dataset == 'PubMed':
             nNin = 500
         nEin = 1
-        n_channels = 256#trial.suggest_categorical('n_channels', [16, 32, 64, 128, 256])
+        n_channels = 64  # trial.suggest_categorical('n_channels', [16, 32, 64, 128, 256])
         nopen = n_channels
         nhid = n_channels
         nNclose = n_channels
@@ -112,7 +112,7 @@ for nlayers in num_layers:
         wd = trial.suggest_float("wd", 5e-5, 1e-2, log=True)
         model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, n_layers, h=h, dense=False, varlet=True,
                                           wave=False,
-                                          diffOrder=1, num_output=dataset.num_classes, dropOut=dropout)
+                                          diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, gated=True)
         model.reset_parameters()
         model.to(device)
         # optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=wd)
