@@ -103,7 +103,7 @@ class Net(torch.nn.Module):
         xn = F.dropout(xn, p=0.6, training=self.training)
 
         out = self.conv1(xn, data.edge_index)
-        xn = out #xn - (h * out)
+        xn = xn - (h * out)
         xn = F.dropout(xn, p=0.6, training=self.training)
 
         out = self.conv2(xn, data.edge_index)
@@ -111,11 +111,11 @@ class Net(torch.nn.Module):
         xn = F.dropout(xn, p=0.6, training=self.training)
 
         out = self.conv3(xn, data.edge_index)
-        xn = out #xn - (h * out)
+        xn = xn - (h * out)
         xn = F.dropout(xn, p=0.6, training=self.training)
 
         out = self.conv4(xn, data.edge_index)
-        xn = out #xn - (h * out)
+        xn = xn - (h * out)
         xn = F.dropout(xn, p=0.6, training=self.training)
 
         out = self.lin1(torch.cat([xn], dim=1))
