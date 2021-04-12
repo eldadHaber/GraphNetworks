@@ -60,7 +60,7 @@ nlayer = 6
 h = 1 / nlayer
 dropout = 0.0
 
-model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
+model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=True,
                                   diffOrder=1, num_output=64, dropOut=dropout, modelnet=True)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -115,8 +115,9 @@ def train():
         out = model(xn, img_graph, data=data)
         loss = F.nll_loss(out, target)
         loss.backward()
-        total_loss += loss.item()
         optimizer.step()
+
+        total_loss += loss.item()
         tmp_loss += loss.item()
         if i % 100 == 99:
             print("Train loss:", tmp_loss / 100)
