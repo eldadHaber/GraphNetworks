@@ -19,7 +19,7 @@ def MLP(channels, batch_norm=True):
 
 def MLP(channels, batch_norm=True):
     return Seq(*[
-        Seq(Lin(channels[i - 1], channels[i]), ReLU())
+        Seq(Lin(channels[i - 1], channels[i]), BN(channels[i]), torch.nn.Tanh())
         for i in range(1, len(channels))
     ])
 
