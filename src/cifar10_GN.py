@@ -92,7 +92,7 @@ def train():
     total_loss = 0
     for (data, target) in trainloader:
         data = data.to(device)
-
+        data.batch = batch
         xn = data.view(-1, 3).t().unsqueeze(0).cuda()
         print("xn shape:", xn.shape)
         optimizer.zero_grad()
