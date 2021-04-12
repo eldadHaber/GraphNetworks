@@ -17,12 +17,6 @@ def MLP(channels, batch_norm=True):
         for i in range(1, len(channels))
     ])
 
-def MLP(channels, batch_norm=True):
-    return Seq(*[
-        Seq(Lin(channels[i - 1], channels[i]), BN(channels[i]), torch.nn.Tanh())
-        for i in range(1, len(channels))
-    ])
-
 
 
 import optuna
@@ -83,7 +77,7 @@ h = 0.1
 
 
 class Net(torch.nn.Module):
-    def __init__(self, out_channels, nIn, k=10, aggr='max'):
+    def __init__(self, out_channels, nIn, k=10, aggr='mean'):
         super().__init__()
         self.numlayers = 100
         self.lin0 = MLP([nIn, 64])
