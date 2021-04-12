@@ -66,6 +66,8 @@ model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = model.to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.0001, weight_decay=1e-4)
+optimizer = torch.optim.SGD(model.parameters(), lr=0.0001, weight_decay=1e-4)
+
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
 
 xs = torch.arange(0, nImg)
@@ -116,8 +118,8 @@ def train():
         total_loss += loss.item()
         optimizer.step()
         tmp_loss += loss.item()
-        if i % 1000 == 999:
-            print("Train loss:", tmp_loss / 1000)
+        if i % 100 == 99:
+            print("Train loss:", tmp_loss / 100)
             tmp_loss = 0
     return total_loss / len(trainset)
 
