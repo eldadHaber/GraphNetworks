@@ -67,7 +67,7 @@ scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
 
 xs = torch.arange(0, nImg)
 ys = torch.arange(0, nImg)
-pos = torch.meshgrid([nImg, nImg])
+pos = torch.meshgrid([xs, ys])
 pos = torch.stack(pos).view(2, -1)
 xtmp: PairTensor = (pos, pos)
 batch = torch.zeros(pos.shape[1])
