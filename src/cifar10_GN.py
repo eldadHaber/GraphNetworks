@@ -101,7 +101,7 @@ def train():
         out = model(xn, img_graph, data=data)
         loss = F.nll_loss(out, target)
         loss.backward()
-        total_loss += loss.item() * data.num_graphs
+        total_loss += loss.item()
         optimizer.step()
     return total_loss / len(trainset)
 
