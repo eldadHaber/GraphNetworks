@@ -47,12 +47,12 @@ elif dataset == 'CiteSeer':
 elif dataset == 'PubMed':
     nNin = 500
 nEin = 1
-nopen = 256
-nhid = 256
-nNclose = 256
+nopen = 64
+nhid = 64
+nNclose = 64
 nlayer = 8
 h = 15 / nlayer
-dropout = 0.3
+dropout = 0.6
 #h = 20 / nlayer
 print("dataset:", dataset)
 print("n channels:", nopen)
