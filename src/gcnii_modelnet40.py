@@ -42,7 +42,7 @@ class Net(torch.nn.Module):
         for layer in range(num_layers):
             self.convs.append(
                 GCN2Conv(hidden_channels, alpha, theta, layer + 1,
-                         shared_weights, normalize=False))
+                         shared_weights, normalize=True))
 
         self.dropout = dropout
         self.mlp = Seq(
@@ -75,7 +75,7 @@ model = Net(hidden_channels=64, num_layers=4, alpha=0.1, theta=0.5,
             shared_weights=True, dropout=0.6).to(device)
 
 model = Net(hidden_channels=64, num_layers=4, alpha=0.1, theta=0.5,
-            shared_weights=True, dropout=0.0, normalize =False).to(device)
+            shared_weights=True, dropout=0.0).to(device)
 optimizer = torch.optim.Adam([
     dict(params=model.convs.parameters(), weight_decay=0.01),
     dict(params=model.lins.parameters(), weight_decay=5e-4)
