@@ -74,8 +74,8 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = Net(hidden_channels=64, num_layers=4, alpha=0.1, theta=0.5,
             shared_weights=True, dropout=0.6).to(device)
 
-model = Net(hidden_channels=64, num_layers=4, alpha=0.0, theta=0.5,
-            shared_weights=True, dropout=0.0).to(device)
+model = Net(hidden_channels=64, num_layers=4, alpha=0.1, theta=0.5,
+            shared_weights=True, dropout=0.0, normalize =False).to(device)
 optimizer = torch.optim.Adam([
     dict(params=model.convs.parameters(), weight_decay=0.01),
     dict(params=model.lins.parameters(), weight_decay=5e-4)

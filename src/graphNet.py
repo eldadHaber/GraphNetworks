@@ -437,11 +437,11 @@ def MLP(channels, batch_norm=True):
     ])
 
 
-
 class graphNetwork_nodesOnly(nn.Module):
 
     def __init__(self, nNin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=False, wave=True,
-                 diffOrder=1, num_output=1024, dropOut=False, modelnet=False, faust=False, GCNII=False, graphUpdate=None, PPI=False, gated=False):
+                 diffOrder=1, num_output=1024, dropOut=False, modelnet=False, faust=False, GCNII=False,
+                 graphUpdate=None, PPI=False, gated=False):
         super(graphNetwork_nodesOnly, self).__init__()
         self.wave = wave
         if not wave:
@@ -678,26 +678,25 @@ class graphNetwork_nodesOnly(nn.Module):
                         dxe = Graph.nodeAve(xn)
                 tmp_xn = xn.clone()
 
-
                 lapX = Graph.nodeLap(xn)
 
-                #operators = self.nodeDeriv(xn, Graph, order=2, edgeSpace=False)
+                # operators = self.nodeDeriv(xn, Graph, order=2, edgeSpace=False)
                 # if debug and image:
                 #    self.saveOperatorImages(operators)
                 if self.varlet:
                     # Define operators:
-                    #gradX = Graph.nodeGrad(xn)
-                    #nodalGradX = Graph.edgeAve(gradX, method='ave')
-                    #dxn = torch.cat([xn, nodalGradX], dim=1)
-                    #dxn = nodalGradX
+                    # gradX = Graph.nodeGrad(xn)
+                    # nodalGradX = Graph.edgeAve(gradX, method='ave')
+                    # dxn = torch.cat([xn, nodalGradX], dim=1)
+                    # dxn = nodalGradX
                     intX = Graph.nodeAve(xn)
-                    dxe = intX #torch.cat([intX], dim=1)
-                #else:
+                    dxe = intX  # torch.cat([intX], dim=1)
+                # else:
                 #    dxn = torch.cat([xn, intX, gradX], dim=1)
 
                 if self.dropout:
                     if self.varlet:
-                        #dxn = F.dropout(dxn, p=self.dropout, training=self.training)
+                        # dxn = F.dropout(dxn, p=self.dropout, training=self.training)
                         dxe = F.dropout(dxe, p=self.dropout, training=self.training)
                     else:
                         lapX = F.dropout(lapX, p=self.dropout, training=self.training)
@@ -705,14 +704,13 @@ class graphNetwork_nodesOnly(nn.Module):
                 # dxe = F.tanh(self.singleLayer(dxe, self.KN2[i], relu=False))
                 # dxe = Graph.edgeDiv(dxe)
 
-
-                #that's the best for cora etc
+                # that's the best for cora etc
                 if self.varlet and not self.gated:
                     dxe = F.tanh(self.singleLayer(dxe, self.KN2[i], relu=False))
                     dxn = F.tanh(lapX + Graph.edgeDiv(dxe))
                 elif self.varlet and self.gated:
                     W = F.tanh(Graph.nodeGrad(self.singleLayer(xn, self.KN2[i], relu=False)))
-                    dxn = F.sigmoid(lapX + Graph.edgeDiv(W*Graph.nodeGrad(xn)))
+                    dxn = F.tanh(lapX + Graph.edgeDiv(W * Graph.nodeGrad(xn)))
                 else:
                     dxn = (self.singleLayer(lapX, self.KN1[i], relu=False))
                     dxn = F.tanh(dxn)
@@ -774,8 +772,8 @@ class graphNetwork_nodesOnly(nn.Module):
 
         # return xn, xe
 
-#----------------------------------------------------------------------------
 
+# ----------------------------------------------------------------------------
 
 
 Test = False
