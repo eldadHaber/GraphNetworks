@@ -71,7 +71,7 @@ ys = torch.arange(0, nImg)
 pos = torch.meshgrid([xs, ys])
 pos = torch.stack(pos).view(-1, 2)
 xtmp: PairTensor = (pos, pos)
-batch = torch.zeros(pos.shape[0], dtype=torch.int64)
+batch = torch.zeros(pos.shape[0], dtype=torch.int64).to(device)
 b = (batch, batch)
 k = 9
 edge_index = knn(xtmp[0], xtmp[1], k, b[0], b[1],
