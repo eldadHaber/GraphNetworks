@@ -17,6 +17,13 @@ def MLP(channels, batch_norm=True):
         for i in range(1, len(channels))
     ])
 
+def MLP(channels, batch_norm=True):
+    return Seq(*[
+        Seq(Lin(channels[i - 1], channels[i]), ReLU())
+        for i in range(1, len(channels))
+    ])
+
+
 
 import optuna
 
@@ -72,7 +79,7 @@ print("h step:", h)
 print("dropout:", dropout)
 batchSize = 32
 
-h = 0.2
+h = 0.1
 
 
 class Net(torch.nn.Module):
