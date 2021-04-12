@@ -91,20 +91,22 @@ def train():
     model.train()
 
     total_loss = 0
+    tmp_loss = 0
     for i,(data, target) in enumerate(trainloader):
         data = data.to(device)
         target = target.to(device)
         data.batch = batch
         xn = data.view(-1, 3).t().unsqueeze(0).cuda()
-        print("xn shape:", xn.shape)
         optimizer.zero_grad()
         out = model(xn, img_graph, data=data)
         loss = F.nll_loss(out, target)
         loss.backward()
         total_loss += loss.item()
         optimizer.step()
+        tmp_loss += loss.item()
         if i%1000 == 999:
-            print("Train loss:", total_loss / i)
+            print("Train loss:", tmp_loss / 1000)
+            tmp_loss = 0
     return total_loss / len(trainset)
 
 
