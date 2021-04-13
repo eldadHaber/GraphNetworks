@@ -103,6 +103,8 @@ N = pos.shape[0] * batch_size
 img_graph = GO.graph(I, J, N, pos=None, faces=None)
 img_graph = img_graph.to(device)
 
+import matplotlib.pyplot as plt
+
 
 def train():
     model.train()
@@ -111,6 +113,10 @@ def train():
     tmp_loss = 0
     for i, (data, target) in enumerate(trainloader):
         data = data.to(device)
+        plt.figure()
+        plt.imshow(data.clone().squeeze().permute(1, 2, 0).cpu().numpy()[:, :, 0])
+        plt.savefig('/users/others/eliasof/GraphNetworks/plots/input.jpg')
+        plt.close()
         target = target.to(device)
         data.batch = batch
         xn = data.view(-1, 3).t().unsqueeze(0).cuda()
