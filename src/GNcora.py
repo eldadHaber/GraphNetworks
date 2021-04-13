@@ -70,8 +70,8 @@ dataset = Planetoid(path, dataset, transform=transform)
 data = dataset[0]
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 data = data.to(device)
-model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
-                                  diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, gated=True)
+model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=False, wave=False,
+                                  diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, gated=True, realVarlet=True)
 model.reset_parameters()
 model.to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0.0001)

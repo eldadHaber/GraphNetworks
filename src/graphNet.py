@@ -443,9 +443,10 @@ class graphNetwork_nodesOnly(nn.Module):
 
     def __init__(self, nNin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=False, wave=True,
                  diffOrder=1, num_output=1024, dropOut=False, modelnet=False, faust=False, GCNII=False,
-                 graphUpdate=None, PPI=False, gated=False):
+                 graphUpdate=None, PPI=False, gated=False, realVarlet=False):
         super(graphNetwork_nodesOnly, self).__init__()
         self.wave = wave
+        self.realVarlet = realVarlet
         if not wave:
             self.heat = True
         else:
@@ -645,6 +646,10 @@ class graphNetwork_nodesOnly(nn.Module):
 
         if self.dropout:
             xn = F.dropout(xn, p=self.dropout, training=self.training)
+        if self.varlet:
+            xe = Graph.nodeAve(xn)
+            xe = self.singleLayer(xe, self.K2Nopen, relu=True)
+
         xn = self.singleLayer(xn, self.K1Nopen, relu=True)
         x0 = xn.clone()
         debug = True
@@ -688,52 +693,68 @@ class graphNetwork_nodesOnly(nn.Module):
                 # operators = self.nodeDeriv(xn, Graph, order=2, edgeSpace=False)
                 # if debug and image:
                 #    self.saveOperatorImages(operators)
-                if self.varlet:
-                    # Define operators:
-                    # gradX = Graph.nodeGrad(xn)
-                    # nodalGradX = Graph.edgeAve(gradX, method='ave')
-                    # dxn = torch.cat([xn, nodalGradX], dim=1)
-                    # dxn = nodalGradX
+                if self.realVarlet:
+                    gradX = Graph.nodeGrad(xn)
                     intX = Graph.nodeAve(xn)
-                    dxe = intX  # torch.cat([intX], dim=1)
-                # else:
-                #    dxn = torch.cat([xn, intX, gradX], dim=1)
+                    dxe = torch.cat([intX, gradX], dim=1)
+                    dxe = F.tanh(self.singleLayer(dxe, self.KE1[i], relu=False))
+                    xe = (xe + self.h * dxe)
 
-                if self.dropout:
+
+                    divE = Graph.edgeDiv(xe)
+                    aveE = Graph.edgeAve(xe, method='ave')
+                    dxn = torch.cat([aveE, divE], dim=1)
+                    dxn = F.tanh(self.singleLayer(dxn, self.KN1[i], relu=False))
+                    xe = xe + self.h * dxe
+                    xn = (xn + self.h * dxn)
+                if not self.realVarlet:
                     if self.varlet:
-                        # dxn = F.dropout(dxn, p=self.dropout, training=self.training)
-                        dxe = F.dropout(dxe, p=self.dropout, training=self.training)
+                        # Define operators:
+                        # gradX = Graph.nodeGrad(xn)
+                        # nodalGradX = Graph.edgeAve(gradX, method='ave')
+                        # dxn = torch.cat([xn, nodalGradX], dim=1)
+                        # dxn = nodalGradX
+                        intX = Graph.nodeAve(xn)
+                        dxe = intX  # torch.cat([intX], dim=1)
+                    # else:
+                    #    dxn = torch.cat([xn, intX, gradX], dim=1)
+
+                    if self.dropout:
+                        if self.varlet:
+                            # dxn = F.dropout(dxn, p=self.dropout, training=self.training)
+                            dxe = F.dropout(dxe, p=self.dropout, training=self.training)
+                        else:
+                            lapX = F.dropout(lapX, p=self.dropout, training=self.training)
+                    # dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
+                    # dxe = F.tanh(self.singleLayer(dxe, self.KN2[i], relu=False))
+                    # dxe = Graph.edgeDiv(dxe)
+
+                    # that's the best for cora etc
+                    if self.varlet and not self.gated:
+                        dxe = F.tanh(self.singleLayer(dxe, self.KN2[i], relu=False)) # + Graph.nodeGrad(lapX)
+                        dxn = F.tanh(lapX + Graph.edgeDiv(dxe))
+                    elif self.varlet and self.gated:
+                        W = F.tanh(Graph.nodeGrad(self.singleLayer(xn, self.KN2[i], relu=False)))
+                        dxn = F.tanh(lapX + Graph.edgeDiv(W * Graph.nodeGrad(xn)))
                     else:
-                        lapX = F.dropout(lapX, p=self.dropout, training=self.training)
-                # dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
-                # dxe = F.tanh(self.singleLayer(dxe, self.KN2[i], relu=False))
-                # dxe = Graph.edgeDiv(dxe)
+                        dxn = (self.singleLayer(lapX, self.KN1[i], relu=False))
+                        dxn = F.tanh(dxn)
 
-                # that's the best for cora etc
-                if self.varlet and not self.gated:
-                    dxe = F.tanh(self.singleLayer(dxe, self.KN2[i], relu=False))
-                    dxn = F.tanh(lapX + Graph.edgeDiv(dxe))
-                elif self.varlet and self.gated:
-                    W = F.tanh(Graph.nodeGrad(self.singleLayer(xn, self.KN2[i], relu=False)))
-                    dxn = F.tanh(lapX + Graph.edgeDiv(W * Graph.nodeGrad(xn)))
-                else:
-                    dxn = (self.singleLayer(lapX, self.KN1[i], relu=False))
-                    dxn = F.tanh(dxn)
+                    # dxe = F.relu(self.singleLayer(dxe, self.KN2[i], relu=False))
+                    # dxn = F.tanh(lapX + Graph.edgeDiv(dxe))
+                    # dxn = lapX + Graph.edgeAve(dxe, method='max')
 
-                # dxe = F.relu(self.singleLayer(dxe, self.KN2[i], relu=False))
-                # dxn = F.tanh(lapX + Graph.edgeDiv(dxe))
-                # dxn = lapX + Graph.edgeAve(dxe, method='max')
+                    # dxn = F.tanh(Graph.edgeAve(dxe, method='ave') + dxn)
+                    # dxn = F.tanh(dxn)
+                    # dxn = F.tanh(Graph.edgeDiv(F.tanh(dxe)) + F.tanh(dxn))
+                    # dxn = F.tanh(F.tanh(dxn) + Graph.edgeDiv(F.tanh(dxe)) + Graph.edgeAve(F.tanh(dxe), method='max'))
+                    # dxn = F.tanh(Graph.edgeDiv(F.tanh(dxe)))
 
-                # dxn = F.tanh(Graph.edgeAve(dxe, method='ave') + dxn)
-                # dxn = F.tanh(dxn)
-                # dxn = F.tanh(Graph.edgeDiv(F.tanh(dxe)) + F.tanh(dxn))
-                # dxn = F.tanh(F.tanh(dxn) + Graph.edgeDiv(F.tanh(dxe)) + Graph.edgeAve(F.tanh(dxe), method='max'))
-                # dxn = F.tanh(Graph.edgeDiv(F.tanh(dxe)))
-            if self.wave:
-                xn = 2 * xn - xn_old - (self.h ** 2) * dxn
-                xn_old = tmp_xn
-            else:
-                xn = (xn - self.h * dxn)
+                    if self.wave:
+                        xn = 2 * xn - xn_old - (self.h ** 2) * dxn
+                        xn_old = tmp_xn
+                    else:
+                        xn = (xn - self.h * dxn)
             if debug:
                 if image:
                     self.savePropagationImage(xn, Graph, i + 1)
