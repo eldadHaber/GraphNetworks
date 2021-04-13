@@ -652,7 +652,7 @@ class graphNetwork_nodesOnly(nn.Module):
 
         xn = self.singleLayer(xn, self.K1Nopen, relu=True)
         x0 = xn.clone()
-        debug = True
+        debug = False
         if debug:
             image = True
             if image:
