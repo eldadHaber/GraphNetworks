@@ -651,7 +651,7 @@ class graphNetwork_nodesOnly(nn.Module):
         if self.dropout:
             xn = F.dropout(xn, p=self.dropout, training=self.training)
         if self.realVarlet:
-            xe = Graph.nodeAve(xn)
+            xe = Graph.nodeAve(xn).t()
             xe = self.singleLayer(xe, self.K2Nopen, relu=True)
 
         xn = self.singleLayer(xn, self.K1Nopen, relu=True)
