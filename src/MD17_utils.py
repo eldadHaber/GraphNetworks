@@ -54,9 +54,9 @@ def getBatchData_MD17(Coords, device='cpu'):
     w = torch.tensor([]).to(device)
     D = []
     iD = []
-    nnodes = []
+    nnodes = torch.zeros(1,device=device,dtype=torch.int64)
     for i in range(Coords.shape[0]):
-        Coordsi, Ii, Ji, xei, Di, iDi = getIterData_MD17(Coords[i,:], device='cpu')
+        Coordsi, Ii, Ji, xei, Di, iDi = getIterData_MD17(Coords[i,:], device=device)
         wi = Di[Ii, Ji]
         I = torch.cat((I, Ii))
         J = torch.cat((J, Ji))
@@ -64,11 +64,11 @@ def getBatchData_MD17(Coords, device='cpu'):
         w = torch.cat((w, wi), dim=-1)
         D.append(Di)
         iD.append(iDi)
-        nnodes.append(Di.shape[0])
+        nnodes += Di.shape[0]
     return I.long(), J.long(), xe, D, iD, nnodes, w
 
 
-def use_model(model,dataloader,train,max_samples,optimizer,device):
+def use_model(model,dataloader,train,max_samples,optimizer,device,batch_size=1):
     aloss = 0.0
     aloss_E = 0.0
     aloss_F = 0.0
@@ -82,18 +82,15 @@ def use_model(model,dataloader,train,max_samples,optimizer,device):
 
     for i, (Ri, Fi, Ei, zi) in enumerate(dataloader):
         Ri.requires_grad_(True)
-        Coords, I, J, xe, Ds, iDs = getIterData_MD17(Ri.squeeze(), device=device)
-        # if print_distograms:
-        #     print_distogram(Ds, Ei, iDs, i)
-        #     continue
-        # elif print_3d_structures:
-        #     print_3d_structure(fig, z, Ri, Fi)
-        #     continue
+        if batch_size == 1:
+            _, I, J, xe, Ds, iDs = getIterData_MD17(Ri.squeeze(), device=device)
+            nnodes = Ds.shape[-1]
+            w = Ds[I, J].to(device=device, dtype=torch.float32)
+        else:
+            I, J, xe, D, iD, nnodes, w = getBatchData_MD17(Ri, device=device)
 
-        nNodes = Ds.shape[-1]
-        w = Ds[I, J].to(device=device, dtype=torch.float32)
-        G = GO.graph(I, J, nNodes, w)
-        xn = zi.unsqueeze(0)
+        G = GO.graph(I, J, nnodes, w)
+        xn = zi.view(-1).unsqueeze(0).unsqueeze(0)
         xe = w.unsqueeze(0).unsqueeze(0)
 
         if train:

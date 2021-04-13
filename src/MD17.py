@@ -45,7 +45,7 @@ if __name__ == '__main__':
     # Following Equivariant paper, we select 1000 configurations from these as our training set, 1000 as our validation set, and the rest are used as test data.
     n_train = 1000
     n_val = 1000
-    batch_size = 1
+    batch_size = 5
 
     ndata_rand = 0 + np.arange(ndata)
     np.random.shuffle(ndata_rand)
@@ -75,11 +75,11 @@ if __name__ == '__main__':
     nNin = 1
     nEin = 1
     nNopen = 128
-    nEopen = 64
-    nEhid = 64
+    nEopen = 128
+    nEhid = 128
     nNclose = 1
     nEclose = 1
-    nlayer = 6
+    nlayer = 18
 
     model = GN.graphNetwork(nNin, nEin, nNopen, nEhid, nNclose, nEclose, nlayer, h=.1, dense=False)
     model.to(device)
@@ -119,9 +119,9 @@ if __name__ == '__main__':
     fig = plt.figure(num=1,figsize=[10,10])
     for epoch in range(epochs):
         t1 = time.time()
-        aloss_t,aloss_E_t,aloss_F_t,MAE_t,Fps_t,Fts_t = use_model(model, dataloader_train, train=True, max_samples=1e6, optimizer=optimizer, device=device)
+        aloss_t,aloss_E_t,aloss_F_t,MAE_t,Fps_t,Fts_t = use_model(model, dataloader_train, train=True, max_samples=1e6, optimizer=optimizer, device=device, batch_size=batch_size)
         t2 = time.time()
-        aloss_v,aloss_E_v,aloss_F_v,MAE_v,Fps_v,Fts_v = use_model(model, dataloader_val, train=False, max_samples=100, optimizer=optimizer, device=device)
+        aloss_v,aloss_E_v,aloss_F_v,MAE_v,Fps_v,Fts_v = use_model(model, dataloader_val, train=False, max_samples=100, optimizer=optimizer, device=device, batch_size=batch_size)
         t3 = time.time()
 
         if MAE_v < MAE_best:
