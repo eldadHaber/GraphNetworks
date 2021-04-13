@@ -647,6 +647,7 @@ class graphNetwork_nodesOnly(nn.Module):
         # xn = [B, C, N]
         # xe = [B, C, N, N] or [B, C, E]
         # Opening layer
+        [Graph, edge_index] = self.updateGraph(Graph)
 
         if self.dropout:
             xn = F.dropout(xn, p=self.dropout, training=self.training)
@@ -680,7 +681,6 @@ class graphNetwork_nodesOnly(nn.Module):
             exit()
 
         xn_old = x0
-        [Graph, edge_index] = self.updateGraph(Graph)
         nlayers = self.nlayers
         for i in range(nlayers):
             if 1 == 1:
