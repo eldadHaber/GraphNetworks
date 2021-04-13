@@ -708,7 +708,6 @@ class graphNetwork_nodesOnly(nn.Module):
                     if self.dropout:
                         dxe = F.dropout(dxe, p=self.dropout, training=self.training)
                     dxe = F.tanh(self.singleLayer(dxe, self.KE1[i], relu=False))
-                    dxe = F.tanh(dxe + Graph.nodeGrad(lapX))
                     xe = (xe + self.h * dxe)
 
 
@@ -718,6 +717,7 @@ class graphNetwork_nodesOnly(nn.Module):
                     if self.dropout:
                         dxn = F.dropout(dxn, p=self.dropout, training=self.training)
                     dxn = F.tanh(self.singleLayer(dxn, self.KN1[i], relu=False))
+                    dxn = F.tanh(lapX + dxn)
                     xn = (xn + self.h * dxn)
                 if not self.realVarlet:
                     if self.varlet:
