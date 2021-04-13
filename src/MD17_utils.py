@@ -47,6 +47,37 @@ def dataloader_MD17(data,batch_size):
 
 
 
+def getBatchData_MD17_fast(Coords, z):
+    nb = Coords.shape[0]
+    nn = Coords.shape[-1]
+    D = torch.relu(torch.sum(Coords ** 2, dim=1, keepdim=True) + \
+                   torch.sum(Coords ** 2, dim=1, keepdim=True).transpose(1,2) - \
+                   2 * Coords.transpose(1,2) @ Coords)
+    iD = 1 / D
+    tmp = iD.diagonal(0,dim1=1,dim2=2)
+    tmp[:] = 0
+
+    vals, J = torch.topk(iD, k=nn, dim=-1)
+    I = (torch.ger(torch.arange(nn), torch.ones(nn, dtype=torch.long))[None,:,:]).repeat(nb,1,1).to(device=z.device)
+    I = I.view(nb,-1)
+    J = J.view(nb,-1)
+    M1 = I + 1 == J
+    M2 = I - 1 == J
+    M = M1 + M2
+
+    xe = torch.zeros_like(I).to(dtype=torch.float32)
+    xe[M] = 1
+
+    one = (torch.arange(nb,device=z.device, dtype=torch.float32)*nn).repeat_interleave(nn**2)
+
+    xe = xe.view(-1)
+    xn = z.view(-1)
+    I = I.view(-1) + one
+    J = J.view(-1) + one
+
+
+    return I, J, xn[None,None,:], xe[None,None,:], nn*nb, iD.view(-1)
+
 def getBatchData_MD17(Coords, device='cpu'):
     I = torch.tensor([]).to(device)
     J = torch.tensor([]).to(device)
@@ -75,28 +106,32 @@ def use_model(model,dataloader,train,max_samples,optimizer,device,batch_size=1):
     Fps = 0.0
     Fts = 0.0
     MAE = 0.0
+    t_dataload = 0.0
+    t_prepare = 0.0
+    t_model = 0.0
+    t_backprop = 0.0
     if train:
         model.train()
     else:
         model.eval()
-
+    t3 = time.time()
     for i, (Ri, Fi, Ei, zi) in enumerate(dataloader):
+        t0 = time.time()
         Ri.requires_grad_(True)
         if batch_size == 1:
             _, I, J, xe, Ds, iDs = getIterData_MD17(Ri.squeeze(), device=device)
             nnodes = Ds.shape[-1]
-            w = Ds[I, J].to(device=device, dtype=torch.float32)
+            w = iDs[I, J].to(device=device, dtype=torch.float32)
         else:
-            I, J, xe, D, iD, nnodes, w = getBatchData_MD17(Ri, device=device)
+            I, J, xn, xe, nnodes, w = getBatchData_MD17_fast(Ri, zi)
 
         G = GO.graph(I, J, nnodes, w)
-        xn = zi.view(-1).unsqueeze(0).unsqueeze(0)
-        xe = w.unsqueeze(0).unsqueeze(0)
 
         if train:
             optimizer.zero_grad()
-
+        t1 = time.time()
         xnOut, xeOut = model(xn, xe, G)
+        t2 = time.time()
 
         E_pred = torch.sum(xnOut)
         F_pred = -grad(E_pred, Ri, create_graph=True)[0].requires_grad_(True)
@@ -113,6 +148,11 @@ def use_model(model,dataloader,train,max_samples,optimizer,device,batch_size=1):
         aloss += loss.detach()
         # aloss_E += loss_E.detach()
         aloss_F += loss_F.detach()
+        t_dataload += t0 - t3
+        t3 = time.time()
+        t_prepare += t1 - t0
+        t_model += t2 - t1
+        t_backprop += t3 - t2
         # gNclose = model.KNclose.grad.norm().item()
         # gE1 = model.KE1.grad.norm().item()
         # gE2 = model.KE2.grad.norm().item()
@@ -132,8 +172,12 @@ def use_model(model,dataloader,train,max_samples,optimizer,device,batch_size=1):
     MAE /= (i+1)
     Fps /= (i+1)
     Fts /= (i+1)
+    t_dataload /= (i+1)
+    t_prepare /= (i+1)
+    t_model /= (i+1)
+    t_backprop /= (i+1)
 
-    return aloss,aloss_E,aloss_F,MAE,Fps,Fts
+    return aloss,aloss_E,aloss_F,MAE,Fps,Fts, t_dataload, t_prepare, t_model, t_backprop
 
 
 
