@@ -702,8 +702,6 @@ class graphNetwork_nodesOnly(nn.Module):
                     intX = Graph.nodeAve(xn)
                     dxe = torch.cat([intX, gradX], dim=1)
                     dxe = F.tanh(self.singleLayer(dxe, self.KE1[i], relu=False))
-                    print("xe shape:", xe.shape)
-                    print("dxe shape:", dxe.shape)
                     xe = (xe + self.h * dxe)
 
 
