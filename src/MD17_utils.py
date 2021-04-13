@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import math
 import torch.autograd.profiler as profiler
-import imageio
 
 from src import graphOps as GO
 from src import processContacts as prc
