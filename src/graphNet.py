@@ -649,11 +649,15 @@ class graphNetwork_nodesOnly(nn.Module):
         # Opening layer
         [Graph, edge_index] = self.updateGraph(Graph)
 
-        if self.dropout:
-            xn = F.dropout(xn, p=self.dropout, training=self.training)
+
         if self.realVarlet:
             xe = Graph.nodeAve(xn)
+            if self.dropout:
+                xe = F.dropout(xe, p=self.dropout, training=self.training)
             xe = self.singleLayer(xe, self.K2Nopen, relu=True)
+
+        if self.dropout:
+            xn = F.dropout(xn, p=self.dropout, training=self.training)
 
         xn = self.singleLayer(xn, self.K1Nopen, relu=True)
         x0 = xn.clone()
@@ -701,6 +705,8 @@ class graphNetwork_nodesOnly(nn.Module):
                     gradX = Graph.nodeGrad(xn)
                     intX = Graph.nodeAve(xn)
                     dxe = torch.cat([intX, gradX], dim=1)
+                    if self.dropout:
+                        dxe = F.dropout(dxe, p=self.dropout, training=self.training)
                     dxe = F.tanh(self.singleLayer(dxe, self.KE1[i], relu=False))
                     xe = (xe + self.h * dxe)
 
@@ -708,6 +714,8 @@ class graphNetwork_nodesOnly(nn.Module):
                     divE = Graph.edgeDiv(xe)
                     aveE = Graph.edgeAve(xe, method='ave')
                     dxn = torch.cat([aveE, divE], dim=1)
+                    if self.dropout:
+                        dxn = F.dropout(dxn, p=self.dropout, training=self.training)
                     dxn = F.tanh(self.singleLayer(dxn, self.KN1[i], relu=False))
                     xn = (xn + self.h * dxn)
                 if not self.realVarlet:
