@@ -56,7 +56,7 @@ nopen = 1
 nNin = 3
 nhid = 1
 nNclose = 1
-nlayer = 3
+nlayer = 20
 h = 1 / nlayer
 dropout = 0.0
 
