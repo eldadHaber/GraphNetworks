@@ -646,7 +646,7 @@ class graphNetwork_nodesOnly(nn.Module):
         x0 = xn.clone()
         debug = True
         if debug:
-            image = False
+            image = True
             if image:
                 plt.figure()
                 img = xn.clone().detach().squeeze().reshape(32, 32).cpu().numpy()
