@@ -590,12 +590,15 @@ class graphNetwork_nodesOnly(nn.Module):
 
     def savePropagationImage(self, xn, Graph, i=0):
         plt.figure()
+        print("xn shape:", xn.shape)
         img = xn.clone().detach().squeeze().reshape(32, 32).cpu().numpy()
         # img = img / img.max()
         plt.imshow(img)
         plt.colorbar()
         plt.show()
-        plt.savefig('plots/img_xn_norm_layer_heat_order_nodeDeriv' + str(self.diffOrder) + '_layer'+ str(i)  + '.jpg')
+        #plt.savefig('plots/img_xn_norm_layer_heat_order_nodeDeriv' + str(self.diffOrder) + '_layer'+ str(i)  + '.jpg')
+        plt.savefig('plots/layer'+ str(i)  + '.jpg')
+
         plt.close()
 
     def updateGraph(self, Graph, features=None):
