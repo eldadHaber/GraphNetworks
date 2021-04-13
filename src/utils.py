@@ -137,24 +137,25 @@ def distPenality(D, dc=0.379, M=torch.ones(1)):
     return p2
 
 
-def distConstraint(X, dc=0.379, M=torch.tensor([1])):
+def distConstraint(X, eps=1e-6):
     X = X.squeeze()
-    M = M.squeeze()
     n = X.shape[1]
     dX = X[:, 1:] - X[:, :-1]
     d = torch.sum(dX ** 2, dim=0)
 
-    if torch.numel(M) > 1:
-        avM = (M[1:] + M[:-1]) / 2 < 0.5
-        dc = (avM == 0) * dc
-    else:
-        avM = 1e-3
-    dX = (dX / torch.sqrt(d + avM)) * dc
+    #ii = (d >= 3.8)
+    #dX[:,ii] = (dX[:,ii] / torch.sqrt(d[ii] + eps)) * 3.8
+    #ii = (d <= 2.5)
+    #dX[:,ii] = (dX[:,ii] / torch.sqrt(d[ii] + eps)) * 2.5
 
-    Xh = torch.zeros(X.shape[0], n, device=X.device)
-    Xh[:, 0] = X[:, 0]
-    Xh[:, 1:] = X[:, 0].unsqueeze(1) + torch.cumsum(dX, dim=1)
-    Xh = M * Xh
+    dc = torch.relu(d - 3.8**2) + 3.8**2
+    dX = (dX / torch.sqrt(d + eps)) * torch.sqrt(dc)
+    Xh = torch.cumsum(dX, dim=1)
+    Xh = torch.cat((torch.ones(3,1),Xh),dim=1)
+    #Xh[:, 0] = X[:, 0]
+    #Xh[:, 1:] = X[:, 0].unsqueeze(1) + torch.cumsum(dX, dim=1)
+    #Xh[:, 1:] = torch.cumsum(dX, dim=1)
+
     return Xh
 
 
@@ -176,7 +177,9 @@ def dMat(X):
     XX = X.t() @ X
     d = torch.diag(XX).unsqueeze(1)
     D = d + d.t() - 2 * XX
-    D = torch.sqrt(torch.relu(D))
+    #D = torch.sqrt(torch.relu(D))
+    D = torch.relu(D)
+
     return D
 
 
@@ -192,12 +195,14 @@ def dRMSD(X, Xobs, M):
     # Filter non-physical ones
     n = X.shape[-1]
     Xl = torch.zeros(3, n, device=X.device)
-    Xl[0, :] = 3.8 * torch.arange(0, n)
+    #Xl[0, :] = 3.8 * torch.arange(0, n)
+    Xl[0, :] = (3.8) * torch.arange(0, n)
+
     Dl = dMat(Xl)
 
     ML = (M * Dl - M * Dobs) > 0
 
-    MS = Dobs < 8*3.8
+    MS = Dobs < 80*(3.8**2)
     M = M > 0
     M = (M & ML & MS) * 1.0
     R = torch.triu(D - Dobs, 2)

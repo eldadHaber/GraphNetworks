@@ -7,8 +7,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 
+
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
+# Data loading
 caspver = "casp11"  # Change this to choose casp version
 
 if "s" in sys.argv:
@@ -54,18 +56,20 @@ YobsTest = torch.load(base_path + caspver + '/RCalphaTesting.pt')
 MSKTest = torch.load(base_path + caspver + '/MasksTesting.pt')
 STest = torch.load(base_path + caspver + '/PSSMTesting.pt')
 
+##
+
 print('Number of data: ', len(S))
 n_data_total = len(S)
 
 # Setup the network and its parameters
-nNin = 40
-nEin = 1
-nopen = 128
-nhid = 128
+nNin    = 40
+nEin    = 1
+nopen   = 64
+nhid    = 64
 nNclose = 3
-nlayer = 6
+nlayer  = 5
 
-model = GN.graphNetwork(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=True)
+model = GN.graphNetwork(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=False)
 model.to(device)
 
 total_params = sum(p.numel() for p in model.parameters())
@@ -90,7 +94,7 @@ optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO},
                         {'params': model.KNclose, 'lr': lrE2}])
 
 alossBest = 1e6
-epochs = 100000
+epochs = 20
 
 ndata = 8 #n_data_total
 bestModel = model
@@ -131,6 +135,7 @@ for j in range(epochs):
             else:
                 Mi      = M[0].squeeze()
             Mi = torch.ger(Mi, Mi)
+            xnOuti = utils.distConstraint(xnOuti)
             lossi = utils.dRMSD(xnOuti, Coordsi, Mi)
             loss += lossi
             cnt = cnt+nNodes[kk]

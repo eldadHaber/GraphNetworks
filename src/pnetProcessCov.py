@@ -221,7 +221,7 @@ def dcaFast(msa_1hot, w, penalty=4.5, kw=1000):
 
 
 if __name__ == "__main__":
-    path = "/Users/eldadhaber/Dropbox/ComputationalGenetics/data/raw_MSA/" # Path to a folder with a2m.gz files in it.
+    path = "/Users/eldadhaber/Your team Dropbox/eldad haber/ComputationalBio/data/raw_MSA/" # Path to a folder with a2m.gz files in it.
     msas = read_a2m_gz_folder(path)
 
     msa = msas[0]

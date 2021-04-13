@@ -123,7 +123,6 @@ class graphNetwork(nn.Module):
                 dxe = torch.cat([intX, xe, gradX], dim=1)
 
             dxe = self.doubleLayer(dxe, self.KE1[i], self.KE2[i])
-
             #dxe = F.layer_norm(dxe, dxe.shape)
             dxe = tv_norm(dxe)
 
