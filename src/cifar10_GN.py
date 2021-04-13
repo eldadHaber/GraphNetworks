@@ -74,7 +74,7 @@ import numpy as np
 xs = np.arange(0, nImg)
 ys = np.arange(0, nImg)
 pos = np.meshgrid(xs, ys)
-pos = np.stack(pos).view(-1, 2)
+pos = np.stack(pos)
 pos = torch.from_numpy(pos)
 
 xtmp: PairTensor = (pos, pos)
