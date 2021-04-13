@@ -57,20 +57,28 @@ class graph(nn.Module):
 
     def __init__(self, iInd, jInd, nnodes, W=torch.tensor([1.0])):
         super(graph, self).__init__()
-        self.iInd = iInd.long()
-        self.jInd = jInd.long()
+        self.iInd = iInd.view(-1).long()
+        self.jInd = jInd.view(-1).long()
+
+        # I, J, nnodesList, W2 = makeBatch(iInd, jInd, nnodes, W)
         self.nnodes = nnodes
         self.W = W
 
     def nodeGrad(self, x, W=[]):
         if len(W)==0:
             W = self.W
+        # x1 = x[self.kInd, :, self.iInd].reshape(x.shape[0],-1,x.shape[1]).transpose(1,2)
+        # x2 = x[self.kInd, :, self.jInd].reshape(x.shape[0],-1,x.shape[1]).transpose(1,2)
+        # g = W * (x1 - x2)
         g = W * (x[:, :, self.iInd] - x[:, :, self.jInd])
         return g
 
     def nodeAve(self, x, W=[]):
         if len(W)==0:
             W = self.W
+        # x1 = x[self.kInd, :, self.iInd].reshape(x.shape[0],-1,x.shape[1]).transpose(1,2)
+        # x2 = x[self.kInd, :, self.jInd].reshape(x.shape[0],-1,x.shape[1]).transpose(1,2)
+        # g = W * (x1 + x2) / 2.0
         g = W * (x[:, :, self.iInd] + x[:, :, self.jInd]) / 2.0
         return g
 

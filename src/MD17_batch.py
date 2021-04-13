@@ -18,7 +18,7 @@ from src import graphNet as GN
 from torch.autograd import grad
 from torch.utils.data import DataLoader
 
-from src.MD17_utils import getIterData_MD17, print_distogram, print_3d_structure, Dataset_MD17, use_model
+from src.MD17_utils import getIterData_MD17, print_distogram, print_3d_structure, Dataset_MD17, getBatchData_MD17
 
 if __name__ == '__main__':
 
@@ -43,12 +43,12 @@ if __name__ == '__main__':
     print('Number of data: {:}, Number of atoms {:}'.format(ndata, natoms))
 
     # Following Equivariant paper, we select 1000 configurations from these as our training set, 1000 as our validation set, and the rest are used as test data.
-    n_train = 1000
+    n_train = 10
     n_val = 1000
-    batch_size = 1
+    batch_size = 5
 
     ndata_rand = 0 + np.arange(ndata)
-    np.random.shuffle(ndata_rand)
+    # np.random.shuffle(ndata_rand)
 
 
     E_train = torch.from_numpy(E[ndata_rand[:n_train]]).to(dtype=torch.float32, device=device)
@@ -114,18 +114,81 @@ if __name__ == '__main__':
     nprnt = 1
     nprnt2 = min(nprnt, n_train)
     t0 = time.time()
-    MAE_best = 1e6
 
     fig = plt.figure(num=1,figsize=[10,10])
     for epoch in range(epochs):
-        t1 = time.time()
-        aloss_t,aloss_E_t,aloss_F_t,MAE_t,Fps_t,Fts_t = use_model(model, dataloader_train, train=True, max_samples=1e6, optimizer=optimizer, device=device)
-        t2 = time.time()
-        aloss_v,aloss_E_v,aloss_F_v,MAE_v,Fps_v,Fts_v = use_model(model, dataloader_val, train=False, max_samples=100, optimizer=optimizer, device=device)
-        t3 = time.time()
+        aloss = 0.0
+        aloss_E = 0.0
+        aloss_F = 0.0
+        MAE = 0.0
+        Fps = 0.0
+        Fts = 0.0
+        for i, (Ri, Fi, Ei, zi) in enumerate(dataloader_train):
+            nb = Ri.shape[0]
+            # Get the data
+            Ri.requires_grad_(True)
 
-        if MAE_v < MAE_best:
-            MAE_best = MAE_v
+            I, J, xe, D, iD, nnodes, w = getBatchData_MD17(Ri, device='cpu')
+            if print_distograms:
+                print_distogram(Ds,Ei,iDs,i)
+                continue
+            elif print_3d_structures:
+                print_3d_structure(fig,z,Ri,Fi)
+                continue
 
-        print(f'{epoch:2d}  Loss(train): {aloss_t:.2f}  Loss(val): {aloss_v:.2f}  MAE(train): {MAE_t:.2f}  MAE(val): {MAE_v:.2f}  |F_pred|(train): {Fps_t:.2f}  |F_pred|(val): {Fps_v:.2f}  |F_true|(train): {Fts_t:.2f}  |F_true|(val): {Fts_v:.2f}  MAE(best): {MAE_best:.2f}  ')
+            N = torch.sum(torch.tensor(nnodes))
+            G = GO.graph(I, J, N, w)
+            xn = zi.view(-1).unsqueeze(0).unsqueeze(0)
+            xe = w.unsqueeze(0).unsqueeze(0)
+
+            optimizer.zero_grad()
+
+            xnOut, xeOut = model(xn, xe, G)
+
+            E_pred = torch.sum(xnOut)
+            F_pred = -grad(E_pred, Ri, create_graph=True)[0].requires_grad_(True)
+            loss_F = F.mse_loss(F_pred, Fi)
+            # loss_E = F.mse_loss(E_pred, Ei)
+            loss = loss_F
+            Fps += torch.mean(torch.sqrt(torch.sum(F_pred.detach()**2,dim=1)))
+            Fts += torch.mean(torch.sqrt(torch.sum(Fi**2,dim=1)))
+            MAEi = torch.mean(torch.abs(F_pred - Fi)).detach()
+            MAE += MAEi
+            loss.backward()
+
+            aloss += loss.detach()
+            # aloss_E += loss_E.detach()
+            aloss_F += loss_F.detach()
+            gNclose = model.KNclose.grad.norm().item()
+            gE1 = model.KE1.grad.norm().item()
+            gE2 = model.KE2.grad.norm().item()
+            gN1 = model.KN1.grad.norm().item()
+            gN2 = model.KN2.grad.norm().item()
+
+            Nclose = model.KNclose.norm().item()
+            E1 = model.KE1.norm().item()
+            E2 = model.KE2.norm().item()
+            N1 = model.KN1.norm().item()
+            N2 = model.KN2.norm().item()
+
+            optimizer.step()
+            if (i + 1) % nprnt == 0 or (epoch + 1) % nprnt ==0:
+                aloss /= nprnt2
+                aloss_E /= nprnt2
+                aloss_F /= nprnt2
+                MAE /= nprnt2
+                Fps /= nprnt2
+                Fts /= nprnt2
+                print(f'{epoch:2d}.{i:4d}  Loss: {aloss:.2f}  Loss_E: {aloss_E:.2f}  Loss_F: {aloss_F:.2f}  MAE: {MAE:.2f}  |F_pred|: {Fps:.4f}  |F_true|: {Fts:.4f}  Nclose: {gNclose/Nclose:2.4f}  E1: {gE1/E1:2.4f}  E2: {gE2/E2:2.4f}  N1: {gN1/N1:2.4f}  N2: {gN2/N2:2.4f}')
+                # print(f'{epoch:2d}.{i:4d}  Loss: {aloss:.2f}  Loss_E: {aloss_E:.2f} Loss_F: {aloss_F:.2f}  MAE: {MAE:.2f}  |F_pred|: {Fps:.4f}  |F_true|: {Fts:.4f} Time taken: {time.time()-t0:.2f}s')
+                aloss = 0.0
+                aloss_E = 0.0
+                aloss_F = 0.0
+                Fps = 0.0
+                Fts = 0.0
+                MAE = 0.0
+
+        if aloss < alossBest:
+            alossBest = aloss
+            bestModel = model
 
