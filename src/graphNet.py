@@ -466,7 +466,7 @@ class graphNetwork_nodesOnly(nn.Module):
         stdv = 1e-3
         stdvp = 1e-3
         self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
-        self.K2Nopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
+        self.K2Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
         self.KNclose = nn.Parameter(torch.randn(num_output, nopen) * stdv)
         if varlet:
             Nfeatures = 1 * nopen
