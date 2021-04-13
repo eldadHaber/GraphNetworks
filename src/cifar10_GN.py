@@ -52,16 +52,16 @@ def MLP(channels, batch_norm=True):
 
 
 nEin = 1
-nopen = 64
+nopen = 256
 nNin = 3
-nhid = 64
-nNclose = 64
-nlayer = 6
+nhid = 256
+nNclose = 256
+nlayer = 3
 h = 1 / nlayer
 dropout = 0.0
 
-model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=True,
-                                  diffOrder=1, num_output=64, dropOut=dropout, modelnet=True)
+model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
+                                  diffOrder=1, num_output=64, dropOut=dropout, modelnet=True, gated=True)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = model.to(device)
@@ -77,7 +77,7 @@ pos = torch.stack(pos).view(-1, 2)
 xtmp: PairTensor = (pos, pos)
 batch = torch.zeros(pos.shape[0], dtype=torch.int64)
 b = (batch, batch)
-k = 9
+k = 8
 edge_index = knn(xtmp[0], xtmp[1], k, b[0], b[1],
                  num_workers=6)
 edge_index = knn(xtmp[0], xtmp[1], k, b[0], b[1],
@@ -116,7 +116,6 @@ def train():
         loss = F.nll_loss(out, target)
         loss.backward()
         optimizer.step()
-
         total_loss += loss.item()
         tmp_loss += loss.item()
         if i % 100 == 99:
