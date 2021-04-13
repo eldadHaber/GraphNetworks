@@ -31,6 +31,7 @@ if __name__ == '__main__':
     E = data['E']
     Force = data['F']
     R = data['R']
+    epochs_for_lr_adjustment = 20
     z = torch.from_numpy(data['z']).to(dtype=torch.float32, device=device)
     # All geometries in Å, energy labels in kcal mol-1 and force labels in kcal mol-1 Å-1.
     # According to http://quantum-machine.org/gdml/#datasets, we need to reach a test error of 0.35 kcal mol-1 Å-1 on force prediction to be compatible with the best
@@ -115,7 +116,7 @@ if __name__ == '__main__':
     nprnt2 = min(nprnt, n_train)
     t0 = time.time()
     MAE_best = 1e6
-
+    epochs_since_best = 0
     fig = plt.figure(num=1,figsize=[10,10])
     for epoch in range(epochs):
         t1 = time.time()
@@ -127,6 +128,13 @@ if __name__ == '__main__':
 
         if MAE_v < MAE_best:
             MAE_best = MAE_v
+            epochs_since_best = 0
+        else:
+            epochs_since_best += 1
+            if epochs_since_best >= epochs_for_lr_adjustment:
+                for g in optimizer.param_groups:
+                    g['lr'] *= 0.8
+                epochs_since_best = 0
 
         print(f' t_dataloader(train): {t_dataload_t:.3f}s  t_dataloader(val): {t_dataload_v:.3f}s  t_prepare(train): {t_prepare_t:.3f}s  t_prepare(val): {t_prepare_v:.3f}s  t_model(train): {t_model_t:.3f}s  t_model(val): {t_model_v:.3f}s  t_backprop(train): {t_backprop_t:.3f}s  t_backprop(val): {t_backprop_v:.3f}s')
         print(f'{epoch:2d}  Loss(train): {aloss_t:.2f}  Loss(val): {aloss_v:.2f}  MAE(train): {MAE_t:.2f}  MAE(val): {MAE_v:.2f}  |F_pred|(train): {Fps_t:.2f}  |F_pred|(val): {Fps_v:.2f}  |F_true|(train): {Fts_t:.2f}  |F_true|(val): {Fts_v:.2f}  MAE(best): {MAE_best:.2f}  Time(train): {t2-t1:.1f}s  Time(val): {t3-t2:.1f}s ')
