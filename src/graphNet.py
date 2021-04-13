@@ -705,8 +705,8 @@ class graphNetwork_nodesOnly(nn.Module):
                     gradX = Graph.nodeGrad(xn)
                     intX = Graph.nodeAve(xn)
                     dxe = torch.cat([intX, gradX], dim=1)
-                    if self.dropout:
-                        dxe = F.dropout(dxe, p=self.dropout, training=self.training)
+                    #if self.dropout:
+                    #    dxe = F.dropout(dxe, p=self.dropout, training=self.training)
                     dxe = F.tanh(self.singleLayer(dxe, self.KE1[i], relu=False))
                     xe = (xe + self.h * dxe)
 
@@ -714,8 +714,8 @@ class graphNetwork_nodesOnly(nn.Module):
                     divE = Graph.edgeDiv(xe)
                     aveE = Graph.edgeAve(xe, method='ave')
                     dxn = torch.cat([aveE, divE], dim=1)
-                    if self.dropout:
-                        dxn = F.dropout(dxn, p=self.dropout, training=self.training)
+                    #if self.dropout:
+                    #    dxn = F.dropout(dxn, p=self.dropout, training=self.training)
                     dxn = F.tanh(self.singleLayer(dxn, self.KN1[i], relu=False))
                     xn = (xn + self.h * dxn)
                 if not self.realVarlet:
