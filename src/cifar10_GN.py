@@ -60,7 +60,7 @@ nlayer = 50
 h = 10 / nlayer
 dropout = 0.0
 
-model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=True,
+model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
                                   diffOrder=1, num_output=1, dropOut=dropout, modelnet=True, gated=True)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
