@@ -644,7 +644,7 @@ class graphNetwork_nodesOnly(nn.Module):
             xn = F.dropout(xn, p=self.dropout, training=self.training)
         xn = self.singleLayer(xn, self.K1Nopen, relu=True)
         x0 = xn.clone()
-        debug = False
+        debug = True
         if debug:
             image = False
             if image:
