@@ -475,7 +475,8 @@ class graphNetwork_nodesOnly(nn.Module):
 
         self.KN1 = nn.Parameter(torch.rand(nlayer, nhid, Nfeatures) * stdvp)
         if self.realVarlet:
-            self.KE1 = nn.Parameter(torch.rand(nlayer, nhid, Nfeatures) * stdvp)
+            self.KN1 = nn.Parameter(torch.rand(nlayer, nhid, 2*Nfeatures) * stdvp)
+            self.KE1 = nn.Parameter(torch.rand(nlayer, nhid, 2*Nfeatures) * stdvp)
 
         self.KN2 = nn.Parameter(torch.rand(nlayer, nopen, 1 * nhid) * stdvp)
 
