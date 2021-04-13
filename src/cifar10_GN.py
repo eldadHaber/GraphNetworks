@@ -52,16 +52,16 @@ def MLP(channels, batch_norm=True):
 
 
 nEin = 1
-nopen = 256
+nopen = 1
 nNin = 3
-nhid = 256
-nNclose = 256
+nhid = 1
+nNclose = 1
 nlayer = 3
 h = 1 / nlayer
 dropout = 0.0
 
 model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
-                                  diffOrder=1, num_output=256, dropOut=dropout, modelnet=True, gated=True)
+                                  diffOrder=1, num_output=1, dropOut=dropout, modelnet=True, gated=True)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = model.to(device)
