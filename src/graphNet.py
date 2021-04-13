@@ -595,7 +595,7 @@ class graphNetwork_nodesOnly(nn.Module):
         plt.imshow(img)
         plt.colorbar()
         plt.show()
-        plt.savefig('plots/img_xn_norm_layer_heat' + str(i) + 'order_nodeDeriv' + str(self.diffOrder) + '.jpg')
+        plt.savefig('plots/img_xn_norm_layer_heat_order_nodeDeriv' + str(self.diffOrder) + '_layer'+ str(i)  + '.jpg')
         plt.close()
 
     def updateGraph(self, Graph, features=None):
