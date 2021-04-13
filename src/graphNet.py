@@ -708,7 +708,7 @@ class graphNetwork_nodesOnly(nn.Module):
                     if self.dropout:
                         dxe = F.dropout(dxe, p=self.dropout, training=self.training)
                     dxe = F.tanh(self.singleLayer(dxe, self.KE1[i], relu=False))
-                    dxe = F.tanh(dxe + Graph.nodeAve(lapX))
+                    dxe = F.tanh(dxe + Graph.nodeGrad(lapX))
                     xe = (xe + self.h * dxe)
 
 
