@@ -711,7 +711,6 @@ class graphNetwork_nodesOnly(nn.Module):
                     aveE = Graph.edgeAve(xe, method='ave')
                     dxn = torch.cat([aveE, divE], dim=1)
                     dxn = F.tanh(self.singleLayer(dxn, self.KN1[i], relu=False))
-                    xe = xe + self.h * dxe
                     xn = (xn + self.h * dxn)
                 if not self.realVarlet:
                     if self.varlet:
