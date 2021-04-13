@@ -69,11 +69,14 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.0001, weight_decay=1e-4)
 optimizer = torch.optim.SGD(model.parameters(), lr=0.001, weight_decay=1e-4)
 
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
+import numpy as np
 
-xs = torch.arange(0, nImg)
-ys = torch.arange(0, nImg)
-pos = torch.meshgrid([xs, ys])
-pos = torch.stack(pos).view(-1, 2)
+xs = np.arange(0, nImg)
+ys = np.arange(0, nImg)
+pos = np.meshgrid(xs, ys)
+pos = np.stack(pos).view(-1, 2)
+pos = torch.from_numpy(pos)
+
 xtmp: PairTensor = (pos, pos)
 batch = torch.zeros(pos.shape[0], dtype=torch.int64)
 b = (batch, batch)
@@ -85,10 +88,10 @@ edge_index = knn(xtmp[0], xtmp[1], k, b[0], b[1],
 edge_index = edge_index.to(device)
 edge_index_batch = edge_index.clone()
 for i in range(1, batch_size):
-    edge_index_new = edge_index + i*pos.shape[0]
+    edge_index_new = edge_index + i * pos.shape[0]
 
     edge_index_batch = torch.cat([edge_index_batch, edge_index_new], dim=1)
-    batch = torch.cat([batch, i*torch.ones(pos.shape[0], dtype=torch.int64)], dim=0)
+    batch = torch.cat([batch, i * torch.ones(pos.shape[0], dtype=torch.int64)], dim=0)
 batch = batch.to(device)
 print("Edge index:", edge_index, "shape:", edge_index.shape)
 edge_index = edge_index_batch
