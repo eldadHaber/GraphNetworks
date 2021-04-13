@@ -38,7 +38,7 @@ batch_size = 1
 trainset = torchvision.datasets.CIFAR10(root=data_path, train=True,
                                         download=True, transform=transform_train)
 trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size,
-                                          shuffle=True, num_workers=6)
+                                          shuffle=False, num_workers=6)
 testset = torchvision.datasets.CIFAR10(root=data_path, train=False, download=True, transform=transform_test)
 testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False,
                                          num_workers=6)
