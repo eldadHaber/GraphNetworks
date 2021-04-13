@@ -87,11 +87,12 @@ edge_index = knn(xtmp[0], xtmp[1], k, b[0], b[1],
                  num_workers=6)
 edge_index = edge_index.to(device)
 edge_index_batch = edge_index.clone()
-for i in range(1, batch_size):
-    edge_index_new = edge_index + i * pos.shape[0]
+if batch_size > 1:
+    for i in range(1, batch_size):
+        edge_index_new = edge_index + i * pos.shape[0]
 
-    edge_index_batch = torch.cat([edge_index_batch, edge_index_new], dim=1)
-    batch = torch.cat([batch, i * torch.ones(pos.shape[0], dtype=torch.int64)], dim=0)
+        edge_index_batch = torch.cat([edge_index_batch, edge_index_new], dim=1)
+        batch = torch.cat([batch, i * torch.ones(pos.shape[0], dtype=torch.int64)], dim=0)
 batch = batch.to(device)
 print("Edge index:", edge_index, "shape:", edge_index.shape)
 edge_index = edge_index_batch
