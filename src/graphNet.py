@@ -524,6 +524,8 @@ class graphNetwork_nodesOnly(nn.Module):
 
     def singleLayer(self, x, K, relu=True, norm=False):
         x = self.edgeConv(x, K)
+        print("K shape:", K.shape)
+        x = self.edgeConv(x, K.t())
         if norm:
             x = F.layer_norm(x, x.shape)
         if not relu:
