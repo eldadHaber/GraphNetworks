@@ -47,9 +47,9 @@ elif dataset == 'CiteSeer':
 elif dataset == 'PubMed':
     nNin = 500
 nEin = 1
-nopen = 64
-nhid = 64
-nNclose = 64
+nopen = 512
+nhid = 512
+nNclose = 512
 nlayer = 8
 h = 20 / nlayer
 h = 1 / nlayer
