@@ -52,6 +52,7 @@ nhid = 64
 nNclose = 64
 nlayer = 16
 h = 20 / nlayer
+h = 1 / nlayer
 dropout = 0.6
 #h = 20 / nlayer
 print("dataset:", dataset)
