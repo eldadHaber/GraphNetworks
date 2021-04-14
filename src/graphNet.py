@@ -726,7 +726,9 @@ class graphNetwork_nodesOnly(nn.Module):
                         # dxn = torch.cat([xn, nodalGradX], dim=1)
                         # dxn = nodalGradX
                         intX = Graph.nodeAve(xn)
+                        gradX = Graph.nodeGrad(xn)
                         dxe = intX  # torch.cat([intX], dim=1)
+                        dxe = gradX
                     # else:
                     #    dxn = torch.cat([xn, intX, gradX], dim=1)
 
@@ -744,7 +746,7 @@ class graphNetwork_nodesOnly(nn.Module):
                     if self.varlet and not self.gated:
                         dxe = F.tanh(self.singleLayer(dxe, self.KN2[i], relu=False)) # + Graph.nodeGrad(lapX)
                         #dxn = F.tanh(lapX + Graph.edgeDiv(dxe))
-                        dxn = F.tanh(lapX)
+                        dxn = F.tanh(Graph.edgeDiv(dxe))
 
                     elif self.varlet and self.gated:
                         W = F.tanh(Graph.nodeGrad(self.singleLayer(xn, self.KN2[i], relu=False)))
