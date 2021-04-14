@@ -23,9 +23,10 @@ from src.MD17_utils import getIterData_MD17, print_distogram, print_3d_structure
 if __name__ == '__main__':
 
     device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
-    # device='cpu'
+    device='cpu'
     print_distograms = False
     print_3d_structures = False
+    use_mean_map = True
     # load training data
     data = np.load('../../../data/MD/MD17/aspirin_dft.npz')
     E = data['E']
@@ -46,7 +47,7 @@ if __name__ == '__main__':
     # Following Equivariant paper, we select 1000 configurations from these as our training set, 1000 as our validation set, and the rest are used as test data.
     n_train = 1000
     n_val = 1000
-    batch_size = 20
+    batch_size = 2
 
     ndata_rand = 0 + np.arange(ndata)
     np.random.shuffle(ndata_rand)
@@ -120,9 +121,9 @@ if __name__ == '__main__':
     fig = plt.figure(num=1,figsize=[10,10])
     for epoch in range(epochs):
         t1 = time.time()
-        aloss_t,aloss_E_t,aloss_F_t,MAE_t,Fps_t,Fts_t, t_dataload_t, t_prepare_t, t_model_t, t_backprop_t = use_model(model, dataloader_train, train=True, max_samples=1e6, optimizer=optimizer, device=device, batch_size=batch_size)
+        aloss_t,aloss_E_t,aloss_F_t,MAE_t,Fps_t,Fts_t, t_dataload_t, t_prepare_t, t_model_t, t_backprop_t = use_model(model, dataloader_train, train=True, max_samples=1e6, optimizer=optimizer, device=device, batch_size=batch_size, use_mean_map=use_mean_map, channels=nEopen)
         t2 = time.time()
-        aloss_v,aloss_E_v,aloss_F_v,MAE_v,Fps_v,Fts_v,t_dataload_v, t_prepare_v, t_model_v, t_backprop_v = use_model(model, dataloader_val, train=False, max_samples=100, optimizer=optimizer, device=device, batch_size=batch_size)
+        aloss_v,aloss_E_v,aloss_F_v,MAE_v,Fps_v,Fts_v,t_dataload_v, t_prepare_v, t_model_v, t_backprop_v = use_model(model, dataloader_val, train=False, max_samples=100, optimizer=optimizer, device=device, batch_size=batch_size, use_mean_map=use_mean_map, channels=nEopen)
         t3 = time.time()
 
         if MAE_v < MAE_best:

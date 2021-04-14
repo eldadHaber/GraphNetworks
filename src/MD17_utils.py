@@ -45,19 +45,26 @@ def dataloader_MD17(data,batch_size):
     dataloader = DataLoader(data, batch_size=batch_size, shuffle=True, drop_last=False)
     return dataloader
 
-
-
-def getBatchData_MD17_fast(Coords, z):
-    nb = Coords.shape[0]
-    nn = Coords.shape[-1]
-    D = torch.relu(torch.sum(Coords ** 2, dim=1, keepdim=True) + \
-                   torch.sum(Coords ** 2, dim=1, keepdim=True).transpose(1,2) - \
-                   2 * Coords.transpose(1,2) @ Coords)
+def compute_inverse_square_distogram(r):
+    D = torch.relu(torch.sum(r ** 2, dim=1, keepdim=True) + \
+                   torch.sum(r ** 2, dim=1, keepdim=True).transpose(1,2) - \
+                   2 * r.transpose(1,2) @ r)
     iD = 1 / D
     tmp = iD.diagonal(0,dim1=1,dim2=2)
     tmp[:] = 0
+    return iD
+
+
+
+def getBatchData_MD17_fast(Coords, z, use_mean_map=False):
+    h = 0.1
+    nb = Coords.shape[0]
+    nn = Coords.shape[-1]
+
+    iD = compute_inverse_square_distogram(Coords)
 
     vals, J = torch.topk(iD, k=nn, dim=-1)
+
     I = (torch.ger(torch.arange(nn), torch.ones(nn, dtype=torch.long))[None,:,:]).repeat(nb,1,1).to(device=z.device)
     I = I.view(nb,-1)
     J = J.view(nb,-1)
@@ -70,13 +77,25 @@ def getBatchData_MD17_fast(Coords, z):
 
     one = (torch.arange(nb,device=z.device, dtype=torch.float32)*nn).repeat_interleave(nn**2)
 
-    xe = xe.view(-1)
-    xn = z.view(-1)
+    xe = xe.view(-1)[None,None,:]
+    xn = z.view(-1)[None,None,:]
     I = I.view(-1) + one
     J = J.view(-1) + one
 
+    iD = iD.view(-1)[None,None,:]
+    if use_mean_map:
+        dr = h * (torch.randint(0,2,Coords.shape,device=z.device)*2-1)
+        r1 = Coords + dr
+        r2 = Coords - dr
+        iD1 = compute_inverse_square_distogram(r1).view(-1)[None,None,:]
+        iD2 = compute_inverse_square_distogram(r2).view(-1)[None,None,:]
+        iD_diff = 2*iD - iD1 - iD2
+        iD_stack = torch.cat((iD,iD1,iD2),dim=1)
+        iD_var = torch.var(iD_stack,1,keepdim=True)
 
-    return I, J, xn[None,None,:], xe[None,None,:], nn*nb, iD.view(-1)
+        iD = torch.cat((iD,iD_diff,iD_var), dim=1)
+        xe = xe.repeat(1,3,1)
+    return I, J, xn, xe, nn*nb, iD
 
 def getBatchData_MD17(Coords, device='cpu'):
     I = torch.tensor([]).to(device)
@@ -99,7 +118,7 @@ def getBatchData_MD17(Coords, device='cpu'):
     return I.long(), J.long(), xe, D, iD, nnodes, w
 
 
-def use_model(model,dataloader,train,max_samples,optimizer,device,batch_size=1):
+def use_model(model,dataloader,train,max_samples,optimizer,device,batch_size=1, use_mean_map=False, channels=1):
     aloss = 0.0
     aloss_E = 0.0
     aloss_F = 0.0
@@ -123,9 +142,9 @@ def use_model(model,dataloader,train,max_samples,optimizer,device,batch_size=1):
             nnodes = Ds.shape[-1]
             w = iDs[I, J].to(device=device, dtype=torch.float32)
         else:
-            I, J, xn, xe, nnodes, w = getBatchData_MD17_fast(Ri, zi)
+            I, J, xn, xe, nnodes, w = getBatchData_MD17_fast(Ri, zi, use_mean_map=use_mean_map)
 
-        G = GO.graph(I, J, nnodes, w)
+        G = GO.graph(I, J, nnodes, w, channels=channels)
 
         if train:
             optimizer.zero_grad()
