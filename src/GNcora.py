@@ -47,9 +47,9 @@ elif dataset == 'CiteSeer':
 elif dataset == 'PubMed':
     nNin = 500
 nEin = 1
-nopen = 512
-nhid = 512
-nNclose = 512
+nopen = 64
+nhid = 64
+nNclose = 64
 nlayer = 8
 h = 20 / nlayer
 h = 1 / nlayer
@@ -82,7 +82,7 @@ optimizer = torch.optim.Adam([
     dict(params=model.K1Nopen, weight_decay=5e-4),
     dict(params=model.KNclose, weight_decay=5e-4)
 ], lr=0.01)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=0)
+#optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=0)
 
 
 # optimizer = torch.optim.Adam([
