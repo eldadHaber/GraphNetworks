@@ -52,7 +52,7 @@ nhid = 64
 nNclose = 64
 nlayer = 4
 h = 20 / nlayer
-h = 2 / nlayer
+h = 1 / nlayer
 dropout = 0.6
 #h = 20 / nlayer
 print("dataset:", dataset)
@@ -71,7 +71,7 @@ dataset = Planetoid(path, dataset, transform=transform)
 data = dataset[0]
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 data = data.to(device)
-model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
+model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=True,
                                   diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, gated=False, realVarlet=False)
 model.reset_parameters()
 model.to(device)
