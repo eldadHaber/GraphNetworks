@@ -50,9 +50,9 @@ nEin = 1
 nopen = 64
 nhid = 64
 nNclose = 64
-nlayer = 8
-h = 20 / nlayer
-h = 1 / nlayer
+nlayer = 4
+h = 5 / nlayer
+#h = 1 / nlayer
 dropout = 0.6
 #h = 20 / nlayer
 print("dataset:", dataset)
