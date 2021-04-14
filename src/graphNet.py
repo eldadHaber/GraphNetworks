@@ -697,8 +697,6 @@ class graphNetwork_nodesOnly(nn.Module):
                         # Graph = GO.graph(I, J, N)
                         Graph, edge_index = self.updateGraph(Graph, features=xn)
                         dxe = Graph.nodeAve(xn)
-                tmp_xn = xn.clone()
-
                 lapX = Graph.nodeLap(xn)
 
                 # operators = self.nodeDeriv(xn, Graph, order=2, edgeSpace=False)
@@ -769,6 +767,7 @@ class graphNetwork_nodesOnly(nn.Module):
                     # dxn = F.tanh(Graph.edgeDiv(F.tanh(dxe)))
 
                     if self.wave:
+                        tmp_xn = xn.clone()
                         xn = 2 * xn - xn_old - (self.h ** 2) * dxn
                         xn_old = tmp_xn
                     else:
