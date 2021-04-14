@@ -729,7 +729,7 @@ class graphNetwork_nodesOnly(nn.Module):
                         intX = Graph.nodeAve(xn)
                         gradX = Graph.nodeGrad(xn)
                         dxe = intX  # torch.cat([intX], dim=1)
-                        dxe = gradX
+                        #dxe = gradX
                     # else:
                     #    dxn = torch.cat([xn, intX, gradX], dim=1)
 
