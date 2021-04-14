@@ -765,7 +765,11 @@ class graphNetwork_nodesOnly(nn.Module):
                         xn = 2 * xn - xn_old - (self.h ** 2) * dxn
                         xn_old = tmp_xn
                     else:
-                        xn = (xn - self.h * dxn)
+                        #xn = (xn - self.h * dxn)
+                        tmp = xn.clone()
+                        xn = (xn_old - self.h * dxn)
+                        xn_old = tmp
+
             if debug:
                 if image:
                     self.savePropagationImage(xn, Graph, i + 1)
