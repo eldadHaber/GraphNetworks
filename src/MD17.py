@@ -46,7 +46,7 @@ if __name__ == '__main__':
     # Following Equivariant paper, we select 1000 configurations from these as our training set, 1000 as our validation set, and the rest are used as test data.
     n_train = 1000
     n_val = 1000
-    batch_size = 40
+    batch_size = 20
 
     ndata_rand = 0 + np.arange(ndata)
     np.random.shuffle(ndata_rand)
@@ -122,7 +122,6 @@ if __name__ == '__main__':
         t1 = time.time()
         aloss_t,aloss_E_t,aloss_F_t,MAE_t,Fps_t,Fts_t, t_dataload_t, t_prepare_t, t_model_t, t_backprop_t = use_model(model, dataloader_train, train=True, max_samples=1e6, optimizer=optimizer, device=device, batch_size=batch_size)
         t2 = time.time()
-        print("done with training")
         aloss_v,aloss_E_v,aloss_F_v,MAE_v,Fps_v,Fts_v,t_dataload_v, t_prepare_v, t_model_v, t_backprop_v = use_model(model, dataloader_val, train=False, max_samples=100, optimizer=optimizer, device=device, batch_size=batch_size)
         t3 = time.time()
 
@@ -136,6 +135,6 @@ if __name__ == '__main__':
                     g['lr'] *= 0.8
                 epochs_since_best = 0
 
-        print(f' t_dataloader(train): {t_dataload_t:.3f}s  t_dataloader(val): {t_dataload_v:.3f}s  t_prepare(train): {t_prepare_t:.3f}s  t_prepare(val): {t_prepare_v:.3f}s  t_model(train): {t_model_t:.3f}s  t_model(val): {t_model_v:.3f}s  t_backprop(train): {t_backprop_t:.3f}s  t_backprop(val): {t_backprop_v:.3f}s')
+        # print(f' t_dataloader(train): {t_dataload_t:.3f}s  t_dataloader(val): {t_dataload_v:.3f}s  t_prepare(train): {t_prepare_t:.3f}s  t_prepare(val): {t_prepare_v:.3f}s  t_model(train): {t_model_t:.3f}s  t_model(val): {t_model_v:.3f}s  t_backprop(train): {t_backprop_t:.3f}s  t_backprop(val): {t_backprop_v:.3f}s')
         print(f'{epoch:2d}  Loss(train): {aloss_t:.2f}  Loss(val): {aloss_v:.2f}  MAE(train): {MAE_t:.2f}  MAE(val): {MAE_v:.2f}  |F_pred|(train): {Fps_t:.2f}  |F_pred|(val): {Fps_v:.2f}  |F_true|(train): {Fts_t:.2f}  |F_true|(val): {Fts_v:.2f}  MAE(best): {MAE_best:.2f}  Time(train): {t2-t1:.1f}s  Time(val): {t3-t2:.1f}s ')
 

@@ -164,7 +164,7 @@ def use_model(model,dataloader,train,max_samples,optimizer,device,batch_size=1):
         # E2 = model.KE2.norm().item()
         # N1 = model.KN1.norm().item()
         # N2 = model.KN2.norm().item()
-        if i >= max_samples:
+        if (i+1)*batch_size >= max_samples:
             break
     aloss /= (i+1)
     aloss_E /= (i+1)
