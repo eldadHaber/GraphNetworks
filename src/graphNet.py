@@ -744,9 +744,9 @@ class graphNetwork_nodesOnly(nn.Module):
 
                     # that's the best for cora etc
                     if self.varlet and not self.gated:
-                        dxe = F.tanh(self.singleLayer(dxe, self.KN2[i], relu=False)) # + Graph.nodeGrad(lapX)
+                        dxe = (self.singleLayer(dxe, self.KN2[i], relu=False)) # + Graph.nodeGrad(lapX)
                         dxn = F.tanh(lapX + Graph.edgeDiv(dxe))
-                        #dxn = F.tanh(Graph.edgeDiv(dxe))
+                        dxn = dxe
 
                     elif self.varlet and self.gated:
                         W = F.tanh(Graph.nodeGrad(self.singleLayer(xn, self.KN2[i], relu=False)))
