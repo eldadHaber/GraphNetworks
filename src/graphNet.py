@@ -525,6 +525,7 @@ class graphNetwork_nodesOnly(nn.Module):
     def singleLayer(self, x, K, relu=True, norm=False):
         x = self.edgeConv(x, K)
         if K.shape[0] == K.shape[1]:
+            x = F.tanh(x)
             x = self.edgeConv(x, K.t())
         if norm:
             x = F.layer_norm(x, x.shape)
@@ -746,7 +747,7 @@ class graphNetwork_nodesOnly(nn.Module):
 
                     # that's the best for cora etc
                     if self.varlet and not self.gated:
-                        dxe = F.tanh(self.singleLayer(dxe, self.KN2[i], relu=False)) # + Graph.nodeGrad(lapX)
+                        dxe = (self.singleLayer(dxe, self.KN2[i], relu=False)) # + Graph.nodeGrad(lapX)
                         #dxn = F.tanh(lapX + Graph.edgeDiv(dxe))
                         dxn = Graph.edgeDiv(dxe)
 
