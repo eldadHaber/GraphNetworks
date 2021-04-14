@@ -53,7 +53,7 @@ nNclose = 512
 nlayer = 8
 h = 20 / nlayer
 h = 1 / nlayer
-dropout = 0.6
+dropout = 0.0
 #h = 20 / nlayer
 print("dataset:", dataset)
 print("n channels:", nopen)
@@ -72,7 +72,7 @@ data = dataset[0]
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 data = data.to(device)
 model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=True,
-                                  diffOrder=1, num_output=dataset.num_classes, dropOut=None, gated=False, realVarlet=False)
+                                  diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, gated=False, realVarlet=False)
 model.reset_parameters()
 model.to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0.0001)
