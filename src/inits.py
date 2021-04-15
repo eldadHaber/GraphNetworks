@@ -20,6 +20,10 @@ def glorot(tensor):
         stdv = math.sqrt(6.0 / (tensor.size(-2) + tensor.size(-1)))
         tensor.data.uniform_(-stdv, stdv)
 
+def identityInit(tensor):
+    I = torch.eye(tensor.shape[1], tensor.shape[2]).unsqueeze(0)
+    II = torch.repeat_interleave(I, repeats=tensor.shape[0], dim=0)
+    return II
 
 def glorot_orthogonal(tensor, scale):
     if tensor is not None:

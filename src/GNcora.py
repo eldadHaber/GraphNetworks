@@ -50,11 +50,11 @@ nEin = 1
 nopen = 64
 nhid = 64
 nNclose = 64
-nlayer = 16
-h = 15 / nlayer
-#h = 1 / nlayer
+nlayer = 4
+h = 1.8  # 16 / nlayer
+
 dropout = 0.6
-#h = 20 / nlayer
+# h = 20 / nlayer
 print("dataset:", dataset)
 print("n channels:", nopen)
 print("n layers:", nlayer)
@@ -71,18 +71,30 @@ dataset = Planetoid(path, dataset, transform=transform)
 data = dataset[0]
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 data = data.to(device)
+realVarlet = False
 model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
-                                  diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, gated=False, realVarlet=False)
+                                  diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, gated=False,
+                                  realVarlet=realVarlet)
 model.reset_parameters()
 model.to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0.0001)
-optimizer = torch.optim.Adam([
-    dict(params=model.KN1, weight_decay=0.01),
-    dict(params=model.KN2, weight_decay=0.01),
-    dict(params=model.K1Nopen, weight_decay=5e-4),
-    dict(params=model.KNclose, weight_decay=5e-4)
-], lr=0.01)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0)
+if not realVarlet:
+    optimizer = torch.optim.Adam([
+        dict(params=model.KN1, lr=0.00001, weight_decay=0),
+        dict(params=model.KN2, lr=0.00001, weight_decay=0),
+        dict(params=model.K1Nopen, weight_decay=5e-4),
+        dict(params=model.KNclose, weight_decay=5e-4)
+    ], lr=0.01)
+else:
+    optimizer = torch.optim.Adam([
+        dict(params=model.KN1, weight_decay=0.01),
+        dict(params=model.KN2, weight_decay=0.01),
+        dict(params=model.KE1, weight_decay=0.01),
+        dict(params=model.K1Nopen, weight_decay=5e-4),
+        dict(params=model.K2Nopen, weight_decay=5e-4),
+        dict(params=model.KNclose, weight_decay=5e-4)
+    ], lr=0.01)
+# optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0)
 
 
 # optimizer = torch.optim.Adam([
@@ -90,7 +102,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0)
 #     dict(params=model.K1Nopen, weight_decay=5e-4),
 #     dict(params=model.KNclose, weight_decay=5e-4)
 # ], lr=0.01)
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=200, gamma=0.1)
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=500, gamma=0.5)
 
 
 def train():
@@ -123,12 +135,21 @@ def train():
     tvreg = absg.mean()
     # tvreg = torch.norm(G.nodeGrad(out.t().unsqueeze(0)), p=1) / I.shape[0]
     # out = out.squeeze()
-    loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask]) #+ 0.1*tvreg
+    loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask])  # + 0.1*tvreg
     loss.backward()
     optimizer.step()
-    #scheduler.step()
-    return float(loss)
+    scheduler.step()
 
+    #gKN2 = model.KN2.grad.norm().item()
+    gKN2 = 0
+    #gKN1 = model.KN1.grad.norm().item()
+    gKN1 = 0
+    gKo = model.K1Nopen.grad.norm().item()
+    gKc = model.KNclose.grad.norm().item()
+    print("gKo gKN1  gKN2    gKc")
+    print("%10.3E   %10.3E   %10.3E   %10.3E" %
+          (gKo, gKN1, gKN2, gKc), flush=True)
+    return float(loss)
 
 @torch.no_grad()
 def test():
@@ -158,7 +179,7 @@ def test():
 
 
 best_val_acc = test_acc = 0
-for epoch in range(1, 1001):
+for epoch in range(1, 20001):
     loss = train()
     train_acc, val_acc, tmp_test_acc = test()
     if tmp_test_acc > test_acc:
