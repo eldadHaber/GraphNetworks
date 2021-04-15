@@ -73,11 +73,27 @@ class graphNetwork(nn.Module):
             self.KE1 = nn.Parameter(torch.rand(nlayer, nhid, Nfeatures, 9, 9) * stdvp)
             self.KE2 = nn.Parameter(torch.rand(nlayer, nopen, nhid, 9, 9) * stdvp)
         else:
-            self.KE1 = nn.Parameter(torch.rand(nlayer, nhid, Nfeatures) * stdvp)
-            self.KE2 = nn.Parameter(torch.rand(nlayer, nopen, nhid) * stdvp)
+            Id  = torch.eye(nhid,Nfeatures).unsqueeze(0)
+            Idt = torch.eye(nopen,nhid).unsqueeze(0)
 
-        self.KN1 = nn.Parameter(torch.rand(nlayer, nhid, Nfeatures) * stdvp)
-        self.KN2 = nn.Parameter(torch.rand(nlayer, nopen, nhid) * stdvp)
+            IdTensor  = torch.repeat_interleave(Id, nlayer, dim=0)
+            IdTensort = torch.repeat_interleave(Idt, nlayer, dim=0)
+
+            #self.KE1 = nn.Parameter(torch.rand(nlayer, nhid, Nfeatures) * stdvp)
+            #self.KE2 = nn.Parameter(torch.rand(nlayer, nopen, nhid) * stdvp)
+            self.KE1 = nn.Parameter(IdTensor * stdvp)
+            self.KE2 = nn.Parameter(IdTensort * stdvp)
+
+        Id  = torch.eye(nhid,Nfeatures).unsqueeze(0)
+        Idt = torch.eye(nopen,nhid).unsqueeze(0)
+        IdTensor = torch.repeat_interleave(Id, nlayer, dim=0)
+        IdTensort = torch.repeat_interleave(Idt, nlayer, dim=0)
+
+        self.KN1 = nn.Parameter(IdTensor * stdvp)
+        self.KN2 = nn.Parameter(IdTensort * stdvp)
+
+        #self.KN1 = nn.Parameter(torch.rand(nlayer, nhid, Nfeatures) * stdvp)
+        #self.KN2 = nn.Parameter(torch.rand(nlayer, nopen, nhid) * stdvp)
 
     def edgeConv(self, xe, K):
         if xe.dim() == 4:
@@ -124,7 +140,7 @@ class graphNetwork(nn.Module):
 
             dxe = self.doubleLayer(dxe, self.KE1[i], self.KE2[i])
             #dxe = F.layer_norm(dxe, dxe.shape)
-            dxe = tv_norm(dxe)
+            #dxe = tv_norm(dxe)
 
             #dxe = torch.relu(dxe)
             if self.varlet:

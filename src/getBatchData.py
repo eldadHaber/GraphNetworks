@@ -61,10 +61,27 @@ YobsTest = torch.load(base_path + caspver + '/RCalphaTesting.pt')
 MSKTest = torch.load(base_path + caspver + '/MasksTesting.pt')
 STest = torch.load(base_path + caspver + '/PSSMTesting.pt')
 
-def maskMat(T,M):
-    M = M.squeeze()
-    MT = (M*(M*T).t()).t()
-    return MT
+# Functions for batch training
+
+
+def getBatchData(S, Aind, Yobs, MSK, IND, device=device):
+    nbatch = IND.numel()
+    xn, CO, M, I, J, xe, Ds = prc.getIterData(S, Aind, Yobs, MSK, IND[0], device=device)
+    M = torch.ger(M.squeeze(),M.squeeze())
+    N = xn.shape[-1]
+
+    for i in range(nbatch):
+        # Get the data
+        xni, Coordsi, Mi, Ii, Ji, xei, Dsi = prc.getIterData(S, Aind, Yobs, MSK, i, device=device)
+        I = torch.cat((I, Ii+N))
+        J = torch.cat((J, Ji+N))
+        xe = torch.cat((xe, xei),dim=2)
+        xn = torch.cat((xn, xni),dim=2)
+        CO = torch.cat((CO, Coordsi),dim=2)
+        M  = torch.block_diag(M,torch.ger(Mi.squeeze(),Mi.squeeze()))
+        N = xni.shape[-1]
+
+    return xn, CO, M, I, J, xe, Ds
 
 ##
 
@@ -90,11 +107,11 @@ total_params = sum(p.numel() for p in model.parameters())
 print('Number of parameters ', total_params)
 
 #### Start Training ####
-lrO = 1e-3
-lrC = 1e-3
-lrN = 1e-3
-lrE1 = 1e-3
-lrE2 = 1e-3
+lrO = 1e-1
+lrC = 1e-1
+lrN = 1e-1
+lrE1 = 1e-1
+lrE2 = 1e-1
 
 optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO},
                         {'params': model.K2Nopen, 'lr': lrC},
@@ -111,40 +128,35 @@ alossBest = 1e6
 epochs = 500
 
 ndata = 8 #n_data_total
-bestModel = model
 hist = torch.zeros(epochs)
+batchSize = 8
 
 for j in range(epochs):
     # Prepare the data
     aloss = 0.0
     alossAQ = 0.0
-    for i in range(ndata):
+    for i in range(ndata//batchSize):
 
         # Get the data
-        nodeProperties, Coords, M, I, J, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
-                                                                            MSK, i, device=device)
-        if nodeProperties.shape[2] > 700:
-            continue
-        nNodes = Ds.shape[0]
+        IND = torch.arange(i*batchSize,(i+1)*batchSize)
+        nodeProperties, Coords, M, I, J, edgeProperties, Ds = getBatchData(S, Aind, Yobs,
+                                                                            MSK, IND, device=device)
+        nNodes = Coords.shape[2]
         # G = GO.dense_graph(nNodes, Ds)
-        w = Ds[I, J]
-        G = GO.graph(I, J, nNodes, w)
+        G = GO.graph(I, J, nNodes)
         # Organize the node data
         xn = nodeProperties
-        # xe = Ds.unsqueeze(0).unsqueeze(0)  # edgeProperties
-        xe = w.unsqueeze(0).unsqueeze(0)
-
-        #M = torch.ger(M.squeeze(), M.squeeze())
+        # edgeProperties
+        xe = torch.zeros(edgeProperties.shape)
 
         optimizer.zero_grad()
 
         xnOut, xeOut = model(xn, xe, G)
-        # xnOut = utils.distConstraint(xnOut, dc=3.79)
         Dout = utils.getDistMat(xnOut)
         Dtrue = utils.getDistMat(Coords)
 
-        #loss = F.mse_loss(M * Dout, M * Dtrue)
-        loss = F.mse_loss(maskMat(Dout,M), maskMat(Dtrue,M))
+        loss = F.mse_loss(M * Dout, M * Dtrue)
+        #loss = F.mse_loss(maskMat(Dout,M), maskMat(Dtrue,M))
 
         loss.backward()
 
@@ -203,4 +215,8 @@ for j in range(epochs):
     if aloss < alossBest:
         alossBest = aloss
         bestModel = model
+
+
+##
+
 
