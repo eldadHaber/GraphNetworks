@@ -673,15 +673,29 @@ class graphNetwork_nodesOnly(nn.Module):
         if self.dropout:
             xn = F.dropout(xn, p=self.dropout, training=self.training)
 
+        plt.figure()
+        print("xn shape:", xn.shape)
+        img = xn.clone().detach().squeeze()[0, :].cpu().numpy().reshape(32, 32, order='C')
+        print("img shape:", img.shape)
+        print("frasures:", img.squeeze()[0, :].squeeze())
+
+        # img = img / img.max()
+        plt.imshow(img)
+        plt.colorbar()
+        plt.show()
+        plt.savefig('plots/img_xn_norm_layer_verlet' + str(0) + 'order_nodeDeriv' + str(0) + '.jpg')
+        plt.close()
+
         xn = self.singleLayer(xn, self.K1Nopen, relu=True)
         x0 = xn.clone()
-        debug = False
+        debug = True
         if debug:
             image = True
             if image:
                 plt.figure()
-                img = xn.clone().detach().squeeze().reshape(32, 32).cpu().numpy()
-                img = img / img.max()
+                print("xn shape:", xn.shape)
+                img = xn.clone().detach().squeeze().cpu().numpy().reshape(32, 32)
+                # img = img / img.max()
                 plt.imshow(img)
                 plt.colorbar()
                 plt.show()
@@ -708,7 +722,7 @@ class graphNetwork_nodesOnly(nn.Module):
                     # Graph = GO.graph(I, J, N)
                     Graph, edge_index = self.updateGraph(Graph, features=xn)
                     dxe = Graph.nodeAve(xn)
-            #lapX = Graph.nodeLap(xn)
+            # lapX = Graph.nodeLap(xn)
 
             # operators = self.nodeDeriv(xn, Graph, order=2, edgeSpace=False)
             # if debug and image:
@@ -736,7 +750,7 @@ class graphNetwork_nodesOnly(nn.Module):
                     # nodalGradX = Graph.edgeAve(gradX, method='ave')
                     # dxn = torch.cat([xn, nodalGradX], dim=1)
                     # dxn = nodalGradX
-                    #intX = Graph.nodeAve(xn)
+                    # intX = Graph.nodeAve(xn)
                     gradX = Graph.nodeGrad(xn)
 
                     # dxe = gradX

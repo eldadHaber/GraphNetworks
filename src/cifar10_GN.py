@@ -73,14 +73,14 @@ import numpy as np
 
 xs = np.arange(0, nImg)
 ys = np.arange(0, nImg)
-pos = np.meshgrid(xs, ys)
+pos = np.meshgrid(xs, ys, indexing='ij')
 pos = np.stack(pos)
-pos = torch.from_numpy(pos).view(-1, 2)
+pos = torch.from_numpy(pos).view(2, -1).t()
 
 xtmp: PairTensor = (pos, pos)
 batch = torch.zeros(pos.shape[0], dtype=torch.int64)
 b = (batch, batch)
-k = 9
+k = 2
 edge_index = knn(xtmp[0], xtmp[1], k, b[0], b[1],
                  num_workers=6)
 edge_index = knn(xtmp[0], xtmp[1], k, b[0], b[1],
@@ -114,13 +114,23 @@ def train():
     tmp_loss = 0
     for i, (data, target) in enumerate(trainloader):
         data = data.to(device)
+        features = data.clone()
+        plt.figure()
+        print("pos shape:", pos.shape)
+        print("features shape:", features.shape)
+        plt.scatter(x=pos[:, 0], y=pos[:, 1],
+                    s=features.clone().detach().cpu().numpy().squeeze()[0, :, :].flatten().squeeze())
+
         plt.figure()
         plt.imshow(data.clone().squeeze().permute(1, 2, 0).cpu().numpy()[:, :, 0])
         plt.savefig('/users/others/eliasof/GraphNetworks/plots/input.jpg')
-        plt.close()
+        #plt.close()
         target = target.to(device)
         data.batch = batch
-        xn = data.view(-1, 3).t().unsqueeze(0).cuda()
+        print("features:", features.squeeze()[0, 0, :])
+        print("features shape:", features.shape)
+        xn = features.view(3, -1).unsqueeze(0).cuda()
+
         optimizer.zero_grad()
         out = model(xn, img_graph, data=data)
         loss = F.nll_loss(out, target)
