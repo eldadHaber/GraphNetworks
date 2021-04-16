@@ -708,7 +708,7 @@ class graphNetwork_nodesOnly(nn.Module):
                     # Graph = GO.graph(I, J, N)
                     Graph, edge_index = self.updateGraph(Graph, features=xn)
                     dxe = Graph.nodeAve(xn)
-            lapX = Graph.nodeLap(xn)
+            #lapX = Graph.nodeLap(xn)
 
             # operators = self.nodeDeriv(xn, Graph, order=2, edgeSpace=False)
             # if debug and image:
