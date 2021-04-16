@@ -1,6 +1,7 @@
 import os.path as osp
 
 import torch
+
 print(torch.cuda.get_device_name(0))
 print(torch.cuda.get_device_properties('cuda:0'))
 
@@ -14,6 +15,7 @@ from torch_geometric.data import DataLoader
 
 dataset = "ppi"
 import sys
+
 if "s" in sys.argv:
     path = '/home/eliasof/GraphNetworks/data/' + dataset
 else:
@@ -95,9 +97,9 @@ dataset = 'ppi'
 
 nNin = train_dataset.num_features
 nEin = 1
-nopen = 2048
-nhid = 2048
-nNclose = 2048
+nopen = 1024
+nhid = 1024
+nNclose = 1024
 nlayer = 8
 h = 1 / nlayer
 dropout = 0.2
@@ -107,23 +109,37 @@ print("n channels:", nopen)
 print("n layers:", nlayer)
 print("h step:", h)
 print("dropout:", dropout)
-print("without edges!!")
 print("wave eq. !")
+wave = True
+print("Wave = ", wave)
 file2Open = "src/GN_ppi.py"
+print("------------------------------------ Driver file: ------------------------------------")
+
 f = open(file2Open, "r")
 for line in f:
     print(line, end='', flush=True)
 
+print("------------------------------------ Graph Networks file: ------------------------------------")
+file2Open = "src/graphNet.py"
+f = open(file2Open, "r")
+for line in f:
+    print(line, end='', flush=True)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-
-model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=False, wave=True,
-                                  diffOrder=1, num_output=train_dataset.num_classes, dropOut=dropout, PPI=True)
+model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=False, wave=wave,
+                                  diffOrder=1, num_output=train_dataset.num_classes, dropOut=dropout, PPI=True,
+                                  realVarlet=False)
 model.reset_parameters()
 model.to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 criterion = torch.nn.BCEWithLogitsLoss()
+optimizer = torch.optim.Adam([
+    dict(params=model.KN1, lr=0.00001, weight_decay=0),
+    dict(params=model.KN2, lr=0.00001, weight_decay=0),
+    dict(params=model.K1Nopen, weight_decay=5e-4),
+    dict(params=model.KNclose, weight_decay=5e-4)
+], lr=0.01)
 
 
 def train():
@@ -175,11 +191,12 @@ def test(loader):
     y, pred = torch.cat(ys, dim=0).numpy(), torch.cat(preds, dim=0).numpy()
     return f1_score(y, pred, average='micro') if pred.sum() > 0 else 0
 
+
 for epoch in range(1, 2001):
     loss = train()
     train_f1 = test(train_dataset)
     val_f1 = test(val_loader)
     test_f1 = test(test_loader)
     print('Epoch: {:02d}, Loss: {:.4f}, Val: {:.4f}, Test: {:.4f}'.format(
-        epoch, loss, val_f1, test_f1),  flush=True)
+        epoch, loss, val_f1, test_f1), flush=True)
     print("Train F1:", train_f1, flush=True)
