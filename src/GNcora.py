@@ -51,7 +51,7 @@ nopen = 64
 nhid = 64
 nNclose = 64
 nlayer = 4
-h = 1.8  # 16 / nlayer
+h = 2  # 16 / nlayer
 
 dropout = 0.6
 # h = 20 / nlayer

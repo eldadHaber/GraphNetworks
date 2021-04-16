@@ -49,7 +49,7 @@ device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
 
 def tv_norm(X, eps=1e-6):
-    #X = X - torch.mean(X, dim=1, keepdim=True)
+    # X = X - torch.mean(X, dim=1, keepdim=True)
     X = X / torch.sqrt(torch.sum(X ** 2, dim=1, keepdim=True) + eps)
     return X
 
@@ -437,8 +437,6 @@ def MLP(channels, batch_norm=True):
     ])
 
 
-
-
 class graphNetwork_nodesOnly(nn.Module):
 
     def __init__(self, nNin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=False, wave=True,
@@ -477,8 +475,8 @@ class graphNetwork_nodesOnly(nn.Module):
         self.KN1 = nn.Parameter(identityInit(self.KN1))
 
         if self.realVarlet:
-            self.KN1 = nn.Parameter(torch.rand(nlayer, nhid, 2*Nfeatures) * stdvp)
-            self.KE1 = nn.Parameter(torch.rand(nlayer, nhid, 2*Nfeatures) * stdvp)
+            self.KN1 = nn.Parameter(torch.rand(nlayer, nhid, 2 * Nfeatures) * stdvp)
+            self.KE1 = nn.Parameter(torch.rand(nlayer, nhid, 2 * Nfeatures) * stdvp)
 
         self.KN2 = nn.Parameter(torch.rand(nlayer, nopen, 1 * nhid) * stdvp)
         self.KN2 = nn.Parameter(identityInit(self.KN2))
@@ -505,8 +503,8 @@ class graphNetwork_nodesOnly(nn.Module):
                 Lin(nopen, 10))
 
     def reset_parameters(self):
-        glorot(self.KN1)
-        #glorot(self.KN2)
+        # glorot(self.KN1)
+        # glorot(self.KN2)
 
         glorot(self.K1Nopen)
         glorot(self.K2Nopen)
@@ -618,8 +616,8 @@ class graphNetwork_nodesOnly(nn.Module):
         plt.imshow(img)
         plt.colorbar()
         plt.show()
-        #plt.savefig('plots/img_xn_norm_layer_heat_order_nodeDeriv' + str(self.diffOrder) + '_layer'+ str(i)  + '.jpg')
-        plt.savefig('plots/layer'+ str(i)  + '.jpg')
+        # plt.savefig('plots/img_xn_norm_layer_heat_order_nodeDeriv' + str(self.diffOrder) + '_layer'+ str(i)  + '.jpg')
+        plt.savefig('plots/layer' + str(i) + '.jpg')
 
         plt.close()
 
@@ -665,7 +663,6 @@ class graphNetwork_nodesOnly(nn.Module):
         # xe = [B, C, N, N] or [B, C, E]
         # Opening layer
         [Graph, edge_index] = self.updateGraph(Graph)
-
 
         if self.realVarlet:
             xe = Graph.nodeGrad(xn)
@@ -725,7 +722,6 @@ class graphNetwork_nodesOnly(nn.Module):
                 dxe = (self.singleLayer(dxe, self.KE1[i], relu=False))
                 xe = (xe + self.h * dxe)
 
-
                 divE = Graph.edgeDiv(xe)
                 aveE = Graph.edgeAve(xe, method='ave')
                 dxn = torch.cat([aveE, divE], dim=1)
@@ -742,31 +738,30 @@ class graphNetwork_nodesOnly(nn.Module):
                     # dxn = nodalGradX
                     intX = Graph.nodeAve(xn)
                     gradX = Graph.nodeGrad(xn)
-                    dxe = gradX  # torch.cat([intX], dim=1)
 
-                    #dxe = gradX
+                    # dxe = gradX
 
                 # else:
                 #    dxn = torch.cat([xn, intX, gradX], dim=1)
 
                 if self.dropout:
                     if self.varlet:
-                        # dxn = F.dropout(dxn, p=self.dropout, training=self.training)
-                        dxe = F.dropout(dxe, p=self.dropout, training=self.training)
                         gradX = F.dropout(gradX, p=self.dropout, training=self.training)
-                        lapX = F.dropout(lapX, p=self.dropout, training=self.training)
+                        # intX = F.dropout(intX, p=self.dropout, training=self.training)
+
+                        # lapX = F.dropout(lapX, p=self.dropout, training=self.training)
                 # dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
                 # dxe = F.tanh(self.singleLayer(dxe, self.KN2[i], relu=False))
                 # dxe = Graph.edgeDiv(dxe)
 
                 # that's the best for cora etc
                 if self.varlet and not self.gated:
-                    dxe = (self.singleLayer(dxe, self.KN2[i], norm=False, relu=False))
-                    intX = (self.singleLayer(intX, self.KN1[i], norm=False, relu=False))
-                    #gradX = self.singleLayer(gradX, self.KN1[i], norm=False, relu=False)
-                    dxn = Graph.edgeDiv(dxe) #+ Graph.edgeAve(intX, method='max')
-                    #dxn = F.tanh(F.tanh(lapX) + F.tanh(Graph.edgeDiv(gradX)) + F.tanh(Graph.edgeAve(dxe, method='max')))
-                    #dxn = (lapX)
+                    dxe = (self.singleLayer(gradX, self.KN2[i], norm=False, relu=False))
+                    # dxe2 = (self.singleLayer(gradX, self.KN1[i], norm=False, relu=False))
+                    # gradX = self.singleLayer(gradX, self.KN1[i], norm=False, relu=False)
+                    dxn = Graph.edgeDiv(dxe)  # + Graph.edgeAve(dxe2, method='ave')
+                    # dxn = F.tanh(F.tanh(lapX) + F.tanh(Graph.edgeDiv(gradX)) + F.tanh(Graph.edgeAve(dxe, method='max')))
+                    # dxn = (lapX)
 
                 elif self.varlet and self.gated:
                     W = F.tanh(Graph.nodeGrad(self.singleLayer(xn, self.KN2[i], relu=False)))
@@ -791,9 +786,9 @@ class graphNetwork_nodesOnly(nn.Module):
                     xn_old = tmp_xn
                 else:
                     xn = (xn - self.h * dxn)
-                    #tmp = xn.clone()
-                    #xn = (xn_old - self.h * dxn)
-                    #xn_old = tmp
+                    # tmp = xn.clone()
+                    # xn = (xn_old - self.h * dxn)
+                    # xn_old = tmp
 
             if debug:
                 if image:
