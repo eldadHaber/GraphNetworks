@@ -113,7 +113,7 @@ print("dropout:", dropout)
 print("wave eq. !")
 wave = False
 print("Wave = ", wave)
-print_files = False
+print_files = True
 if print_files:
     file2Open = "src/GN_ppi.py"
     print("------------------------------------ Driver file: ------------------------------------")
