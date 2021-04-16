@@ -110,7 +110,7 @@ print("n layers:", nlayer)
 print("h step:", h)
 print("dropout:", dropout)
 print("wave eq. !")
-wave = True
+wave = False
 print("Wave = ", wave)
 file2Open = "src/GN_ppi.py"
 print("------------------------------------ Driver file: ------------------------------------")
