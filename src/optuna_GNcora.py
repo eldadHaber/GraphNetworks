@@ -42,7 +42,7 @@ num_layers = [2, 4, 8, 16, 32, 64]
 # Setup the network and its parameters
 for nlayers in num_layers:
     torch.cuda.synchronize()
-    print("With symmetric conv - using TransposedConv !!!")
+    print("Without symmetric conv - not using TransposedConv !!!")
     print("Doing experiment for ", nlayers, " layers!", flush=True)
     torch.cuda.synchronize()
 

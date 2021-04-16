@@ -539,7 +539,7 @@ class graphNetwork_nodesOnly(nn.Module):
                 # x = F.layer_norm(x, x.shape)
                 beta = torch.norm(x)
                 x = beta * tv_norm(x)
-            x = self.edgeConv(x, K.t())
+            #x = self.edgeConv(x, K.t())
 
         if not relu:
             return x
