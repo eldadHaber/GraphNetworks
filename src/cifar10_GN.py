@@ -80,7 +80,7 @@ pos = torch.from_numpy(pos).view(2, -1).t()
 xtmp: PairTensor = (pos, pos)
 batch = torch.zeros(pos.shape[0], dtype=torch.int64)
 b = (batch, batch)
-k = 2
+k = 8
 edge_index = knn(xtmp[0], xtmp[1], k, b[0], b[1],
                  num_workers=6)
 edge_index = knn(xtmp[0], xtmp[1], k, b[0], b[1],
