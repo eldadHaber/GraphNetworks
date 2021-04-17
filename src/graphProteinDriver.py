@@ -234,7 +234,7 @@ for j in range(epochs):
 
                     if 1 == 1:
                         print("M shape:", M.shape)
-                        known_idx = M == 1
+                        known_idx = (M == 1).squeeze()
                         gt_coords = Coords.clone().squeeze().t().detach().cpu().numpy()
                         if j == 0:
                             ##SAVE GT FILE
