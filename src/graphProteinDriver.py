@@ -174,6 +174,7 @@ for j in range(epochs):
         Dtrue = utils.getDistMat(Coords)
 
         Medge = torch.ger(M.squeeze(), M.squeeze())
+        Medge = Medge > 0
 
         #loss = F.mse_loss(M * Dout, M * Dtrue)
         n = xnOut.shape[-1]
@@ -181,11 +182,12 @@ for j in range(epochs):
         Xl[0, :] = 3.9 * torch.arange(0, n)
         Dl = torch.sum(Xl ** 2, dim=0, keepdim=True) + torch.sum(Xl ** 2, dim=0, keepdim=True).t() - 2 * Xl.t() @ Xl
         Dl = torch.sqrt(torch.relu(Dl))
-        ML = (M * Dl - M * torch.sqrt(torch.relu(Dtrue))) > 0
+        ML = (Medge * Dl - Medge * torch.sqrt(torch.relu(Dtrue))) > 0
         MS = torch.sqrt(torch.relu(Dtrue)) < 7 * 3.9
         Medge = (Medge & MS & ML) * 1.0
+        Medge = torch.triu(M, 1)
         R = torch.triu(Dout - torch.sqrt(torch.relu(Dtrue)), 1)
-        loss = torch.norm(M * R) ** 2 / torch.sum(M)
+        loss = torch.norm(Medge * R) ** 2 / torch.sum(Medge)
         loss = torch.sqrt(loss)
         #loss = F.mse_loss(maskMat(Dout, M), maskMat(Dtrue, M))
         loss.backward()
@@ -236,7 +238,7 @@ for j in range(epochs):
                     Dtrue = utils.getDistMat(Coords)
 
                     Medge = torch.ger(M.squeeze(), M.squeeze())
-
+                    Medge = Medge > 0
                     # loss = F.mse_loss(M * Dout, M * Dtrue)
                     #loss = F.mse_loss(maskMat(Dout, M), maskMat(Dtrue, M))
 
@@ -246,11 +248,12 @@ for j in range(epochs):
                     Dl = torch.sum(Xl ** 2, dim=0, keepdim=True) + torch.sum(Xl ** 2, dim=0,
                                                                              keepdim=True).t() - 2 * Xl.t() @ Xl
                     Dl = torch.sqrt(torch.relu(Dl))
-                    ML = (M * Dl - M * torch.sqrt(torch.relu(Dtrue))) > 0
+                    ML = (Medge * Dl - Medge * torch.sqrt(torch.relu(Dtrue))) > 0
                     MS = torch.sqrt(torch.relu(Dtrue)) < 7 * 3.9
                     Medge = (Medge & MS & ML) * 1.0
+                    Medge = torch.triu(M, 1)
                     R = torch.triu(Dout - torch.sqrt(torch.relu(Dtrue)), 1)
-                    loss = torch.norm(M * R) ** 2 / torch.sum(M)
+                    loss = torch.norm(Medge * R) ** 2 / torch.sum(Medge)
                     loss = torch.sqrt(loss)
 
 
