@@ -109,7 +109,7 @@ def maskMat(T,M):
 ndata = n_data_total
 bestModel = model
 hist = torch.zeros(epochs)
-ndata = 8 #len(STest)
+#ndata = 8 #len(STest)
 for j in range(epochs):
     # Prepare the data
     aloss = 0.0
@@ -119,8 +119,8 @@ for j in range(epochs):
     for i in range(ndata):
 
         # Get the data
-        nodeProperties, Coords, M, I, J, edgeProperties, Ds = prc.getIterData(STest, AindTest, YobsTest,
-                                                                              MSKTest, i, device=device)
+        nodeProperties, Coords, M, I, J, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
+                                                                              MSK, i, device=device)
 
         if nodeProperties.shape[2] > 700:
             continue
@@ -177,37 +177,39 @@ for j in range(epochs):
             aloss = 0.0
             alossAQ = 0.0
         # Validation
-        nextval = 1e9
+        nextval = 100
         if (i + 1) % nextval == 0:
             with torch.no_grad():
-                misVal = 0
+                aloss = 0
                 AQdis = 0
                 nVal = len(STest)
                 for jj in range(nVal):
-                    nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
-                                                                                        MSK, 0, device=device)
-
+                    nodeProperties, Coords, M, I, J, edgeProperties, Ds = prc.getIterData(STest, AindTest, YobsTest,
+                                                                                          MSKTest, jj, device=device)
+                    if nodeProperties.shape[2] > 700:
+                        continue
                     nNodes = Ds.shape[0]
-                    # G = GO.dense_graph(nNodes, Ds)
-                    w = Ds[IJ[:, 0], IJ[:, 1]]
-                    G = GO.graph(IJ[:, 0], IJ[:, 1], nNodes, w)
-                    # Organize the node data
+                    w = Ds[I, J]
+                    G = GO.graph(I, J, nNodes, w)
                     xn = nodeProperties
-                    # xe = Ds.unsqueeze(0).unsqueeze(0)  # edgeProperties
                     xe = w.unsqueeze(0).unsqueeze(0)
 
-                    M = torch.ger(M.squeeze(), M.squeeze())
-
-                    xnOut, xeOut = model(xn, xe, G, Ds)
-
+                    xnOut, xeOut = model(xn, xe, G)
+                    xnOut = utils.distConstraint(xnOut, dc=3.8)
                     Dout = utils.getDistMat(xnOut)
                     Dtrue = utils.getDistMat(Coords)
-                    loss = F.mse_loss(M * Dout, M * Dtrue)
 
-                    AQdis += (torch.norm(M * Dout - M * Dtrue) / torch.sqrt(torch.sum(M))).detach()
-                    misVal += loss.detach()
+                    Medge = torch.ger(M.squeeze(), M.squeeze())
 
-                print("%2d       %10.3E   %10.3E" % (j, misVal / nVal, AQdis / nVal))
+                    # loss = F.mse_loss(M * Dout, M * Dtrue)
+                    loss = F.mse_loss(maskMat(Dout, M), maskMat(Dtrue, M))
+                    loss.backward()
+
+                    aloss += loss.detach()
+                    AQdis += (torch.norm(maskMat(Dout, M) - maskMat(Dtrue, M)) / torch.sqrt(
+                        torch.sum(Medge)).detach())
+
+                print("%2d       %10.3E   %10.3E" % (j, aloss / nVal, AQdis / nVal))
                 print('===============================================')
 
     if aloss < alossBest:
