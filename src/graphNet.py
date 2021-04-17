@@ -864,8 +864,8 @@ class graphNetwork_proteins(nn.Module):
         self.h = h
         self.varlet = varlet
         self.dense  = dense
-        stdv = 1.0 #1e-2
-        stdvp = 1.0 # 1e-3
+        stdv = 1e-2
+        stdvp = 1e-3
         self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
         self.K2Nopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
         if dense:
