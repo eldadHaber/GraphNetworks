@@ -177,11 +177,9 @@ for j in range(epochs):
         Medge = Medge > 0
 
         #loss = F.mse_loss(M * Dout, M * Dtrue)
-        print("xnOut shape:", xnOut.shape)
         n = xnOut.shape[-1]
         Xl = torch.zeros(3, n, device=xnOut.device)
         Xl[0, :] = 3.9 * torch.arange(0, n)
-        print("Xl shape:", Xl.shape)
         Dl = torch.sum(Xl ** 2, dim=0, keepdim=True) + torch.sum(Xl ** 2, dim=0, keepdim=True).t() - 2 * Xl.t() @ Xl
         Dl = torch.sqrt(torch.relu(Dl))
         ML = (Medge * Dl - Medge * (torch.relu(Dtrue))) > 0
