@@ -164,8 +164,9 @@ for j in range(epochs):
         gC = model.KN2.grad.norm().item()
 
         if i%4 == 3:
-            optimizer.zero_grad()
             optimizer.step()
+            optimizer.zero_grad()
+
         # scheduler.step()
         nprnt = 1
         if (i + 1) % nprnt == 0:
