@@ -39,6 +39,22 @@ else:
 
 num_layers = [2, 4, 8, 16, 32, 64]
 
+print("**********************************************************************************")
+file2Open = "src/optuna_GNcora.py"
+print("DRIVER CODE:")
+f = open(file2Open, "r")
+for line in f:
+    print(line, end='', flush=True)
+
+print("NETWORKS CODE:")
+file2Open = "src/graphNet.py"
+f = open(file2Open, "r")
+for line in f:
+    print(line, end='', flush=True)
+
+print("**********************************************************************************")
+
+
 # Setup the network and its parameters
 for nlayers in num_layers:
     torch.cuda.synchronize()
