@@ -79,7 +79,7 @@ nEopen = 128
 nEhid = 128
 nNclose = 3
 nEclose = 1
-nlayer = 18
+nlayer = 6
 
 filename = filename = caspver + "nopen" + str(nNopen) + "nhid" + str(nEhid) + "nclose" + str(nNclose) + "nlayers" + str(
     nlayer)
@@ -293,7 +293,7 @@ for j in range(epochs):
                         ind = a.clone()[known_idx].detach().cpu().numpy().astype(int)
                         atoms = [inv_AA_DICT[i] for i in ind]
                         atoms_group = prody.AtomGroup('prot' + str(jj))
-                        pred_coords = xnOut.clone()[:, known_idx].t().detach().cpu().numpy()
+                        pred_coords = xnOut.clone().squeeze()[:, known_idx].t().detach().cpu().numpy()
 
                         chids = len(atoms) * ['CA']
                         atoms_group.setNames(chids)
