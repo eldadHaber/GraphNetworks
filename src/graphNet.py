@@ -923,7 +923,7 @@ class graphNetwork_proteins(nn.Module):
     def doubleLayer(self, x, K1, K2):
         x = self.edgeConv(x, K1)
         #x = F.layer_norm(x, x.shape)
-        x = tv_norm(x)
+        #x = tv_norm(x)
         #x = torch.relu(x)
         x = torch.tanh(x)
         x = self.edgeConv(x, K2)
