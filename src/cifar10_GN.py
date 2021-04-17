@@ -57,7 +57,7 @@ nNin = 3
 nhid = 128
 nNclose = 128
 nlayer = 6
-h = 1  # 10 / nlayer
+h = 0.1  # 10 / nlayer
 dropout = 0.0
 
 model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
