@@ -79,7 +79,7 @@ nEopen = 128
 nEhid = 128
 nNclose = 3
 nEclose = 1
-nlayer = 6
+nlayer = 18
 
 
 model = GN.graphNetwork_proteins(nNin, nEin, nNopen, nEhid, nNclose, nlayer, h=0.5, dense=False, varlet=True)
