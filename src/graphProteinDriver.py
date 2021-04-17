@@ -115,18 +115,20 @@ for j in range(epochs):
     for i in range(ndata):
 
         # Get the data
-        nodeProperties, Coords, M, IJ, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
-                                                                            MSK, i, device=device)
+        nodeProperties, Coords, M, I, J, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
+                                                                              MSK, i, device=device)
+
         if nodeProperties.shape[2] > 700:
             continue
         nNodes = Ds.shape[0]
         # G = GO.dense_graph(nNodes, Ds)
-        w = Ds[IJ[:, 0], IJ[:, 1]]
-        G = GO.graph(IJ[:, 0], IJ[:, 1], nNodes, w)
+        w = Ds[I, J]
+        G = GO.graph(I, J, nNodes, w)
         # Organize the node data
         xn = nodeProperties
         # xe = Ds.unsqueeze(0).unsqueeze(0)  # edgeProperties
         xe = w.unsqueeze(0).unsqueeze(0)
+
 
         M = torch.ger(M.squeeze(), M.squeeze())
 
