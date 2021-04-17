@@ -109,7 +109,7 @@ def maskMat(T,M):
 ndata = n_data_total
 bestModel = model
 hist = torch.zeros(epochs)
-ndata = len(STest)
+ndata = 8 #len(STest)
 for j in range(epochs):
     # Prepare the data
     aloss = 0.0
