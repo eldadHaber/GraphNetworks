@@ -608,12 +608,16 @@ class graphNetwork_nodesOnly(nn.Module):
             plt.savefig('plots/operator' + str(i) + '.jpg')
             plt.close()
 
-    def savePropagationImage(self, xn, Graph, i=0):
+    def savePropagationImage(self, xn, Graph, i=0, minv=None, maxv=None):
         plt.figure()
         print("xn shape:", xn.shape)
         img = xn.clone().detach().squeeze().reshape(32, 32).cpu().numpy()
         # img = img / img.max()
-        plt.imshow(img)
+        if (maxv is not None) and (minv is not None):
+            plt.imshow(img, vmax=maxv, vmin=minv)
+        else:
+            plt.imshow(img)
+
         plt.colorbar()
         plt.show()
         # plt.savefig('plots/img_xn_norm_layer_heat_order_nodeDeriv' + str(self.diffOrder) + '_layer'+ str(i)  + '.jpg')
@@ -695,8 +699,10 @@ class graphNetwork_nodesOnly(nn.Module):
                 plt.figure()
                 print("xn shape:", xn.shape)
                 img = xn.clone().detach().squeeze().cpu().numpy().reshape(32, 32)
+                minv = img.min()
+                maxv = img.max()
                 # img = img / img.max()
-                plt.imshow(img)
+                plt.imshow(img, vmax=maxv, vmin=minv)
                 plt.colorbar()
                 plt.show()
                 plt.savefig('plots/img_xn_norm_layer_verlet' + str(0) + 'order_nodeDeriv' + str(0) + '.jpg')
@@ -806,7 +812,7 @@ class graphNetwork_nodesOnly(nn.Module):
 
             if debug:
                 if image:
-                    self.savePropagationImage(xn, Graph, i + 1)
+                    self.savePropagationImage(xn, Graph, i + 1, minv=minv, maxv=maxv)
                 else:
                     saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, i + 1)
 
