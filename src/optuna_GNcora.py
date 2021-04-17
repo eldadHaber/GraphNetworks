@@ -114,7 +114,7 @@ for nlayers in num_layers:
         wdGCN = trial.suggest_float("wdGCN", 1e-10, 1e-2, log=True)
         model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, n_layers, h=h, dense=False, varlet=True,
                                           wave=False,
-                                          diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, gated=True,
+                                          diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, gated=False,
                                           realVarlet=False)
         model.reset_parameters()
         model.to(device)
