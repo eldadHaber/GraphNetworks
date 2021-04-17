@@ -184,11 +184,11 @@ for j in range(epochs):
         print("Xl shape:", Xl.shape)
         Dl = torch.sum(Xl ** 2, dim=0, keepdim=True) + torch.sum(Xl ** 2, dim=0, keepdim=True).t() - 2 * Xl.t() @ Xl
         Dl = torch.sqrt(torch.relu(Dl))
-        ML = (Medge * Dl - Medge * torch.sqrt(torch.relu(Dtrue))) > 0
-        MS = torch.sqrt(torch.relu(Dtrue)) < 7 * 3.9
+        ML = (Medge * Dl - Medge * (torch.relu(Dtrue))) > 0
+        MS = (torch.relu(Dtrue)) < 7 * 3.9
         Medge = (Medge & MS & ML) * 1.0
         Medge = torch.triu(Medge, 1)
-        R = torch.triu(Dout - torch.sqrt(torch.relu(Dtrue)), 1)
+        R = torch.triu(Dout - (torch.relu(Dtrue)), 1)
         loss = torch.norm(Medge * R) ** 2 / torch.sum(Medge)
         loss = torch.sqrt(loss)
         #loss = F.mse_loss(maskMat(Dout, M), maskMat(Dtrue, M))
@@ -250,11 +250,11 @@ for j in range(epochs):
                     Dl = torch.sum(Xl ** 2, dim=0, keepdim=True) + torch.sum(Xl ** 2, dim=0,
                                                                              keepdim=True).t() - 2 * Xl.t() @ Xl
                     Dl = torch.sqrt(torch.relu(Dl))
-                    ML = (Medge * Dl - Medge * torch.sqrt(torch.relu(Dtrue))) > 0
-                    MS = torch.sqrt(torch.relu(Dtrue)) < 7 * 3.9
+                    ML = (Medge * Dl - Medge * (torch.relu(Dtrue))) > 0
+                    MS = (torch.relu(Dtrue)) < 7 * 3.9
                     Medge = (Medge & MS & ML) * 1.0
                     Medge = torch.triu(Medge, 1)
-                    R = torch.triu(Dout - torch.sqrt(torch.relu(Dtrue)), 1)
+                    R = torch.triu(Dout - (torch.relu(Dtrue)), 1)
                     loss = torch.norm(Medge * R) ** 2 / torch.sum(Medge)
                     loss = torch.sqrt(loss)
 
