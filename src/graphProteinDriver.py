@@ -233,6 +233,7 @@ for j in range(epochs):
                         torch.sum(Medge)).detach())
 
                     if 1 == 1:
+                        print("M shape:", M.shape)
                         known_idx = M == 1
                         gt_coords = Coords.clone().squeeze().t().detach().cpu().numpy()
                         if j == 0:
