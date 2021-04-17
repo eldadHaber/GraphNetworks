@@ -233,7 +233,7 @@ for j in range(epochs):
                     xe = w.unsqueeze(0).unsqueeze(0)
 
                     xnOut, xeOut = model(xn, xe, G)
-                    xnOut = utils.distConstraint(xnOut, dc=3.8)
+                    #xnOut = utils.distConstraint(xnOut, dc=3.8)
                     Dout = utils.getDistMat(xnOut)
                     Dtrue = utils.getDistMat(Coords)
 
