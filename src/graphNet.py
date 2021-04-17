@@ -841,7 +841,6 @@ class graphNetwork_nodesOnly(nn.Module):
         if self.modelnet:
             out = global_max_pool(xn, data.batch)
             out = self.mlp(out)
-            print("out shape:", out.shape)
             return F.log_softmax(out, dim=-1)
 
         if self.faust:
