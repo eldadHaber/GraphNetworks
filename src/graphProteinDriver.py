@@ -243,7 +243,7 @@ for j in range(epochs):
                             atoms = [inv_AA_DICT[i] for i in ind]
                             # print("atoms:", atoms)
                             atoms_group = prody.AtomGroup('prot' + str(jj))
-                            gt_coords = Coords.clone()[:, known_idx].t().detach().cpu().numpy()
+                            gt_coords = Coords.clone().squeeze()[:, known_idx].t().detach().cpu().numpy()
 
                             # print("coords shape:", gt_coords.shape)
 
