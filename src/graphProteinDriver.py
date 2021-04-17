@@ -64,7 +64,7 @@ nEclose = 1
 nlayer = 6
 
 
-model = GN.graphNetwork_proteins(nNin, nEin, nNopen, nEhid, nNclose, nlayer, h=.1, dense=False, varlet=True)
+model = GN.graphNetwork_proteins(nNin, nEin, nNopen, nEhid, nNclose, nlayer, h=1, dense=False, varlet=True)
 model.to(device)
 
 total_params = sum(p.numel() for p in model.parameters())
