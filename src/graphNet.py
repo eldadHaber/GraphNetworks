@@ -432,10 +432,10 @@ class graphNetwork_try(nn.Module):
 
 def MLP(channels, batch_norm=True):
     return Seq(*[
-        Seq(Lin(channels[i - 1], channels[i]), BN(channels[i]), ReLU())
+        Seq(Lin(channels[i - 1], channels[i]), ReLU())
         for i in range(1, len(channels))
     ])
-
+#, BN(channels[i])
 
 class graphNetwork_nodesOnly(nn.Module):
 

@@ -159,7 +159,7 @@ def test(loader):
         data.batch = batch
         with torch.no_grad():
             pred = model(xn, img_graph, data=data).max(dim=1)[1]
-        correct += pred.eq(data.y).sum().item()
+        correct += pred.eq(target).sum().item()
     return correct / len(loader.dataset)
 
 
