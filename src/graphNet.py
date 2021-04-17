@@ -677,22 +677,23 @@ class graphNetwork_nodesOnly(nn.Module):
         if self.dropout:
             xn = F.dropout(xn, p=self.dropout, training=self.training)
 
-        plt.figure()
-        print("xn shape:", xn.shape)
-        img = xn.clone().detach().squeeze()[0, :].cpu().numpy().reshape(32, 32, order='C')
-        print("img shape:", img.shape)
-        print("frasures:", img.squeeze()[0, :].squeeze())
+        if 1==0:
+            plt.figure()
+            print("xn shape:", xn.shape)
+            img = xn.clone().detach().squeeze()[0, :].cpu().numpy().reshape(32, 32, order='C')
+            print("img shape:", img.shape)
+            print("frasures:", img.squeeze()[0, :].squeeze())
 
-        # img = img / img.max()
-        plt.imshow(img)
-        plt.colorbar()
-        plt.show()
-        plt.savefig('plots/img_xn_norm_layer_verlet' + str(0) + 'order_nodeDeriv' + str(0) + '.jpg')
-        plt.close()
+            # img = img / img.max()
+            plt.imshow(img)
+            plt.colorbar()
+            plt.show()
+            plt.savefig('plots/img_xn_norm_layer_verlet' + str(0) + 'order_nodeDeriv' + str(0) + '.jpg')
+            plt.close()
 
         xn = self.singleLayer(xn, self.K1Nopen, relu=True)
         x0 = xn.clone()
-        debug = True
+        debug = False
         if debug:
             image = True
             if image:
@@ -776,10 +777,16 @@ class graphNetwork_nodesOnly(nn.Module):
 
                 # that's the best for cora etc
                 if self.varlet and not self.gated:
-                    dxe = (self.singleLayer(gradX, self.KN2[i], norm=False, relu=False))
+                    efficient=True
+                    if efficient:
+                        dxn = (self.singleLayer(gradX, self.KN2[i], norm=False, relu=False))
+                        dxn = Graph.edgeDiv(dxn)  # + Graph.edgeAve(dxe2, method='ave')
+                    else:
+                        dxe = (self.singleLayer(gradX, self.KN2[i], norm=False, relu=False))
+                        dxn = Graph.edgeDiv(dxe)  # + Graph.edgeAve(dxe2, method='ave')
+
                     # dxe2 = (self.singleLayer(gradX, self.KN1[i], norm=False, relu=False))
                     # gradX = self.singleLayer(gradX, self.KN1[i], norm=False, relu=False)
-                    dxn = Graph.edgeDiv(dxe)  # + Graph.edgeAve(dxe2, method='ave')
                     # dxn = F.tanh(F.tanh(lapX) + F.tanh(Graph.edgeDiv(gradX)) + F.tanh(Graph.edgeAve(dxe, method='max')))
                     # dxn = (lapX)
 
