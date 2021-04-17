@@ -116,20 +116,22 @@ def train():
     for i, (data, target) in enumerate(trainloader):
         data = data.to(device)
         features = data.clone()
-        plt.figure()
-        print("pos shape:", pos.shape)
-        print("features shape:", features.shape)
-        plt.scatter(x=pos[:, 0], y=pos[:, 1],
-                    s=features.clone().detach().cpu().numpy().squeeze()[0, :, :].flatten().squeeze())
+        # plt.figure()
+        # print("pos shape:", pos.shape)
+        # print("features shape:", features.shape)
+        # plt.scatter(x=pos[:, 0], y=pos[:, 1],
+        #             s=features.clone().detach().cpu().numpy().squeeze()[0, :, :].flatten().squeeze())
+        #
+        # plt.figure()
+        # plt.imshow(data.clone().squeeze().permute(1, 2, 0).cpu().numpy()[:, :, 0])
+        # plt.savefig('/users/others/eliasof/GraphNetworks/plots/input.jpg')
+        # # plt.close()
+        # print("features:", features.squeeze()[0, 0, :])
+        # print("features shape:", features.shape)
 
-        plt.figure()
-        plt.imshow(data.clone().squeeze().permute(1, 2, 0).cpu().numpy()[:, :, 0])
-        plt.savefig('/users/others/eliasof/GraphNetworks/plots/input.jpg')
-        # plt.close()
-        target = target.to(device)
+
         data.batch = batch
-        print("features:", features.squeeze()[0, 0, :])
-        print("features shape:", features.shape)
+        target = target.to(device)
         xn = features.view(3, -1).unsqueeze(0).cuda()
 
         optimizer.zero_grad()
