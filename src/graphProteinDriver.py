@@ -94,7 +94,7 @@ optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO},
                         {'params': model.KN2, 'lr': lrE2},
                         {'params': model.KNclose, 'lr': lrE2}])
 
-optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)
+optimizer = optim.Adam(model.parameters(), lr=0.0001, weight_decay=1e-4)
 
 
 alossBest = 1e6
@@ -132,7 +132,7 @@ for j in range(epochs):
         xe = w.unsqueeze(0).unsqueeze(0)
 
 
-        M = torch.ger(M.squeeze(), M.squeeze())
+        #M = torch.ger(M.squeeze(), M.squeeze())
 
         optimizer.zero_grad()
 
@@ -147,14 +147,14 @@ for j in range(epochs):
         Dout = utils.getDistMat(xnOut)
         Dtrue = utils.getDistMat(Coords)
 
-
+        Medge = torch.ger(M.squeeze(), M.squeeze())
 
         #loss = F.mse_loss(M * Dout, M * Dtrue)
         loss = F.mse_loss(maskMat(Dout, M), maskMat(Dtrue, M))
         loss.backward()
 
         aloss += loss.detach()
-        alossAQ += (torch.norm(M * Dout - M * Dtrue) / torch.sqrt(torch.sum(M)).detach())
+        alossAQ += (torch.norm(maskMat(Dout, M) - maskMat(Dtrue, M)) / torch.sqrt(torch.sum(Medge)).detach())
         gN = model.KNclose.grad.norm().item()
         gE1 = model.KE1.grad.norm().item()
         gE2 = model.KE2.grad.norm().item()
