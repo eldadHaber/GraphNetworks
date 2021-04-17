@@ -87,7 +87,7 @@ try:
 except:
     import utils
 
-def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
+def getIterData(S, Aind, Yobs, MSK, i, device='cpu', return_a=False):
     scale = 1e-2
 
     PSSM = S[i].t()
@@ -149,6 +149,8 @@ def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
     J = J.to(device=device, non_blocking=True)
     xe = xe.to(device=device, non_blocking=True)
     D = D.to(device=device, non_blocking=True)
+    if return_a:
+        return Seq.unsqueeze(0), Coords.unsqueeze(0), M.unsqueeze(0).unsqueeze(0), I, J, xe, D, a
 
     return Seq.unsqueeze(0), Coords.unsqueeze(0), M.unsqueeze(0).unsqueeze(0), I, J, xe, D
 

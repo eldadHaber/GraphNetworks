@@ -7,11 +7,29 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 import torch.autograd.profiler as profiler
+import prody
+from collections import OrderedDict
+
+AA_DICT = OrderedDict(
+    {'A': '0', 'C': '1', 'D': '2', 'E': '3', 'F': '4', 'G': '5', 'H': '6', 'I': '7', 'K': '8', 'L': '9',
+     'M': '10', 'N': '11', 'P': '12', 'Q': '13', 'R': '14', 'S': '15', 'T': '16', 'V': '17', 'W': '18',
+     'Y': '19', '-': '20'})
+inv_AA_DICT = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L',
+               'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W',
+               'Y', '-']
+# inv_AA_DICT = list({k for (k, v) in AA_DICT.items()})
+
+amino_dict = {'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q', 'LYS': 'K',
+              'ILE': 'I', 'PRO': 'P', 'THR': 'T', 'PHE': 'F', 'ASN': 'N',
+              'GLY': 'G', 'HIS': 'H', 'LEU': 'L', 'ARG': 'R', 'TRP': 'W',
+              'ALA': 'A', 'VAL': 'V', 'GLU': 'E', 'TYR': 'Y', 'MET': 'M', '-': '-'}
+
+amino_dict = {v: k for k, v in amino_dict.items()}
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
 caspver = "casp12"  # Change this to choose casp version
-
+checkpoints_path = "/home/cluster/users/erant_group/moshe/"
 if "s" in sys.argv:
     base_path = '/home/eliasof/pFold/data/'
     import graphOps as GO
@@ -184,8 +202,8 @@ for j in range(epochs):
                 AQdis = 0
                 nVal = len(STest)
                 for jj in range(nVal):
-                    nodeProperties, Coords, M, I, J, edgeProperties, Ds = prc.getIterData(STest, AindTest, YobsTest,
-                                                                                          MSKTest, jj, device=device)
+                    nodeProperties, Coords, M, I, J, edgeProperties, Ds, a = prc.getIterData(STest, AindTest, YobsTest,
+                                                                                          MSKTest, jj, device=device, return_a=True)
                     if nodeProperties.shape[2] > 700:
                         continue
                     nNodes = Ds.shape[0]
@@ -206,6 +224,91 @@ for j in range(epochs):
                     aloss += loss.detach()
                     AQdis += (torch.norm(maskMat(Dout, M) - maskMat(Dtrue, M)) / torch.sqrt(
                         torch.sum(Medge)).detach())
+
+                    if 1 == 1:
+                        known_idx = M == 1
+                        gt_coords = Coords.clone().t().detach().cpu().numpy()
+                        if j == 0:
+                            ##SAVE GT FILE
+                            ind = a.clone()[known_idx].detach().cpu().numpy().astype(int)
+                            # print("ind:", ind)
+                            atoms = [inv_AA_DICT[i] for i in ind]
+                            # print("atoms:", atoms)
+                            atoms_group = prody.AtomGroup('prot' + str(jj))
+                            gt_coords = Coords.clone()[:, known_idx].t().detach().cpu().numpy()
+
+                            # print("coords shape:", gt_coords.shape)
+
+                            chids = len(atoms) * ['CA']
+                            # atoms_group.setChids(chids)
+                            atoms_group.setNames(chids)
+                            # print("len(atoms):", len(atoms))
+                            atoms_group.setResnums(range(1, len(atoms) + 1))
+
+                            res_names = [amino_dict[i] for i in atoms]
+                            # print("res_names:", res_names)
+                            # exit()
+                            atoms_group.setResnames(res_names)
+                            labels = len(atoms) * ['ATOM']
+                            atoms_group.setCoords(gt_coords, label=labels)
+
+                            prody.writePDB(checkpoints_path + 'gt_prot' + str(jj) + '.pdb', atoms_group)
+
+                        ind = a.clone()[known_idx].detach().cpu().numpy().astype(int)
+                        atoms = [inv_AA_DICT[i] for i in ind]
+                        atoms_group = prody.AtomGroup('prot' + str(jj))
+                        pred_coords = xnOut.clone()[:, known_idx].t().detach().cpu().numpy()
+
+                        chids = len(atoms) * ['CA']
+                        atoms_group.setNames(chids)
+                        atoms_group.setResnums(range(1, len(atoms) + 1))
+
+                        res_names = [amino_dict[iii] for iii in atoms]
+                        atoms_group.setResnames(res_names)
+                        labels = len(atoms) * ['ATOM']
+                        atoms_group.setCoords(pred_coords, label=labels)
+
+                        prody.writePDB(checkpoints_path + 'epoch' + str(j) + '_pred_prot' + str(jj) + '.pdb',
+                                       atoms_group)
+
+                        fname = checkpoints_path + 'epoch' + str(j) + '_pred_protCoords' + str(jj) + '.txt'
+
+                        np.savetxt(fname, pred_coords)
+                        if (jj < 1000) and 1 == 1:
+                            gtC = Coords.clone()[:, known_idx].squeeze()
+                            if j == 0:
+                                distMap = utils.getDistMat(gtC)  # * M
+                                distMap = distMap.cpu().numpy()
+                                # indices_bad = distMap > 26.6
+                                # distMap[distMap > 26.6] = 0
+                                plt.figure()
+                                plt.imshow(distMap)
+                                # plt.clim(0, 26.6)
+                                plt.colorbar()
+                                plt.axis('off')
+                                plt.savefig(
+                                    checkpoints_path + '_epoch_' + str(
+                                        j) + 'distmap_gt_' + str(jj) + ".jpg")
+                                plt.close()
+                                plt.cla()
+
+                            ##Save distmap:
+                            # predC = Cout.clone().squeeze()
+                            predC = torch.from_numpy(pred_coords).t()
+                            distMap = utils.getDistMat(predC)  # * M
+                            distMap = distMap.cpu().numpy()
+                            # distMap[indices_bad] = 0
+                            plt.figure()
+                            plt.imshow(distMap)
+                            # plt.clim(0, 26.6)
+
+                            plt.colorbar()
+                            plt.axis('off')
+                            plt.savefig(
+                                checkpoints_path + '_epoch_' + str(
+                                    j) + 'distmap_pred_' + str(jj) + ".jpg")
+                            plt.close()
+                            plt.cla()
 
                 print("%2d       %10.3E   %10.3E" % (j, aloss / nVal, AQdis / nVal))
                 print('===============================================')
