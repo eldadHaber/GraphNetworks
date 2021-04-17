@@ -79,7 +79,7 @@ nEopen = 128
 nEhid = 128
 nNclose = 3
 nEclose = 1
-nlayer = 18
+nlayer = 6
 
 filename = filename = caspver + "nopen" + str(nNopen) + "nhid" + str(nEhid) + "nclose" + str(nNclose) + "nlayers" + str(
     nlayer)
