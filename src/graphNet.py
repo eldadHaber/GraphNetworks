@@ -441,7 +441,7 @@ class graphNetwork_nodesOnly(nn.Module):
 
     def __init__(self, nNin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=False, wave=True,
                  diffOrder=1, num_output=1024, dropOut=False, modelnet=False, faust=False, GCNII=False,
-                 graphUpdate=None, PPI=False, gated=False, realVarlet=False):
+                 graphUpdate=None, PPI=False, gated=False, realVarlet=False, mixDyamics=False):
         super(graphNetwork_nodesOnly, self).__init__()
         self.wave = wave
         self.realVarlet = realVarlet
@@ -449,6 +449,7 @@ class graphNetwork_nodesOnly(nn.Module):
             self.heat = True
         else:
             self.heat = False
+        self.mixDynamics = mixDyamics
         self.h = h
         self.varlet = varlet
         self.dense = dense
@@ -477,6 +478,9 @@ class graphNetwork_nodesOnly(nn.Module):
         if self.realVarlet:
             self.KN1 = nn.Parameter(torch.rand(nlayer, nhid, 2 * Nfeatures) * stdvp)
             self.KE1 = nn.Parameter(torch.rand(nlayer, nhid, 2 * Nfeatures) * stdvp)
+
+        if self.mixDynamics:
+            self.alpha = nn.Parameter(torch.ones(1) * 0.5)
 
         self.KN2 = nn.Parameter(torch.rand(nlayer, nopen, 1 * nhid) * stdvp)
         self.KN2 = nn.Parameter(identityInit(self.KN2))
@@ -792,6 +796,7 @@ class graphNetwork_nodesOnly(nn.Module):
 
                 elif self.varlet and self.gated:
                     W = F.tanh(Graph.nodeGrad(self.singleLayer(xn, self.KN2[i], relu=False)))
+                    lapX = Graph.nodeLap(xn)
                     dxn = F.tanh(lapX + Graph.edgeDiv(W * Graph.nodeGrad(xn)))
                 else:
                     dxn = (self.singleLayer(lapX, self.KN1[i], relu=False))
@@ -806,8 +811,14 @@ class graphNetwork_nodesOnly(nn.Module):
                 # dxn = F.tanh(Graph.edgeDiv(F.tanh(dxe)) + F.tanh(dxn))
                 # dxn = F.tanh(F.tanh(dxn) + Graph.edgeDiv(F.tanh(dxe)) + Graph.edgeAve(F.tanh(dxe), method='max'))
                 # dxn = F.tanh(Graph.edgeDiv(F.tanh(dxe)))
+                if self.mixDynamics:
+                    tmp_xn = xn.clone()
+                    xn_wave = 2 * xn - xn_old - (self.h ** 2) * dxn
+                    xn_heat = (xn - self.h * dxn)
+                    xn_old = tmp_xn
 
-                if self.wave:
+                    xn = (1-self.alpha)*xn_wave + self.alpha*xn_heat
+                elif self.wave:
                     tmp_xn = xn.clone()
                     xn = 2 * xn - xn_old - (self.h ** 2) * dxn
                     xn_old = tmp_xn

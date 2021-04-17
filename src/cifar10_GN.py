@@ -57,11 +57,12 @@ nNin = 3
 nhid = 1
 nNclose = 1
 nlayer = 50
-h = 1#10 / nlayer
+h = 1  # 10 / nlayer
 dropout = 0.0
 
 model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
-                                  diffOrder=1, num_output=1, dropOut=dropout, modelnet=True, gated=False, realVarlet=False)
+                                  diffOrder=1, num_output=1, dropOut=dropout, modelnet=True, gated=False,
+                                  realVarlet=False)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = model.to(device)
@@ -124,7 +125,7 @@ def train():
         plt.figure()
         plt.imshow(data.clone().squeeze().permute(1, 2, 0).cpu().numpy()[:, :, 0])
         plt.savefig('/users/others/eliasof/GraphNetworks/plots/input.jpg')
-        #plt.close()
+        # plt.close()
         target = target.to(device)
         data.batch = batch
         print("features:", features.squeeze()[0, 0, :])
