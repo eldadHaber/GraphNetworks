@@ -78,11 +78,11 @@ lrN = 1e-4
 lrE1 = 1e-4
 lrE2 = 1e-4
 
-lrO = 1e-3
-lrC = 1e-3
-lrN = 1e-3
-lrE1 = 1e-3
-lrE2 = 1e-3
+lrO = 1e-2
+lrC = 1e-2
+lrN = 1e-2
+lrE1 = 1e-2
+lrE2 = 1e-2
 
 optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO},
                         {'params': model.K2Nopen, 'lr': lrC},
@@ -152,7 +152,7 @@ for j in range(epochs):
         loss.backward()
 
         aloss += loss.detach()
-        alossAQ += (torch.norm(M * Dout - M * Dtrue) / torch.sqrt(torch.sum(M)).detach())
+        alossAQ += torch.sqrt((torch.norm(M * Dout - M * Dtrue) / torch.sum(M)).detach())
         gN = model.KNclose.grad.norm().item()
         gE1 = model.KE1.grad.norm().item()
         gE2 = model.KE2.grad.norm().item()
