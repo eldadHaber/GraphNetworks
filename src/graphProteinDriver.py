@@ -81,8 +81,8 @@ lrE2 = 1e-4
 lrO = 1e-3
 lrC = 1e-3
 lrN = 1e-3
-lrE1 = 1e-3
-lrE2 = 1e-3
+lrE1 = 1e-5
+lrE2 = 1e-5
 
 optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO},
                         {'params': model.K2Nopen, 'lr': lrC},
@@ -94,7 +94,7 @@ optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO},
                         {'params': model.KN2, 'lr': lrE2},
                         {'params': model.KNclose, 'lr': lrE2}])
 
-optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)
+#optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)
 
 
 alossBest = 1e6
