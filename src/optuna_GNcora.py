@@ -72,7 +72,7 @@ for nlayers in num_layers:
         elif dataset == 'PubMed':
             nNin = 500
         nEin = 1
-        n_channels = trial.suggest_categorical('n_channels', [64, 128, 256])
+        n_channels = 64 #trial.suggest_categorical('n_channels', [64, 128, 256])
         nopen = n_channels
         nhid = n_channels
         nNclose = n_channels
@@ -131,15 +131,17 @@ for nlayers in num_layers:
         model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, n_layers, h=h, dense=False, varlet=True,
                                           wave=False,
                                           diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, gated=False,
-                                          realVarlet=False)
+                                          realVarlet=False, mixDyamics=True)
         model.reset_parameters()
         model.to(device)
         # optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=wd)
         optimizer = torch.optim.Adam([
-            dict(params=model.KN1, lr=lrGCN, weight_decay=wdGCN),
-            dict(params=model.KN2, lr=lrGCN, weight_decay=wdGCN),
+            dict(params=model.KN1, lr=lrGCN, weight_decay=0),
+            dict(params=model.KN2, lr=lrGCN, weight_decay=0),
             dict(params=model.K1Nopen, weight_decay=wd),
-            dict(params=model.KNclose, weight_decay=wd)
+            dict(params=model.KNclose, weight_decay=wd),
+            dict(params=model.alpha, weight_decay=0),
+
         ], lr=lr)
 
         # optimizer = torch.optim.Adam([
