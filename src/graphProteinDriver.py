@@ -176,7 +176,18 @@ for j in range(epochs):
         Medge = torch.ger(M.squeeze(), M.squeeze())
 
         #loss = F.mse_loss(M * Dout, M * Dtrue)
-        loss = F.mse_loss(maskMat(Dout, M), maskMat(Dtrue, M))
+        n = xnOut.shape[-1]
+        Xl = torch.zeros(3, n, device=xnOut.device)
+        Xl[0, :] = 3.9 * torch.arange(0, n)
+        Dl = torch.sum(Xl ** 2, dim=0, keepdim=True) + torch.sum(Xl ** 2, dim=0, keepdim=True).t() - 2 * Xl.t() @ Xl
+        Dl = torch.sqrt(torch.relu(Dl))
+        ML = (M * Dl - M * torch.sqrt(torch.relu(Dtrue))) > 0
+        MS = torch.sqrt(torch.relu(Dtrue)) < 7 * 3.9
+        Medge = (Medge & MS & ML) * 1.0
+        R = torch.triu(Dout - torch.sqrt(torch.relu(Dtrue)), 1)
+        loss = torch.norm(M * R) ** 2 / torch.sum(M)
+        loss = torch.sqrt(loss)
+        #loss = F.mse_loss(maskMat(Dout, M), maskMat(Dtrue, M))
         loss.backward()
 
 
@@ -227,7 +238,22 @@ for j in range(epochs):
                     Medge = torch.ger(M.squeeze(), M.squeeze())
 
                     # loss = F.mse_loss(M * Dout, M * Dtrue)
-                    loss = F.mse_loss(maskMat(Dout, M), maskMat(Dtrue, M))
+                    #loss = F.mse_loss(maskMat(Dout, M), maskMat(Dtrue, M))
+
+                    n = xnOut.shape[-1]
+                    Xl = torch.zeros(3, n, device=xnOut.device)
+                    Xl[0, :] = 3.9 * torch.arange(0, n)
+                    Dl = torch.sum(Xl ** 2, dim=0, keepdim=True) + torch.sum(Xl ** 2, dim=0,
+                                                                             keepdim=True).t() - 2 * Xl.t() @ Xl
+                    Dl = torch.sqrt(torch.relu(Dl))
+                    ML = (M * Dl - M * torch.sqrt(torch.relu(Dtrue))) > 0
+                    MS = torch.sqrt(torch.relu(Dtrue)) < 7 * 3.9
+                    Medge = (Medge & MS & ML) * 1.0
+                    R = torch.triu(Dout - torch.sqrt(torch.relu(Dtrue)), 1)
+                    loss = torch.norm(M * R) ** 2 / torch.sum(M)
+                    loss = torch.sqrt(loss)
+
+
                     aloss += loss.detach()
                     AQdis += (torch.norm(maskMat(Dout, M) - maskMat(Dtrue, M)) / torch.sqrt(
                         torch.sum(Medge)).detach())
