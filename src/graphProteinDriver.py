@@ -202,7 +202,7 @@ for j in range(epochs):
             aloss = 0.0
             alossAQ = 0.0
         # Validation
-        nextval = 10
+        nextval = 10000
         if (i + 1) % nextval == 0:
             with torch.no_grad():
                 aloss = 0
@@ -233,7 +233,6 @@ for j in range(epochs):
                         torch.sum(Medge)).detach())
 
                     if 1 == 1:
-                        print("M shape:", M.shape)
                         known_idx = (M == 1).squeeze()
                         gt_coords = Coords.clone().squeeze().t().detach().cpu().numpy()
                         if j == 0:
