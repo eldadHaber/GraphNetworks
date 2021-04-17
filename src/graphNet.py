@@ -837,9 +837,7 @@ class graphNetwork_nodesOnly(nn.Module):
         xn = F.dropout(xn, p=self.dropout, training=self.training)
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
 
-        print("xm shape:", xn.shape)
         xn = xn.squeeze().t()
-        print("xm shape:", xn.shape)
         if self.modelnet:
             out = global_max_pool(xn, data.batch)
             out = self.mlp(out)
