@@ -203,8 +203,6 @@ for j in range(epochs):
 
                     # loss = F.mse_loss(M * Dout, M * Dtrue)
                     loss = F.mse_loss(maskMat(Dout, M), maskMat(Dtrue, M))
-                    loss.backward()
-
                     aloss += loss.detach()
                     AQdis += (torch.norm(maskMat(Dout, M) - maskMat(Dtrue, M)) / torch.sqrt(
                         torch.sum(Medge)).detach())
