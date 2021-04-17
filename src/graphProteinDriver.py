@@ -234,7 +234,7 @@ for j in range(epochs):
 
                     if 1 == 1:
                         known_idx = M == 1
-                        gt_coords = Coords.clone().t().detach().cpu().numpy()
+                        gt_coords = Coords.clone().squeeze().t().detach().cpu().numpy()
                         if j == 0:
                             ##SAVE GT FILE
                             ind = a.clone()[known_idx].detach().cpu().numpy().astype(int)
