@@ -107,7 +107,7 @@ def maskMat(T,M):
 ndata = n_data_total
 bestModel = model
 hist = torch.zeros(epochs)
-
+ndata = len(STest)
 for j in range(epochs):
     # Prepare the data
     aloss = 0.0
@@ -115,8 +115,8 @@ for j in range(epochs):
     for i in range(ndata):
 
         # Get the data
-        nodeProperties, Coords, M, I, J, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
-                                                                              MSK, i, device=device)
+        nodeProperties, Coords, M, I, J, edgeProperties, Ds = prc.getIterData(STest, AindTest, YobsTest,
+                                                                              MSKTest, i, device=device)
 
         if nodeProperties.shape[2] > 700:
             continue
@@ -161,7 +161,7 @@ for j in range(epochs):
 
         optimizer.step()
         # scheduler.step()
-        nprnt = 100
+        nprnt = 10
         if (i + 1) % nprnt == 0:
             aloss = aloss / nprnt
             alossAQ = alossAQ / nprnt
