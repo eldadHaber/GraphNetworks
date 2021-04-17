@@ -126,7 +126,7 @@ alossBest = 1e6
 epochs = 1000
 
 
-def maskMat(T,M):
+def maskMat(T, M):
     M = M.squeeze()
     MT = (M*(M*T).t()).t()
     return MT
@@ -169,7 +169,7 @@ for j in range(epochs):
         # print(prof.key_averages())
 
         xnOut, xeOut = model(xn, xe, G)
-        xnOut = utils.distConstraint(xnOut, dc=3.8)
+        #xnOut = utils.distConstraint(xnOut, dc=3.8)
         Dout = utils.getDistMat(xnOut)
         Dtrue = utils.getDistMat(Coords)
 
