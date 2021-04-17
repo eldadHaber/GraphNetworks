@@ -435,7 +435,9 @@ def MLP(channels, batch_norm=True):
         Seq(Lin(channels[i - 1], channels[i]), ReLU())
         for i in range(1, len(channels))
     ])
-#, BN(channels[i])
+
+
+# , BN(channels[i])
 
 class graphNetwork_nodesOnly(nn.Module):
 
@@ -681,7 +683,7 @@ class graphNetwork_nodesOnly(nn.Module):
         if self.dropout:
             xn = F.dropout(xn, p=self.dropout, training=self.training)
 
-        if 1==0:
+        if 1 == 0:
             plt.figure()
             print("xn shape:", xn.shape)
             img = xn.clone().detach().squeeze()[0, :].cpu().numpy().reshape(32, 32, order='C')
@@ -781,7 +783,7 @@ class graphNetwork_nodesOnly(nn.Module):
 
                 # that's the best for cora etc
                 if self.varlet and not self.gated:
-                    efficient=True
+                    efficient = True
                     if efficient:
                         dxn = (self.singleLayer(gradX, self.KN2[i], norm=False, relu=False))
                         dxn = Graph.edgeDiv(dxn)  # + Graph.edgeAve(dxe2, method='ave')
@@ -817,7 +819,7 @@ class graphNetwork_nodesOnly(nn.Module):
                     xn_heat = (xn - self.h * dxn)
                     xn_old = tmp_xn
 
-                    xn = (1-F.sigmoid(self.alpha[i]))*xn_wave + F.sigmoid(self.alpha[i])*xn_heat
+                    xn = (1 - F.sigmoid(self.alpha[i])) * xn_wave + F.sigmoid(self.alpha[i]) * xn_heat
                 elif self.wave:
                     tmp_xn = xn.clone()
                     xn = 2 * xn - xn_old - (self.h ** 2) * dxn
@@ -881,7 +883,7 @@ class graphNetwork_proteins(nn.Module):
 
         self.h = h
         self.varlet = varlet
-        self.dense  = dense
+        self.dense = dense
         stdv = 1e-2
         stdvp = 1e-3
         self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
@@ -903,27 +905,27 @@ class graphNetwork_proteins(nn.Module):
             self.KE1 = nn.Parameter(torch.rand(nlayer, nhid, Nfeatures, 9, 9) * stdvp)
             self.KE2 = nn.Parameter(torch.rand(nlayer, nopen, nhid, 9, 9) * stdvp)
         else:
-            Id  = torch.eye(nhid,Nfeatures).unsqueeze(0)
-            Idt = torch.eye(nopen,nhid).unsqueeze(0)
+            Id = torch.eye(nhid, Nfeatures).unsqueeze(0)
+            Idt = torch.eye(nopen, nhid).unsqueeze(0)
 
-            IdTensor  = torch.repeat_interleave(Id, nlayer, dim=0)
+            IdTensor = torch.repeat_interleave(Id, nlayer, dim=0)
             IdTensort = torch.repeat_interleave(Idt, nlayer, dim=0)
 
-            #self.KE1 = nn.Parameter(torch.rand(nlayer, nhid, Nfeatures) * stdvp)
-            #self.KE2 = nn.Parameter(torch.rand(nlayer, nopen, nhid) * stdvp)
+            # self.KE1 = nn.Parameter(torch.rand(nlayer, nhid, Nfeatures) * stdvp)
+            # self.KE2 = nn.Parameter(torch.rand(nlayer, nopen, nhid) * stdvp)
             self.KE1 = nn.Parameter(IdTensor * stdvp)
             self.KE2 = nn.Parameter(IdTensort * stdvp)
 
-        Id  = torch.eye(nhid,Nfeatures).unsqueeze(0)
-        Idt = torch.eye(nopen,nhid).unsqueeze(0)
+        Id = torch.eye(nhid, Nfeatures).unsqueeze(0)
+        Idt = torch.eye(nopen, nhid).unsqueeze(0)
         IdTensor = torch.repeat_interleave(Id, nlayer, dim=0)
         IdTensort = torch.repeat_interleave(Idt, nlayer, dim=0)
 
         self.KN1 = nn.Parameter(IdTensor * stdvp)
         self.KN2 = nn.Parameter(IdTensort * stdvp)
 
-        #self.KN1 = nn.Parameter(torch.rand(nlayer, nhid, Nfeatures) * stdvp)
-        #self.KN2 = nn.Parameter(torch.rand(nlayer, nopen, nhid) * stdvp)
+        # self.KN1 = nn.Parameter(torch.rand(nlayer, nhid, Nfeatures) * stdvp)
+        # self.KN2 = nn.Parameter(torch.rand(nlayer, nopen, nhid) * stdvp)
 
     def edgeConv(self, xe, K):
         if xe.dim() == 4:
@@ -940,9 +942,9 @@ class graphNetwork_proteins(nn.Module):
 
     def doubleLayer(self, x, K1, K2):
         x = self.edgeConv(x, K1)
-        #x = F.layer_norm(x, x.shape)
-        #x = tv_norm(x)
-        #x = torch.relu(x)
+        # x = F.layer_norm(x, x.shape)
+        # x = tv_norm(x)
+        # x = torch.relu(x)
         x = torch.tanh(x)
         x = self.edgeConv(x, K2)
 
@@ -969,10 +971,10 @@ class graphNetwork_proteins(nn.Module):
                 dxe = torch.cat([intX, xe, gradX], dim=1)
 
             dxe = self.doubleLayer(dxe, self.KE1[i], self.KE2[i])
-            #dxe = F.layer_norm(dxe, dxe.shape)
-            #dxe = tv_norm(dxe)
+            # dxe = F.layer_norm(dxe, dxe.shape)
+            # dxe = tv_norm(dxe)
 
-            #dxe = torch.relu(dxe)
+            # dxe = torch.relu(dxe)
             if self.varlet:
                 xe = xe + self.h * dxe
                 flux = xe

@@ -54,7 +54,6 @@ for line in f:
 
 print("**********************************************************************************")
 
-
 # Setup the network and its parameters
 for nlayers in num_layers:
     torch.cuda.synchronize()
@@ -72,7 +71,7 @@ for nlayers in num_layers:
         elif dataset == 'PubMed':
             nNin = 500
         nEin = 1
-        n_channels = 64 #trial.suggest_categorical('n_channels', [64, 128, 256])
+        n_channels = 64  # trial.suggest_categorical('n_channels', [64, 128, 256])
         nopen = n_channels
         nhid = n_channels
         nNclose = n_channels
