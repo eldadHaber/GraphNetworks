@@ -152,9 +152,8 @@ for j in range(epochs):
 
         #loss = F.mse_loss(M * Dout, M * Dtrue)
         loss = F.mse_loss(maskMat(Dout, M), maskMat(Dtrue, M))
-        if i%4 == 3:
-            loss.backward()
-            optimizer.zero_grad()
+        loss.backward()
+
 
         aloss += loss.detach()
         alossAQ += (torch.norm(maskMat(Dout, M) - maskMat(Dtrue, M)) / torch.sqrt(torch.sum(Medge)).detach())
@@ -164,7 +163,9 @@ for j in range(epochs):
         gO = model.KN1.grad.norm().item()
         gC = model.KN2.grad.norm().item()
 
-        optimizer.step()
+        if i%4 == 3:
+            optimizer.zero_grad()
+            optimizer.step()
         # scheduler.step()
         nprnt = 1
         if (i + 1) % nprnt == 0:
