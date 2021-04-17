@@ -114,6 +114,8 @@ for j in range(epochs):
     # Prepare the data
     aloss = 0.0
     alossAQ = 0.0
+    optimizer.zero_grad()
+
     for i in range(ndata):
 
         # Get the data
@@ -134,7 +136,6 @@ for j in range(epochs):
 
         #M = torch.ger(M.squeeze(), M.squeeze())
 
-        optimizer.zero_grad()
 
         ## Profiler:
         # with profiler.profile(record_shapes=True, use_cuda=True, profile_memory=True) as prof:
@@ -151,7 +152,9 @@ for j in range(epochs):
 
         #loss = F.mse_loss(M * Dout, M * Dtrue)
         loss = F.mse_loss(maskMat(Dout, M), maskMat(Dtrue, M))
-        loss.backward()
+        if i%4 == 3:
+            loss.backward()
+            optimizer.zero_grad()
 
         aloss += loss.detach()
         alossAQ += (torch.norm(maskMat(Dout, M) - maskMat(Dtrue, M)) / torch.sqrt(torch.sum(Medge)).detach())
