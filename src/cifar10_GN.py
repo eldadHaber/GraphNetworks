@@ -52,11 +52,11 @@ def MLP(channels, batch_norm=True):
 
 
 nEin = 1
-nopen = 1
+nopen = 128
 nNin = 3
-nhid = 1
-nNclose = 1
-nlayer = 50
+nhid = 128
+nNclose = 128
+nlayer = 6
 h = 1  # 10 / nlayer
 dropout = 0.0
 
