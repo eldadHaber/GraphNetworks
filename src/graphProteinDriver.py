@@ -94,7 +94,7 @@ optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO},
                         {'params': model.KN2, 'lr': lrE2},
                         {'params': model.KNclose, 'lr': lrC}])
 
-#optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)
+optimizer = optim.Adam(model.parameters(), lr=0.0001, weight_decay=1e-4)
 
 
 alossBest = 1e6
