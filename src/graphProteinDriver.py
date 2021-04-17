@@ -81,6 +81,13 @@ nNclose = 3
 nEclose = 1
 nlayer = 18
 
+filename = filename = caspver + "nopen" + str(nNopen) + "nhid" + str(nEhid) + "nclose" + str(nNclose) + "nlayers" + str(
+    nlayer)
+checkpoints_path = checkpoints_path + "/" + filename + "/"
+import os
+
+if not os.path.exists(checkpoints_path):
+    os.makedirs(checkpoints_path)
 
 model = GN.graphNetwork_proteins(nNin, nEin, nNopen, nEhid, nNclose, nlayer, h=0.5, dense=False, varlet=True)
 model.to(device)
