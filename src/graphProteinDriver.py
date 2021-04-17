@@ -10,7 +10,7 @@ import torch.autograd.profiler as profiler
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
-caspver = "casp11"  # Change this to choose casp version
+caspver = "casp12"  # Change this to choose casp version
 
 if "s" in sys.argv:
     base_path = '/home/eliasof/pFold/data/'
@@ -57,13 +57,14 @@ n_data_total = len(S)
 nNin = 40
 nEin = 1
 nNopen = 128
-nEopen = 64
-nEhid = 64
+nEopen = 128
+nEhid = 128
 nNclose = 3
 nEclose = 1
 nlayer = 6
 
-model = GN.graphNetwork(nNin, nEin, nNopen, nEopen, nEhid, nNclose, nEclose, nlayer, h=.1)
+
+model = GN.graphNetwork_proteins(nNin, nEin, nNopen, nEhid, nNclose, nlayer, h=.1, dense=False)
 model.to(device)
 
 total_params = sum(p.numel() for p in model.parameters())
@@ -82,16 +83,26 @@ lrC = 1e-3
 lrN = 1e-3
 lrE1 = 1e-3
 lrE2 = 1e-3
-optimizer = optim.Adam([{'params': model.KNopen, 'lr': lrO},
-                        {'params': model.KNclose, 'lr': lrC},
-                        {'params': model.KEopen, 'lr': lrO},
-                        {'params': model.KEclose, 'lr': lrC},
+
+optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO},
+                        {'params': model.K2Nopen, 'lr': lrC},
+                        {'params': model.K1Eopen, 'lr': lrO},
+                        {'params': model.K2Eopen, 'lr': lrC},
                         {'params': model.KE1, 'lr': lrE1},
                         {'params': model.KE2, 'lr': lrE2},
-                        {'params': model.KN, 'lr': lrN}])
+                        {'params': model.KN1, 'lr': lrE1},
+                        {'params': model.KN2, 'lr': lrE2},
+                        {'params': model.KNclose, 'lr': lrE2}])
+
 
 alossBest = 1e6
 epochs = 1000
+
+
+def maskMat(T,M):
+    M = M.squeeze()
+    MT = (M*(M*T).t()).t()
+    return MT
 
 ndata = n_data_total
 bestModel = model
@@ -132,16 +143,19 @@ for j in range(epochs):
         Dout = utils.getDistMat(xnOut)
         Dtrue = utils.getDistMat(Coords)
 
-        loss = F.mse_loss(M * Dout, M * Dtrue)
+
+
+        #loss = F.mse_loss(M * Dout, M * Dtrue)
+        loss = F.mse_loss(maskMat(Dout, M), maskMat(Dtrue, M))
         loss.backward()
 
         aloss += loss.detach()
         alossAQ += (torch.norm(M * Dout - M * Dtrue) / torch.sqrt(torch.sum(M)).detach())
-        gN = model.KN.grad.norm().item()
+        gN = model.KNclose.grad.norm().item()
         gE1 = model.KE1.grad.norm().item()
         gE2 = model.KE2.grad.norm().item()
-        gO = model.KNopen.grad.norm().item()
-        gC = model.KNclose.grad.norm().item()
+        gO = model.KN1.grad.norm().item()
+        gC = model.KN2.grad.norm().item()
 
         optimizer.step()
         # scheduler.step()

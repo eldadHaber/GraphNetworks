@@ -856,6 +856,128 @@ class graphNetwork_nodesOnly(nn.Module):
 
 # ----------------------------------------------------------------------------
 
+class graphNetwork_proteins(nn.Module):
+
+    def __init__(self, nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=False):
+        super(graphNetwork_proteins, self).__init__()
+
+        self.h = h
+        self.varlet = varlet
+        self.dense  = dense
+        stdv = 1.0 #1e-2
+        stdvp = 1.0 # 1e-3
+        self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
+        self.K2Nopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
+        if dense:
+            self.K1Eopen = nn.Parameter(torch.randn(nopen, nEin, 9, 9) * stdv)
+            self.K2Eopen = nn.Parameter(torch.randn(nopen, nopen, 9, 9) * stdv)
+        else:
+            self.K1Eopen = nn.Parameter(torch.randn(nopen, nEin) * stdv)
+            self.K2Eopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
+
+        self.KNclose = nn.Parameter(torch.randn(nNclose, nopen) * stdv)
+
+        if varlet:
+            Nfeatures = 2 * nopen
+        else:
+            Nfeatures = 3 * nopen
+        if dense:
+            self.KE1 = nn.Parameter(torch.rand(nlayer, nhid, Nfeatures, 9, 9) * stdvp)
+            self.KE2 = nn.Parameter(torch.rand(nlayer, nopen, nhid, 9, 9) * stdvp)
+        else:
+            Id  = torch.eye(nhid,Nfeatures).unsqueeze(0)
+            Idt = torch.eye(nopen,nhid).unsqueeze(0)
+
+            IdTensor  = torch.repeat_interleave(Id, nlayer, dim=0)
+            IdTensort = torch.repeat_interleave(Idt, nlayer, dim=0)
+
+            #self.KE1 = nn.Parameter(torch.rand(nlayer, nhid, Nfeatures) * stdvp)
+            #self.KE2 = nn.Parameter(torch.rand(nlayer, nopen, nhid) * stdvp)
+            self.KE1 = nn.Parameter(IdTensor * stdvp)
+            self.KE2 = nn.Parameter(IdTensort * stdvp)
+
+        Id  = torch.eye(nhid,Nfeatures).unsqueeze(0)
+        Idt = torch.eye(nopen,nhid).unsqueeze(0)
+        IdTensor = torch.repeat_interleave(Id, nlayer, dim=0)
+        IdTensort = torch.repeat_interleave(Idt, nlayer, dim=0)
+
+        self.KN1 = nn.Parameter(IdTensor * stdvp)
+        self.KN2 = nn.Parameter(IdTensort * stdvp)
+
+        #self.KN1 = nn.Parameter(torch.rand(nlayer, nhid, Nfeatures) * stdvp)
+        #self.KN2 = nn.Parameter(torch.rand(nlayer, nopen, nhid) * stdvp)
+
+    def edgeConv(self, xe, K):
+        if xe.dim() == 4:
+            if K.dim() == 2:
+                xe = F.conv2d(xe, K.unsqueeze(-1).unsqueeze(-1))
+            else:
+                xe = conv2(xe, K)
+        elif xe.dim() == 3:
+            if K.dim() == 2:
+                xe = F.conv1d(xe, K.unsqueeze(-1))
+            else:
+                xe = conv1(xe, K)
+        return xe
+
+    def doubleLayer(self, x, K1, K2):
+        x = self.edgeConv(x, K1)
+        #x = F.layer_norm(x, x.shape)
+        x = tv_norm(x)
+        #x = torch.relu(x)
+        x = torch.tanh(x)
+        x = self.edgeConv(x, K2)
+
+        return x
+
+    def forward(self, xn, xe, Graph):
+
+        # Opening layer
+        # xn = [B, C, N]
+        # xe = [B, C, N, N] or [B, C, E]
+        # Opening layer
+        xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
+        xe = self.doubleLayer(xe, self.K1Eopen, self.K2Eopen)
+
+        nlayers = self.KE1.shape[0]
+
+        for i in range(nlayers):
+            # gradX = torch.exp(-torch.abs(Graph.nodeGrad(xn)))
+            gradX = Graph.nodeGrad(xn)
+            intX = Graph.nodeAve(xn)
+            if self.varlet:
+                dxe = torch.cat([intX, gradX], dim=1)
+            else:
+                dxe = torch.cat([intX, xe, gradX], dim=1)
+
+            dxe = self.doubleLayer(dxe, self.KE1[i], self.KE2[i])
+            #dxe = F.layer_norm(dxe, dxe.shape)
+            #dxe = tv_norm(dxe)
+
+            #dxe = torch.relu(dxe)
+            if self.varlet:
+                xe = xe + self.h * dxe
+                flux = xe
+            else:
+                flux = dxe
+            divE = Graph.edgeDiv(flux)
+            aveE = Graph.edgeAve(flux, method='ave')
+
+            if self.varlet:
+                dxn = torch.cat([aveE, divE], dim=1)
+            else:
+                dxn = torch.cat([aveE, divE, xn], dim=1)
+
+            dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
+
+            xn = xn - self.h * dxn
+            if self.varlet == False:
+                xe = xe - self.h * dxe
+
+        xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
+
+        return xn, xe
+
 
 Test = False
 if Test:
