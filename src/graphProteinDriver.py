@@ -143,7 +143,7 @@ for j in range(epochs):
         # print(prof.key_averages())
 
         xnOut, xeOut = model(xn, xe, G)
-        # xnOut = utils.distConstraint(xnOut, dc=3.79)
+        xnOut = utils.distConstraint(xnOut, dc=3.8)
         Dout = utils.getDistMat(xnOut)
         Dtrue = utils.getDistMat(Coords)
 
