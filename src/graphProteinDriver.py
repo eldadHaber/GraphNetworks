@@ -283,7 +283,7 @@ for j in range(epochs):
 
                         np.savetxt(fname, pred_coords)
                         if (jj < 1000) and 1 == 1:
-                            gtC = Coords.clone()[:, known_idx].squeeze()
+                            gtC = Coords.clone().squeeze()[:, known_idx].squeeze()
                             if j == 0:
                                 distMap = utils.getDistMat(gtC)  # * M
                                 distMap = distMap.cpu().numpy()
