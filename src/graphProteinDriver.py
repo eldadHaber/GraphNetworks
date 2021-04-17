@@ -251,7 +251,7 @@ for j in range(epochs):
                     ML = (Medge * Dl - Medge * torch.sqrt(torch.relu(Dtrue))) > 0
                     MS = torch.sqrt(torch.relu(Dtrue)) < 7 * 3.9
                     Medge = (Medge & MS & ML) * 1.0
-                    Medge = torch.triu(M, 1)
+                    Medge = torch.triu(Medge, 1)
                     R = torch.triu(Dout - torch.sqrt(torch.relu(Dtrue)), 1)
                     loss = torch.norm(Medge * R) ** 2 / torch.sum(Medge)
                     loss = torch.sqrt(loss)
