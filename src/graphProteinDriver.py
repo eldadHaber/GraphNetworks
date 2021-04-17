@@ -92,7 +92,7 @@ optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO},
                         {'params': model.KE2, 'lr': lrE2},
                         {'params': model.KN1, 'lr': lrE1},
                         {'params': model.KN2, 'lr': lrE2},
-                        {'params': model.KNclose, 'lr': lrE2}])
+                        {'params': model.KNclose, 'lr': lrC}])
 
 #optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)
 
