@@ -220,8 +220,8 @@ for j in range(epochs):
             aloss = 0.0
             alossAQ = 0.0
         # Validation
-        nextval = 10000
-        if (i + 1) % nextval == 0:
+        nextval = 10
+        if (j + 1) % nextval == 0:
             with torch.no_grad():
                 aloss = 0
                 AQdis = 0
