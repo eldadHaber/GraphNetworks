@@ -58,7 +58,7 @@ for line in f:
     print(line, end='', flush=True)
 
 print("**********************************************************************************")
-datastr = "cora"
+
 num_layers = [2, 4, 8, 16, 32, 64]
 for nlayers in num_layers:
     torch.cuda.synchronize()
@@ -75,7 +75,7 @@ for nlayers in num_layers:
         nhid = n_channels
         nNclose = n_channels
         nlayer = nlayers
-        datastr = "cora"
+        datastr = "chameleon"
         print("DATA SET IS:", datastr)
         # h = 1 / n_layers
         h = trial.suggest_discrete_uniform('h', 0.1 / nlayer, 3, q=1 / (nlayer))
@@ -142,7 +142,7 @@ for nlayers in num_layers:
                 return loss_test.item(), acc_test.item()
 
         def train(datastr, splitstr, num_output):
-            slurm = "s" in sys.argv
+            slurm = ("s" in sys.argv) or ("e" in sys.argv)
             adj, features, labels, idx_train, idx_val, idx_test, num_features, num_labels = process.full_load_data(
                 datastr,
                 splitstr, slurm=slurm)
@@ -216,7 +216,7 @@ for nlayers in num_layers:
                 num_output = 5
             else:
                 num_output = 5
-            if "s" in sys.argv:
+            if ("s" in sys.argv) or ("e" in sys.argv):
                 splitstr = 'splits/' + datastr + '_split_0.6_0.2_' + str(i) + '.npz'
             else:
                 splitstr = '../splits/' + datastr + '_split_0.6_0.2_' + str(i) + '.npz'
