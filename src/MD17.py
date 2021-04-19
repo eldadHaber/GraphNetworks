@@ -120,9 +120,9 @@ if __name__ == '__main__':
     # R_mean = calculate_mean_coordinates(dataloader_train)
     for epoch in range(epochs):
         t1 = time.time()
-        aloss_t,aloss_E_t,aloss_F_t,MAE_t,Fps_t,Fts_t, t_dataload_t, t_prepare_t, t_model_t, t_backprop_t = use_model(model, dataloader_train, train=True, max_samples=1e6, optimizer=optimizer, device=device, batch_size=batch_size, use_mean_map=use_mean_map, channels=nopen,R_mean=R_mean)
+        aloss_t,aloss_E_t,aloss_F_t,MAE_t,Fps_t,Fts_t, t_dataload_t, t_prepare_t, t_model_t, t_backprop_t = use_model(model, dataloader_train, train=True, max_samples=1e6, optimizer=optimizer, device=device, batch_size=batch_size, use_mean_map=use_mean_map, channels=nopen*3,R_mean=R_mean)
         t2 = time.time()
-        aloss_v,aloss_E_v,aloss_F_v,MAE_v,Fps_v,Fts_v,t_dataload_v, t_prepare_v, t_model_v, t_backprop_v = use_model(model, dataloader_val, train=False, max_samples=100, optimizer=optimizer, device=device, batch_size=batch_size, use_mean_map=use_mean_map, channels=nopen,R_mean=R_mean)
+        aloss_v,aloss_E_v,aloss_F_v,MAE_v,Fps_v,Fts_v,t_dataload_v, t_prepare_v, t_model_v, t_backprop_v = use_model(model, dataloader_val, train=False, max_samples=100, optimizer=optimizer, device=device, batch_size=batch_size, use_mean_map=use_mean_map, channels=nopen*3,R_mean=R_mean)
         t3 = time.time()
 
         if MAE_v < MAE_best:

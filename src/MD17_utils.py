@@ -68,6 +68,8 @@ def getBatchData_MD17_fast(Coords, z, use_mean_map=False, R_mean=None):
 
     vals, J = torch.topk(iD2, k=nn-1, dim=-1)
 
+    wiD2 = torch.gather(iD2, -1, J).view(-1)[None,None,:]
+    wD2 = torch.gather(D2, -1, J).view(-1)[None,None,:]
 
 
     I = (torch.ger(torch.arange(nn), torch.ones(nn-1, dtype=torch.long))[None,:,:]).repeat(nb,1,1).to(device=z.device)
@@ -87,12 +89,6 @@ def getBatchData_MD17_fast(Coords, z, use_mean_map=False, R_mean=None):
     I = I.view(-1) + one
     J = J.view(-1) + one
 
-    iD2res = iD2.reshape(nb,-1)
-
-    wiD2 = iD2.view(-1)[None,None,:]
-    wD2 = D2.view(-1)[None,None,:]
-
-
 
     # if use_mean_map:
     #     dr = h * (torch.randint(0,2,Coords.shape,device=z.device)*2-1)
@@ -106,7 +102,7 @@ def getBatchData_MD17_fast(Coords, z, use_mean_map=False, R_mean=None):
     #
     #     iD = torch.cat((iD,iD_diff,iD_var), dim=1)
     #     xe = xe.repeat(1,3,1)
-    return I, J, xn, xe, nn*nb, D2, iD2
+    return I, J, xn, xe, nn*nb, wD2, wiD2
 
 def getBatchData_MD17(Coords, device='cpu'):
     I = torch.tensor([]).to(device)

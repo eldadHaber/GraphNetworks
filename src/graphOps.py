@@ -96,8 +96,8 @@ class graph(nn.Module):
         # for j in range(self.jInd.numel()):
         #    x[:,:,self.jInd[j]] -= w*g[:,:,j]
 
-        x.index_add_(2, self.iInd, W * g)
-        x.index_add_(2, self.jInd, -W * g)
+        x.index_add_(2, self.iInd, W[:,:g.shape[1],:] * g)
+        x.index_add_(2, self.jInd, -W[:,:g.shape[1],:] * g)
 
         return x
 
@@ -107,8 +107,8 @@ class graph(nn.Module):
         x1 = torch.zeros(g.shape[0], g.shape[1], self.nnodes, device=g.device)
         x2 = torch.zeros(g.shape[0], g.shape[1], self.nnodes, device=g.device)
 
-        x1.index_add_(2, self.iInd, W * g)
-        x2.index_add_(2, self.jInd, W * g)
+        x1.index_add_(2, self.iInd, W[:,:g.shape[1],:] * g)
+        x2.index_add_(2, self.jInd, W[:,:g.shape[1],:] * g)
         if method == 'max':
             x = torch.max(x1, x2)
         elif method == 'ave':
