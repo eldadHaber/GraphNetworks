@@ -14,6 +14,7 @@ import process
 import utils_gcnii
 from torch_geometric.utils import sparse as sparseConvert
 import optuna
+print(torch.cuda.get_device_properties('cuda:0'))
 
 if "s" in sys.argv:
     base_path = '/home/eliasof/pdeGraphs/data/'
