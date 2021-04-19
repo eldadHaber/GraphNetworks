@@ -74,7 +74,7 @@ for nlayers in num_layers:
         nopen = n_channels
         nhid = n_channels
         nNclose = n_channels
-        n_layers = nlayers
+        nlayer = nlayers
         datastr = "cora"
         print("DATA SET IS:", datastr)
         # h = 1 / n_layers
@@ -82,7 +82,7 @@ for nlayers in num_layers:
         dropout = trial.suggest_discrete_uniform('dropout', 0.5, 0.7, q=0.1)
         # h = 20 / nlayer
         print("n channels:", nopen)
-        print("n layers:", n_layers)
+        print("n layers:", nlayer)
         print("h step:", h)
         print("dropout:", dropout)
 
