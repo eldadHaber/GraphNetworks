@@ -70,9 +70,9 @@ def getBatchData(S, Aind, Yobs, MSK, IND, device=device):
     M = torch.ger(M.squeeze(),M.squeeze())
     N = xn.shape[-1]
 
-    for i in range(nbatch):
+    for i in range(1,nbatch):
         # Get the data
-        xni, Coordsi, Mi, Ii, Ji, xei, Dsi = prc.getIterData(S, Aind, Yobs, MSK, i, device=device)
+        xni, Coordsi, Mi, Ii, Ji, xei, Dsi = prc.getIterData(S, Aind, Yobs, MSK, IND[i], device=device)
         I = torch.cat((I, Ii+N))
         J = torch.cat((J, Ji+N))
         xe = torch.cat((xe, xei),dim=2)

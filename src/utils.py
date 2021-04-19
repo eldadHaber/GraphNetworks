@@ -88,6 +88,32 @@ def getDistMat(X, msk=torch.tensor([1.0])):
     mm = torch.ger(msk, msk)
     return mm * torch.sqrt(torch.relu(D))
 
+def getBatchDRMSDloss(XX, XXobs, N, MM):
+    XX = XX.squeeze(0)
+    N  = torch.cat((torch.zeros(1),N))
+    n = N.numel()
+    R = 0
+    for i in range(1,n):
+        X      = XX[:,N[i-1]:N[i]]
+        Xobs   = XXobs[:,N[i-1]:N[i]]
+        Xsq    = torch.sum(torch.pow(X, 2), dim=0, keepdim=True)
+        XobsSq = torch.sum(torch.pow(Xobs, 2), dim=0, keepdim=True)
+
+        D    = Xsq + Xsq.t() - 2 * X.t() @ X
+        Dobs = XobsSq + XobsSq.t() - 2 * XobsSq.t() @ XobsSq
+
+        msk = MM[:, N[i - 1]:N[i]]
+        dev = X.device
+        msk = msk.to(dev)
+
+        mm = torch.ger(msk, msk)
+        r = F.mse_loss(mm * torch.sqrt(torch.relu(D)),  mm * torch.sqrt(torch.relu(Dobs)))
+        R = R + r
+
+    return R/(n-1)
+
+
+
 
 def getNormMat(N, msk=torch.tensor([1.0])):
     N = N / torch.sqrt(torch.sum(N ** 2, dim=0, keepdim=True) + 1e-9)
@@ -139,22 +165,12 @@ def distPenality(D, dc=0.379, M=torch.ones(1)):
 
 def distConstraint(X, eps=1e-6):
     X = X.squeeze()
-    n = X.shape[1]
     dX = X[:, 1:] - X[:, :-1]
-    d = torch.sum(dX ** 2, dim=0)
+    d = torch.sum(dX**2, dim=0)
 
-    #ii = (d >= 3.8)
-    #dX[:,ii] = (dX[:,ii] / torch.sqrt(d[ii] + eps)) * 3.8
-    #ii = (d <= 2.5)
-    #dX[:,ii] = (dX[:,ii] / torch.sqrt(d[ii] + eps)) * 2.5
-
-    dc = torch.relu(d - 3.8**2) + 3.8**2
-    dX = (dX / torch.sqrt(d + eps)) * torch.sqrt(dc)
+    dX = (dX / torch.sqrt(d + eps)) * 3.8
     Xh = torch.cumsum(dX, dim=1)
-    Xh = torch.cat((torch.ones(3,1),Xh),dim=1)
-    #Xh[:, 0] = X[:, 0]
-    #Xh[:, 1:] = X[:, 0].unsqueeze(1) + torch.cumsum(dX, dim=1)
-    #Xh[:, 1:] = torch.cumsum(dX, dim=1)
+    Xh = torch.cat((torch.ones(3,1).to(X.device),Xh),dim=1)
 
     return Xh
 
@@ -210,3 +226,19 @@ def dRMSD(X, Xobs, M):
     loss = torch.norm(M * R) ** 2 / torch.sum(M)
 
     return loss
+
+def torAng(X,eps=1e-9):
+    X = X.squeeze()
+    dX = X[:, 1:] - X[:, :-1]
+    d = torch.sqrt(torch.sum(dX ** 2, dim=0, keepdim=True)+eps)
+    dX = dX/d
+    a = torch.diag(dX.t()@dX,1)
+
+    return a
+
+def torAngPenalty(X,ang=3.1415926535/6):
+    a = torAng(X)
+    t = torch.cos(-torch.ones(1)*ang)
+    IND = a < t
+
+    return torch.sum((a[IND]-t)**2)

@@ -61,6 +61,12 @@ YobsTest = torch.load(base_path + caspver + '/RCalphaTesting.pt')
 MSKTest = torch.load(base_path + caspver + '/MasksTesting.pt')
 STest = torch.load(base_path + caspver + '/PSSMTesting.pt')
 
+Aind = AindTest
+Yobs = YobsTest
+MSK  = MSKTest
+S    = STest
+
+
 def maskMat(T,M):
     M = M.squeeze()
     MT = (M*(M*T).t()).t()
@@ -76,25 +82,24 @@ n_data_total = len(S)
 # Setup the network and its parameters
 nNin = 40
 nEin = 1
-nNopen = 128
-nEopen = 128
-nEhid = 128
+nopen = 64
+nhid  = 512
 nNclose = 3
 nEclose = 1
 nlayer = 18
 
-model = GN.graphNetwork(nNin, nEin, nNopen, nEhid, nNclose, nlayer, h=.1, dense=False)
+model = GN.graphNetwork(nNin, nEin, nopen, nhid, nNclose, nlayer, h=.1)
 model.to(device)
 
 total_params = sum(p.numel() for p in model.parameters())
 print('Number of parameters ', total_params)
 
 #### Start Training ####
-lrO = 1e-3
-lrC = 1e-3
-lrN = 1e-3
-lrE1 = 1e-3
-lrE2 = 1e-3
+lrO = 1e-2
+lrC = 1e-2
+lrN = 1e-2
+lrE1 = 1e-2
+lrE2 = 1e-2
 
 optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO},
                         {'params': model.K2Nopen, 'lr': lrC},
@@ -102,15 +107,13 @@ optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO},
                         {'params': model.K2Eopen, 'lr': lrC},
                         {'params': model.KE1, 'lr': lrE1},
                         {'params': model.KE2, 'lr': lrE2},
-                        {'params': model.KN1, 'lr': lrE1},
-                        {'params': model.KN2, 'lr': lrE2},
                         {'params': model.KNclose, 'lr': lrE2}])
 
 
 alossBest = 1e6
-epochs = 500
+epochs = 100
 
-ndata = 8 #n_data_total
+ndata = n_data_total
 bestModel = model
 hist = torch.zeros(epochs)
 
@@ -139,24 +142,32 @@ for j in range(epochs):
         optimizer.zero_grad()
 
         xnOut, xeOut = model(xn, xe, G)
+        xnOut = utils.distConstraint(xnOut)
         # xnOut = utils.distConstraint(xnOut, dc=3.79)
         Dout = utils.getDistMat(xnOut)
         Dtrue = utils.getDistMat(Coords)
 
         #loss = F.mse_loss(M * Dout, M * Dtrue)
-        loss = F.mse_loss(maskMat(Dout,M), maskMat(Dtrue,M))
+        loss = F.mse_loss(maskMat(Dout,M), maskMat(Dtrue,M))/F.mse_loss(maskMat(Dtrue*0,M), maskMat(Dtrue,M))
 
         loss.backward()
 
         aloss += loss.detach()
-        alossAQ += (torch.norm(M * Dout - M * Dtrue) / torch.sqrt(torch.sum(M)).detach())
+        alossAQ += (torch.norm(maskMat(Dout,M) - maskMat(Dtrue,M)) / (torch.sum(M)).detach())
         gN = model.KNclose.grad.norm().item()
         gE1 = model.KE1.grad.norm().item()
         gE2 = model.KE2.grad.norm().item()
-        gO = model.KN1.grad.norm().item()
-        gC = model.KN2.grad.norm().item()
+        gO = model.K1Nopen.grad.norm().item()
+        gC = model.K2Nopen.grad.norm().item()
 
         optimizer.step()
+
+        d1 = torch.diag(maskMat(Dout,M),-1)
+        d1 = d1[d1 > 0.01]
+        print(' ')
+        print('Estimated noise level ', (torch.norm(d1-3.8)/torch.norm(d1)).item())
+        print(' ')
+
         # scheduler.step()
         nprnt = 1
         if (i + 1) % nprnt == 0:
