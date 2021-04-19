@@ -142,9 +142,10 @@ for nlayers in num_layers:
                 return loss_test.item(), acc_test.item()
 
         def train(datastr, splitstr, num_output):
+            slurm = "s" in sys.argv
             adj, features, labels, idx_train, idx_val, idx_test, num_features, num_labels = process.full_load_data(
                 datastr,
-                splitstr)
+                splitstr, slurm=slurm)
             adj = adj.to_dense()
             print("adj shape:", adj.shape)
 
@@ -215,8 +216,11 @@ for nlayers in num_layers:
                 num_output = 5
             else:
                 num_output = 5
+            if "s" in sys.argv:
+                splitstr = 'splits/' + datastr + '_split_0.6_0.2_' + str(i) + '.npz'
+            else:
+                splitstr = '../splits/' + datastr + '_split_0.6_0.2_' + str(i) + '.npz'
 
-            splitstr = '../splits/' + datastr + '_split_0.6_0.2_' + str(i) + '.npz'
             acc_list.append(train(datastr, splitstr, num_output))
             print(i, ": {:.2f}".format(acc_list[-1]))
 
