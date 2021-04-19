@@ -147,15 +147,15 @@ for nlayers in num_layers:
                 datastr,
                 splitstr, slurm=slurm)
             adj = adj.to_dense()
-            print("adj shape:", adj.shape)
+            #print("adj shape:", adj.shape)
 
             [edge_index, edge_weight] = sparseConvert.dense_to_sparse(adj)
             del adj
-            print("edge index shape:", edge_index.shape)
+            #print("edge index shape:", edge_index.shape)
 
-            print("features shape:", features.shape)
-            print("labels shhape:", labels.shape)
-            print("idx shape:", idx_train.shape)
+            #print("features shape:", features.shape)
+            #print("labels shhape:", labels.shape)
+            #print("idx shape:", idx_train.shape)
             edge_index = edge_index.to(device)
             features = features.to(device).t().unsqueeze(0)
             idx_train = idx_train.to(device)
@@ -182,7 +182,7 @@ for nlayers in num_layers:
             for epoch in range(1000):
                 loss_tra, acc_tra = train_step(model, optimizer, features, labels, edge_index, idx_train)
                 loss_val, acc_val = test_step(model, features, labels, edge_index, idx_test)
-                if (epoch + 1) % 1 == 0:
+                if (epoch + 1) % 10000000000 == 0:
                     print('Epoch:{:04d}'.format(epoch + 1),
                           'train',
                           'loss:{:.3f}'.format(loss_tra),
