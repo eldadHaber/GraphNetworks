@@ -78,7 +78,7 @@ for nlayers in num_layers:
         datastr = "cora"
         print("DATA SET IS:", datastr)
         # h = 1 / n_layers
-        h = trial.suggest_discrete_uniform('h', 0.1 / n_layers, 3, q=1 / (n_layers))
+        h = trial.suggest_discrete_uniform('h', 0.1 / nlayer, 3, q=1 / (nlayer))
         dropout = trial.suggest_discrete_uniform('dropout', 0.5, 0.7, q=0.1)
         # h = 20 / nlayer
         print("n channels:", nopen)
