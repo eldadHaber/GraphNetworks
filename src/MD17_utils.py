@@ -56,12 +56,16 @@ def compute_inverse_square_distogram(r):
 
 
 
-def getBatchData_MD17_fast(Coords, z, use_mean_map=False):
+def getBatchData_MD17_fast(Coords, z, use_mean_map=False, R_mean=None):
     h = 0.1
     nb = Coords.shape[0]
     nn = Coords.shape[-1]
 
     iD = compute_inverse_square_distogram(Coords)
+    if R_mean is not None:
+        iD_mean = compute_inverse_square_distogram(R_mean[None,:,:])
+        iD = torch.abs(iD - iD_mean)
+
 
     vals, J = torch.topk(iD, k=nn, dim=-1)
 
@@ -118,7 +122,19 @@ def getBatchData_MD17(Coords, device='cpu'):
     return I.long(), J.long(), xe, D, iD, nnodes, w
 
 
-def use_model(model,dataloader,train,max_samples,optimizer,device,batch_size=1, use_mean_map=False, channels=1):
+def calculate_mean_coordinates(dataloader):
+    R = None
+    for i, (Ri, Fi, Ei, zi) in enumerate(dataloader):
+        if R is None:
+            R = torch.sum(Ri,dim=0)
+        else:
+            R += torch.sum(Ri,dim=0)
+
+    return R / len(dataloader.dataset)
+
+
+
+def use_model(model,dataloader,train,max_samples,optimizer,device,batch_size=1, use_mean_map=False, channels=1, R_mean=None):
     aloss = 0.0
     aloss_E = 0.0
     aloss_F = 0.0
@@ -129,10 +145,10 @@ def use_model(model,dataloader,train,max_samples,optimizer,device,batch_size=1, 
     t_prepare = 0.0
     t_model = 0.0
     t_backprop = 0.0
-    if train:
-        model.train()
-    else:
-        model.eval()
+    # if train:
+    #     model.train()
+    # else:
+    #     model.eval()
     t3 = time.time()
     for i, (Ri, Fi, Ei, zi) in enumerate(dataloader):
         t0 = time.time()
@@ -142,18 +158,19 @@ def use_model(model,dataloader,train,max_samples,optimizer,device,batch_size=1, 
             nnodes = Ds.shape[-1]
             w = iDs[I, J].to(device=device, dtype=torch.float32)
         else:
-            I, J, xn, xe, nnodes, w = getBatchData_MD17_fast(Ri, zi, use_mean_map=use_mean_map)
+            I, J, xn, xe, nnodes, w = getBatchData_MD17_fast(Ri, zi, use_mean_map=use_mean_map,R_mean=R_mean)
 
         G = GO.graph(I, J, nnodes, w, channels=channels)
 
-        if train:
-            optimizer.zero_grad()
+        optimizer.zero_grad()
         t1 = time.time()
         xnOut, xeOut = model(xn, xe, G)
         t2 = time.time()
 
         E_pred = torch.sum(xnOut)
-        F_pred = -grad(E_pred, Ri, create_graph=True)[0].requires_grad_(True)
+        F_pred = -grad(E_pred, Ri)[0]
+        if train:
+            F_pred.requires_grad_(True)
         loss_F = F.mse_loss(F_pred, Fi)
         # loss_E = F.mse_loss(E_pred, Ei)
         loss = loss_F
