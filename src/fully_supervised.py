@@ -41,39 +41,24 @@ else:
     from src import pnetArch as PNA
 
 # Setup the network and its parameters
-dataset = 'Cora'
 
-if dataset == 'Cora':
-    nNin = 1433
-elif dataset == 'CiteSeer':
-    nNin = 3703
-elif dataset == 'PubMed':
-    nNin = 500
 nEin = 1
 nopen = 64
 nhid = 64
 nNclose = 64
-nlayer = 64
-h = 1  # 16 / nlayer
+nlayer = 32
+h = 0.25  # 16 / nlayer
 
-dropout = 0.6
+dropout = 0.5
 # h = 20 / nlayer
-print("dataset:", dataset)
 print("n channels:", nopen)
 print("n layers:", nlayer)
 print("h step:", h)
 print("dropout:", dropout)
 batchSize = 32
 
-if "s" in sys.argv:
-    path = '/home/eliasof/GraphNetworks/data/' + dataset
-else:
-    path = '/home/cluster/users/erant_group/moshe/' + dataset
 transform = T.Compose([T.NormalizeFeatures()])
-dataset = Planetoid(path, dataset, transform=transform)
-data = dataset[0]
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
-data = data.to(device)
 realVarlet = False
 
 
@@ -126,7 +111,7 @@ def test_step(model, features, labels, adj, idx_test):
         return loss_test.item(), acc_test.item()
 
 
-def train(datastr, splitstr):
+def train(datastr, splitstr, num_output):
     adj, features, labels, idx_train, idx_val, idx_test, num_features, num_labels = process.full_load_data(datastr,
                                                                                                            splitstr)
     adj = adj.to_dense()
@@ -148,8 +133,8 @@ def train(datastr, splitstr):
 
     model = GN.graphNetwork_nodesOnly(num_features, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True,
                                       wave=False,
-                                      diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, gated=False,
-                                      realVarlet=realVarlet, mixDyamics=True)
+                                      diffOrder=1, num_output=num_output, dropOut=dropout, gated=False,
+                                      realVarlet=realVarlet, mixDyamics=False)
     model = model.to(device)
 
     optimizer = torch.optim.Adam([
@@ -157,7 +142,7 @@ def train(datastr, splitstr):
         dict(params=model.KN2, lr=0.00001, weight_decay=0),
         dict(params=model.K1Nopen, weight_decay=5e-4),
         dict(params=model.KNclose, weight_decay=5e-4),
-        dict(params=model.alpha, lr=0.001, weight_decay=0)
+        # dict(params=model.alpha, lr=0.001, weight_decay=0)
     ], lr=0.01)
 
     bad_counter = 0
@@ -180,7 +165,7 @@ def train(datastr, splitstr):
         else:
             bad_counter += 1
 
-        if bad_counter == 100:
+        if bad_counter == 200:
             break
     acc = best
 
@@ -189,8 +174,19 @@ def train(datastr, splitstr):
 
 acc_list = []
 for i in range(10):
-    datastr = "texas"
+    datastr = "citeseer"
+    if datastr == "cora":
+        num_output = 7
+    elif datastr == "citeseer":
+        num_output = 6
+    elif datastr == "pubmed":
+        num_output = 3
+    elif datastr == "chameleon":
+        num_output = 5
+    else:
+        num_output = 5
+
     splitstr = '../splits/' + datastr + '_split_0.6_0.2_' + str(i) + '.npz'
-    acc_list.append(train(datastr, splitstr))
+    acc_list.append(train(datastr, splitstr, num_output))
     print(i, ": {:.2f}".format(acc_list[-1]))
 print("Test acc.:{:.2f}".format(np.mean(acc_list)))
