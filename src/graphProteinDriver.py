@@ -211,7 +211,7 @@ for j in range(epochs):
             optimizer.zero_grad()
 
         # scheduler.step()
-        nprnt = 100
+        nprnt = 1
         if (i + 1) % nprnt == 0:
             aloss = aloss / nprnt
             alossAQ = alossAQ / nprnt
