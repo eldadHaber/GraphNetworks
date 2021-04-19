@@ -49,7 +49,7 @@ if __name__ == '__main__':
     # Following Equivariant paper, we select 1000 configurations from these as our training set, 1000 as our validation set, and the rest are used as test data.
     n_train = 1000
     n_val = 1000
-    batch_size = 40
+    batch_size = 64
 
     ndata_rand = 0 + np.arange(ndata)
     np.random.shuffle(ndata_rand)
@@ -78,14 +78,12 @@ if __name__ == '__main__':
     # Setup the network and its parameters
     nNin = 1
     nEin = 1
-    nNopen = 128
-    nEopen = 128
-    nEhid = 128
+    nopen = 128
+    nhid = 128
     nNclose = 1
-    nEclose = 1
-    nlayer = 54
+    nlayer = 18
 
-    model = GN.graphNetwork(nNin, nEin, nNopen, nEhid, nNclose, nEclose, nlayer, h=.1, dense=False)
+    model = GN.graphNetwork(nNin, nEin, nopen, nhid, nNclose, nlayer, h=.1)
     model.to(device)
 
     total_params = sum(p.numel() for p in model.parameters())
@@ -105,10 +103,7 @@ if __name__ == '__main__':
                             {'params': model.K2Eopen, 'lr': lrC},
                             {'params': model.KE1, 'lr': lrE1},
                             {'params': model.KE2, 'lr': lrE2},
-                            {'params': model.KN1, 'lr': lrE1},
-                            {'params': model.KN2, 'lr': lrE2},
                             {'params': model.KNclose, 'lr': lrE2}])
-
 
     alossBest = 1e6
     epochs = 100000
@@ -125,9 +120,9 @@ if __name__ == '__main__':
     # R_mean = calculate_mean_coordinates(dataloader_train)
     for epoch in range(epochs):
         t1 = time.time()
-        aloss_t,aloss_E_t,aloss_F_t,MAE_t,Fps_t,Fts_t, t_dataload_t, t_prepare_t, t_model_t, t_backprop_t = use_model(model, dataloader_train, train=True, max_samples=1e6, optimizer=optimizer, device=device, batch_size=batch_size, use_mean_map=use_mean_map, channels=nEopen,R_mean=R_mean)
+        aloss_t,aloss_E_t,aloss_F_t,MAE_t,Fps_t,Fts_t, t_dataload_t, t_prepare_t, t_model_t, t_backprop_t = use_model(model, dataloader_train, train=True, max_samples=1e6, optimizer=optimizer, device=device, batch_size=batch_size, use_mean_map=use_mean_map, channels=nopen,R_mean=R_mean)
         t2 = time.time()
-        aloss_v,aloss_E_v,aloss_F_v,MAE_v,Fps_v,Fts_v,t_dataload_v, t_prepare_v, t_model_v, t_backprop_v = use_model(model, dataloader_val, train=False, max_samples=100, optimizer=optimizer, device=device, batch_size=batch_size, use_mean_map=use_mean_map, channels=nEopen,R_mean=R_mean)
+        aloss_v,aloss_E_v,aloss_F_v,MAE_v,Fps_v,Fts_v,t_dataload_v, t_prepare_v, t_model_v, t_backprop_v = use_model(model, dataloader_val, train=False, max_samples=100, optimizer=optimizer, device=device, batch_size=batch_size, use_mean_map=use_mean_map, channels=nopen,R_mean=R_mean)
         t3 = time.time()
 
         if MAE_v < MAE_best:

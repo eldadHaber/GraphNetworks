@@ -46,30 +46,31 @@ def dataloader_MD17(data,batch_size):
     return dataloader
 
 def compute_inverse_square_distogram(r):
-    D = torch.relu(torch.sum(r ** 2, dim=1, keepdim=True) + \
+    D2 = torch.relu(torch.sum(r ** 2, dim=1, keepdim=True) + \
                    torch.sum(r ** 2, dim=1, keepdim=True).transpose(1,2) - \
                    2 * r.transpose(1,2) @ r)
-    iD = 1 / D
-    tmp = iD.diagonal(0,dim1=1,dim2=2)
+    iD2 = 1 / D2
+    tmp = iD2.diagonal(0,dim1=1,dim2=2)
     tmp[:] = 0
-    return iD
+    return D2, iD2
 
 
 
 def getBatchData_MD17_fast(Coords, z, use_mean_map=False, R_mean=None):
-    h = 0.1
     nb = Coords.shape[0]
     nn = Coords.shape[-1]
 
-    iD = compute_inverse_square_distogram(Coords)
+    D2, iD2 = compute_inverse_square_distogram(Coords)
     if R_mean is not None:
-        iD_mean = compute_inverse_square_distogram(R_mean[None,:,:])
-        iD = torch.abs(iD - iD_mean)
+        D2_mean, iD2_mean = compute_inverse_square_distogram(R_mean[None,:,:])
+        iD2 = torch.abs(iD2 - iD2_mean)
 
 
-    vals, J = torch.topk(iD, k=nn, dim=-1)
+    vals, J = torch.topk(iD2, k=nn-1, dim=-1)
 
-    I = (torch.ger(torch.arange(nn), torch.ones(nn, dtype=torch.long))[None,:,:]).repeat(nb,1,1).to(device=z.device)
+
+
+    I = (torch.ger(torch.arange(nn), torch.ones(nn-1, dtype=torch.long))[None,:,:]).repeat(nb,1,1).to(device=z.device)
     I = I.view(nb,-1)
     J = J.view(nb,-1)
     M1 = I + 1 == J
@@ -79,27 +80,33 @@ def getBatchData_MD17_fast(Coords, z, use_mean_map=False, R_mean=None):
     xe = torch.zeros_like(I).to(dtype=torch.float32)
     xe[M] = 1
 
-    one = (torch.arange(nb,device=z.device, dtype=torch.float32)*nn).repeat_interleave(nn**2)
+    one = (torch.arange(nb,device=z.device, dtype=torch.float32)*nn).repeat_interleave(nn*(nn-1))
 
     xe = xe.view(-1)[None,None,:]
     xn = z.view(-1)[None,None,:]
     I = I.view(-1) + one
     J = J.view(-1) + one
 
-    iD = iD.view(-1)[None,None,:]
-    if use_mean_map:
-        dr = h * (torch.randint(0,2,Coords.shape,device=z.device)*2-1)
-        r1 = Coords + dr
-        r2 = Coords - dr
-        iD1 = compute_inverse_square_distogram(r1).view(-1)[None,None,:]
-        iD2 = compute_inverse_square_distogram(r2).view(-1)[None,None,:]
-        iD_diff = 2*iD - iD1 - iD2
-        iD_stack = torch.cat((iD,iD1,iD2),dim=1)
-        iD_var = torch.var(iD_stack,1,keepdim=True)
+    iD2res = iD2.reshape(nb,-1)
 
-        iD = torch.cat((iD,iD_diff,iD_var), dim=1)
-        xe = xe.repeat(1,3,1)
-    return I, J, xn, xe, nn*nb, iD
+    wiD2 = iD2.view(-1)[None,None,:]
+    wD2 = D2.view(-1)[None,None,:]
+
+
+
+    # if use_mean_map:
+    #     dr = h * (torch.randint(0,2,Coords.shape,device=z.device)*2-1)
+    #     r1 = Coords + dr
+    #     r2 = Coords - dr
+    #     iD1 = compute_inverse_square_distogram(r1).view(-1)[None,None,:]
+    #     iD2 = compute_inverse_square_distogram(r2).view(-1)[None,None,:]
+    #     iD_diff = 2*iD - iD1 - iD2
+    #     iD_stack = torch.cat((iD,iD1,iD2),dim=1)
+    #     iD_var = torch.var(iD_stack,1,keepdim=True)
+    #
+    #     iD = torch.cat((iD,iD_diff,iD_var), dim=1)
+    #     xe = xe.repeat(1,3,1)
+    return I, J, xn, xe, nn*nb, D2, iD2
 
 def getBatchData_MD17(Coords, device='cpu'):
     I = torch.tensor([]).to(device)
@@ -158,9 +165,9 @@ def use_model(model,dataloader,train,max_samples,optimizer,device,batch_size=1, 
             nnodes = Ds.shape[-1]
             w = iDs[I, J].to(device=device, dtype=torch.float32)
         else:
-            I, J, xn, xe, nnodes, w = getBatchData_MD17_fast(Ri, zi, use_mean_map=use_mean_map,R_mean=R_mean)
+            I, J, xn, xe, nnodes, D2, iD2 = getBatchData_MD17_fast(Ri, zi, use_mean_map=use_mean_map,R_mean=R_mean)
 
-        G = GO.graph(I, J, nnodes, w, channels=channels)
+        G = GO.graph(I, J, nnodes, D2, iD2, channels=channels)
 
         optimizer.zero_grad()
         t1 = time.time()
@@ -168,9 +175,10 @@ def use_model(model,dataloader,train,max_samples,optimizer,device,batch_size=1, 
         t2 = time.time()
 
         E_pred = torch.sum(xnOut)
-        F_pred = -grad(E_pred, Ri)[0]
         if train:
-            F_pred.requires_grad_(True)
+            F_pred = -grad(E_pred, Ri, create_graph=True)[0].requires_grad_(True)
+        else:
+            F_pred = -grad(E_pred, Ri, create_graph=False)[0]
         loss_F = F.mse_loss(F_pred, Fi)
         # loss_E = F.mse_loss(E_pred, Ei)
         loss = loss_F

@@ -55,20 +55,21 @@ def makeBatch(Ilist, Jlist, nnodesList, Wlist=[1.0]):
 
 class graph(nn.Module):
 
-    def __init__(self, iInd, jInd, nnodes, W=torch.tensor([1.0]), channels=1):
+    def __init__(self, iInd, jInd, nnodes, D2, iD2, channels=1):
         super(graph, self).__init__()
         self.iInd = iInd.view(-1).long()
         self.jInd = jInd.view(-1).long()
 
         # I, J, nnodesList, W2 = makeBatch(iInd, jInd, nnodes, W)
         self.nnodes = nnodes
-        assert np.mod(channels,W.shape[1]) == 0
-        self.W = W.repeat_interleave(int(channels/W.shape[1]),dim=1)
+        assert np.mod(channels, iD2.shape[1]) == 0
+        self.iD2 = iD2.repeat_interleave(int(channels / iD2.shape[1]), dim=1)
+        self.D2 = D2.repeat_interleave(int(channels / D2.shape[1]), dim=1)
         return
 
     def nodeGrad(self, x, W=[]):
         if len(W)==0:
-            W = self.W
+            W = self.iD2
         # x1 = x[self.kInd, :, self.iInd].reshape(x.shape[0],-1,x.shape[1]).transpose(1,2)
         # x2 = x[self.kInd, :, self.jInd].reshape(x.shape[0],-1,x.shape[1]).transpose(1,2)
         # g = W * (x1 - x2)
@@ -77,7 +78,7 @@ class graph(nn.Module):
 
     def nodeAve(self, x, W=[]):
         if len(W)==0:
-            W = self.W
+            W = self.iD2
         # x1 = x[self.kInd, :, self.iInd].reshape(x.shape[0],-1,x.shape[1]).transpose(1,2)
         # x2 = x[self.kInd, :, self.jInd].reshape(x.shape[0],-1,x.shape[1]).transpose(1,2)
         # g = W * (x1 + x2) / 2.0
@@ -87,7 +88,7 @@ class graph(nn.Module):
 
     def edgeDiv(self, g, W=[]):
         if len(W)==0:
-            W = self.W
+            W = self.iD2
         x = torch.zeros(g.shape[0], g.shape[1], self.nnodes, device=g.device)
         # z = torch.zeros(g.shape[0],g.shape[1],self.nnodes,device=g.device)
         # for i in range(self.iInd.numel()):
@@ -102,7 +103,7 @@ class graph(nn.Module):
 
     def edgeAve(self, g, method='max', W=[]):
         if len(W)==0:
-            W = self.W
+            W = self.iD2
         x1 = torch.zeros(g.shape[0], g.shape[1], self.nnodes, device=g.device)
         x2 = torch.zeros(g.shape[0], g.shape[1], self.nnodes, device=g.device)
 
