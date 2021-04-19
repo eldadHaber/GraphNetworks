@@ -336,7 +336,7 @@ for j in range(epochs):
 
                             ##Save distmap:
                             # predC = Cout.clone().squeeze()
-                            predC = torch.from_numpy(pred_coords).t()
+                            predC = torch.from_numpy(pred_coords)#.t()
                             distMap = utils.getDistMat(predC)  # * M
                             distMap = distMap.cpu().numpy()
                             # distMap[indices_bad] = 0
