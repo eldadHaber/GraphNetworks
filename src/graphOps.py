@@ -63,26 +63,19 @@ class graph(nn.Module):
         # I, J, nnodesList, W2 = makeBatch(iInd, jInd, nnodes, W)
         self.nnodes = nnodes
         assert np.mod(channels, iD2.shape[1]) == 0
-        self.iD2 = iD2.repeat_interleave(int(channels / iD2.shape[1]), dim=1)
-        self.D2 = D2.repeat_interleave(int(channels / D2.shape[1]), dim=1)
+        self.iD = torch.sqrt(iD2).repeat_interleave(int(channels/4 / iD2.shape[1]), dim=1)
+        self.D = torch.sqrt(D2).repeat_interleave(int(channels/4 / D2.shape[1]), dim=1)
+        self.iD2 = iD2.repeat_interleave(int(channels/4 / iD2.shape[1]), dim=1)
+        self.D2 = D2.repeat_interleave(int(channels/4 / D2.shape[1]), dim=1)
+        self.W = torch.cat((self.iD,self.iD2,self.D,self.D2),dim=1)
         return
 
-    def nodeGrad(self, x, W=[]):
-        if len(W)==0:
-            W = self.iD2
-        # x1 = x[self.kInd, :, self.iInd].reshape(x.shape[0],-1,x.shape[1]).transpose(1,2)
-        # x2 = x[self.kInd, :, self.jInd].reshape(x.shape[0],-1,x.shape[1]).transpose(1,2)
-        # g = W * (x1 - x2)
-        g = W * (x[:, :, self.iInd] - x[:, :, self.jInd])
+    def nodeGrad(self, x):
+        g = self.W * (x[:, :, self.iInd] - x[:, :, self.jInd])
         return g
 
-    def nodeAve(self, x, W=[]):
-        if len(W)==0:
-            W = self.iD2
-        # x1 = x[self.kInd, :, self.iInd].reshape(x.shape[0],-1,x.shape[1]).transpose(1,2)
-        # x2 = x[self.kInd, :, self.jInd].reshape(x.shape[0],-1,x.shape[1]).transpose(1,2)
-        # g = W * (x1 + x2) / 2.0
-        g = W * (x[:, :, self.iInd] + x[:, :, self.jInd]) / 2.0
+    def nodeAve(self, x):
+        g = self.W * (x[:, :, self.iInd] + x[:, :, self.jInd]) / 2.0
         return g
 
 
@@ -90,14 +83,11 @@ class graph(nn.Module):
         if len(W)==0:
             W = self.iD2
         x = torch.zeros(g.shape[0], g.shape[1], self.nnodes, device=g.device)
-        # z = torch.zeros(g.shape[0],g.shape[1],self.nnodes,device=g.device)
-        # for i in range(self.iInd.numel()):
-        #    x[:,:,self.iInd[i]]  += w*g[:,:,i]
-        # for j in range(self.jInd.numel()):
-        #    x[:,:,self.jInd[j]] -= w*g[:,:,j]
 
-        x.index_add_(2, self.iInd, W[:,:g.shape[1],:] * g)
-        x.index_add_(2, self.jInd, -W[:,:g.shape[1],:] * g)
+        W = torch.cat((self.iD[:,:g.shape[1]//4,:], self.iD2[:,:g.shape[1]//4,:],self.D[:,:g.shape[1]//4,:],self.D2[:,:g.shape[1]//4,:]),dim=1)
+
+        x.index_add_(2, self.iInd, W * g)
+        x.index_add_(2, self.jInd, -W * g)
 
         return x
 
@@ -107,8 +97,11 @@ class graph(nn.Module):
         x1 = torch.zeros(g.shape[0], g.shape[1], self.nnodes, device=g.device)
         x2 = torch.zeros(g.shape[0], g.shape[1], self.nnodes, device=g.device)
 
-        x1.index_add_(2, self.iInd, W[:,:g.shape[1],:] * g)
-        x2.index_add_(2, self.jInd, W[:,:g.shape[1],:] * g)
+        W = torch.cat((self.iD[:,:g.shape[1]//4,:], self.iD2[:,:g.shape[1]//4,:],self.D[:,:g.shape[1]//4,:],self.D2[:,:g.shape[1]//4,:]),dim=1)
+
+        x1.index_add_(2, self.iInd, W * g)
+        x2.index_add_(2, self.jInd, W * g)
+
         if method == 'max':
             x = torch.max(x1, x2)
         elif method == 'ave':
