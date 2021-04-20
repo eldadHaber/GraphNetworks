@@ -88,7 +88,7 @@ nNclose = 3
 nEclose = 1
 nlayer = 18
 
-model = GN.graphNetwork(nNin, nEin, nopen, nhid, nNclose, nlayer, h=.1)
+model = GN.graphNetwork(nNin, nEin, nopen, nhid, nNclose, nlayer, h=.01)
 model.to(device)
 
 total_params = sum(p.numel() for p in model.parameters())
@@ -117,6 +117,7 @@ ndata = n_data_total
 bestModel = model
 hist = torch.zeros(epochs)
 
+
 for j in range(epochs):
     # Prepare the data
     aloss = 0.0
@@ -142,8 +143,8 @@ for j in range(epochs):
         optimizer.zero_grad()
 
         xnOut, xeOut = model(xn, xe, G)
-        xnOut = utils.distConstraint(xnOut)
-        # xnOut = utils.distConstraint(xnOut, dc=3.79)
+        #xnOut = utils.distConstraint(xnOut)
+
         Dout = utils.getDistMat(xnOut)
         Dtrue = utils.getDistMat(Coords)
 
@@ -162,19 +163,25 @@ for j in range(epochs):
 
         optimizer.step()
 
-        d1 = torch.diag(maskMat(Dout,M),-1)
-        d1 = d1[d1 > 0.01]
-        print(' ')
-        print('Estimated noise level ', (torch.norm(d1-3.8)/torch.norm(d1)).item())
-        print(' ')
+        #d1 = torch.diag(maskMat(Dtrue,M),-1)
+        #d1 = d1[d1 > 0.01]
+        #print(' ')
+        #print('Estimated noise level ', (torch.norm(d1-3.8)/torch.norm(d1)).item())
+        #print(' ')
 
         # scheduler.step()
         nprnt = 1
         if (i + 1) % nprnt == 0:
             aloss = aloss / nprnt
             alossAQ = alossAQ / nprnt
-            print("%2d.%1d   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E" %
-                  (j, i, aloss, alossAQ, gO, gN, gE1, gE2, gC), flush=True)
+            c       = GN.constraint(xnOut)
+            c       = c.abs().mean().item()
+            if c>0.4:
+                print('warning constraint non fulfilled ')
+
+            print("%2d.%1d   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E" %
+                  (j, i, aloss, alossAQ, gO, gN, gE1, gE2, gC, c), flush=True)
+
             aloss = 0.0
             alossAQ = 0.0
         # Validation

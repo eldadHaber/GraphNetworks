@@ -170,9 +170,22 @@ def distConstraint(X, eps=1e-6):
 
     dX = (dX / torch.sqrt(d + eps)) * 3.8
     Xh = torch.cumsum(dX, dim=1)
-    Xh = torch.cat((torch.ones(3,1).to(X.device),Xh),dim=1)
+    Xh = torch.cat((torch.zeros(3,1).to(X.device),Xh),dim=1)
 
     return Xh
+
+
+def distConstraintGen(X, K, eps=1e-6):
+    X = K@(X.squeeze())
+    dX = X[:, 1:] - X[:, :-1]
+    d = torch.sum(dX**2, dim=0)
+
+    dX = (dX / torch.sqrt(d + eps)) * 3.8
+    Xh = torch.cumsum(dX, dim=1)
+    Xh = torch.cat((torch.zeros(3,1).to(X.device),Xh),dim=1)
+    Xh = torch.pinv(K)@Xh
+    return Xh
+
 
 
 def kl_div(p, q, weight=False):

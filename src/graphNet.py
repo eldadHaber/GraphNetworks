@@ -35,11 +35,76 @@ def tv_norm(X, eps=1e-3):
     return X
 
 
+def diffX(X):
+    X = X.squeeze()
+    return X[:,1:] - X[:,:-1]
+
+def diffXT(X):
+    X  = X.squeeze()
+    D  = X[:,:-1] - X[:,1:]
+    d0 = -X[:,0].unsqueeze(1)
+    d1 = X[:,-1].unsqueeze(1)
+    D  = torch.cat([d0,D,d1],dim=1)
+    return D
+
+
+def constraint(X,d=3.8):
+    X = X.squeeze()
+    c = torch.ones(1,3,device=X.device)@(diffX(X)**2) - d**2
+
+    return c
+
+def dConstraint(S,X):
+    dX = diffX(X)
+    dS = diffX(S)
+    e  = torch.ones(1,3,device=X.device)
+    dc = 2*e@(dX*dS)
+    return dc
+
+def dConstraintT(c,X):
+    dX = diffX(X)
+    e = torch.ones(3, 1, device=X.device)
+    C = (e@c)*dX
+    C = diffXT(C)
+    return 2*C
+
+def proj(x,K,n=1, d=3.8):
+
+    for j in range(n):
+
+        x3 = F.conv1d(x, K.unsqueeze(-1))
+        c = constraint(x3, d)
+        lam = dConstraintT(c, x3)
+        lam = F.conv_transpose1d(lam.unsqueeze(0), K.unsqueeze(-1))
+
+        #print(j, 0, torch.mean(torch.abs(c)).item())
+
+        with torch.no_grad():
+            alpha = 1.0/lam.norm()
+            lsiter = 0
+            while True:
+                xtry = x - alpha * lam
+                x3 = F.conv1d(xtry, K.unsqueeze(-1))
+                ctry = constraint(x3, d)
+                #print(j, lsiter, torch.mean(torch.abs(ctry)).item()/torch.mean(torch.abs(c)).item())
+
+                if torch.norm(ctry) < torch.norm(c):
+                    break
+                alpha = alpha/2
+                lsiter = lsiter+1
+                if lsiter > 5:
+                    break
+
+        x = x - alpha * lam
+
+    return x
+
 class graphNetwork(nn.Module):
 
     def __init__(self, nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1):
         super(graphNetwork, self).__init__()
 
+        self.const = True
         self.h = h
         stdv = 1.0 #1e-2
         stdvp = 1.0 # 1e-3
@@ -59,7 +124,7 @@ class graphNetwork(nn.Module):
         self.KE1 = nn.Parameter(IdTensor * stdvp)
         self.KE2 = nn.Parameter(IdTensort * stdvp)
 
-        self.KNclose = nn.Parameter(torch.randn(nNclose, nopen) * stdv)
+        self.KNclose = nn.Parameter(torch.eye(nNclose, nopen))
 
     def doubleLayer(self, x, K1, K2):
 
@@ -81,9 +146,15 @@ class graphNetwork(nn.Module):
         xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
         xe = self.doubleLayer(xe, self.K1Eopen, self.K2Eopen)
         xn = torch.cat([xn,Graph.edgeDiv(xe), Graph.edgeAve(xe)], dim=1)
+        if self.const:
+            xn = proj(xn, self.KNclose, n=500)
+            #x3 = F.conv1d(xn, self.KNclose.unsqueeze(-1))
+            #c = constraint(x3)
+            #print(c.abs().mean().item())
 
         nlayers = self.KE1.shape[0]
 
+        #xold = xn
         for i in range(nlayers):
 
             gradX = Graph.nodeGrad(xn)
@@ -97,9 +168,28 @@ class graphNetwork(nn.Module):
 
             xn = xn - self.h * (divE + aveE)
 
+            #tmp = xn
+            #xn = 2*xn - xold - (self.h**2) * (divE + aveE)
+            #xold = tmp
+
+            if self.const:
+                xn = proj(xn, self.KNclose, n=50)
+                #x3 = F.conv1d(xn, self.KNclose.unsqueeze(-1))
+                #c = constraint(x3)
+                #print(c.abs().mean().item())
+
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
+        if self.const:
+            c = constraint(xn)
+            if c.abs().mean() > 0.1:
+                xn = proj(xn, torch.eye(3, 3), n=500)
+                #c = constraint(xn)
+            #print(c.abs().mean().item())
 
         return xn, xe
+
+
+
 
 
 
