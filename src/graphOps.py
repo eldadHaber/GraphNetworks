@@ -63,19 +63,15 @@ class graph(nn.Module):
         # I, J, nnodesList, W2 = makeBatch(iInd, jInd, nnodes, W)
         self.nnodes = nnodes
         assert np.mod(channels, iD2.shape[1]) == 0
-        self.iD = torch.sqrt(iD2).repeat_interleave(int(channels/4 / iD2.shape[1]), dim=1)
-        self.D = torch.sqrt(D2).repeat_interleave(int(channels/4 / D2.shape[1]), dim=1)
-        self.iD2 = iD2.repeat_interleave(int(channels/4 / iD2.shape[1]), dim=1)
-        self.D2 = D2.repeat_interleave(int(channels/4 / D2.shape[1]), dim=1)
-        self.W = torch.cat((self.iD,self.iD2,self.D,self.D2),dim=1)
+        self.iD2 = iD2.repeat_interleave(int(channels / iD2.shape[1]), dim=1)
         return
 
     def nodeGrad(self, x):
-        g = self.W * (x[:, :, self.iInd] - x[:, :, self.jInd])
+        g = self.iD2 * (x[:, :, self.iInd] - x[:, :, self.jInd])
         return g
 
     def nodeAve(self, x):
-        g = self.W * (x[:, :, self.iInd] + x[:, :, self.jInd]) / 2.0
+        g = self.iD2 * (x[:, :, self.iInd] + x[:, :, self.jInd]) / 2.0
         return g
 
 
@@ -84,10 +80,8 @@ class graph(nn.Module):
             W = self.iD2
         x = torch.zeros(g.shape[0], g.shape[1], self.nnodes, device=g.device)
 
-        W = torch.cat((self.iD[:,:g.shape[1]//4,:], self.iD2[:,:g.shape[1]//4,:],self.D[:,:g.shape[1]//4,:],self.D2[:,:g.shape[1]//4,:]),dim=1)
-
-        x.index_add_(2, self.iInd, W * g)
-        x.index_add_(2, self.jInd, -W * g)
+        x.index_add_(2, self.iInd, W[:,:g.shape[1],:] * g)
+        x.index_add_(2, self.jInd, -W[:,:g.shape[1],:] * g)
 
         return x
 
@@ -97,10 +91,8 @@ class graph(nn.Module):
         x1 = torch.zeros(g.shape[0], g.shape[1], self.nnodes, device=g.device)
         x2 = torch.zeros(g.shape[0], g.shape[1], self.nnodes, device=g.device)
 
-        W = torch.cat((self.iD[:,:g.shape[1]//4,:], self.iD2[:,:g.shape[1]//4,:],self.D[:,:g.shape[1]//4,:],self.D2[:,:g.shape[1]//4,:]),dim=1)
-
-        x1.index_add_(2, self.iInd, W * g)
-        x2.index_add_(2, self.jInd, W * g)
+        x1.index_add_(2, self.iInd, W[:,:g.shape[1],:] * g)
+        x2.index_add_(2, self.jInd, W[:,:g.shape[1],:] * g)
 
         if method == 'max':
             x = torch.max(x1, x2)
