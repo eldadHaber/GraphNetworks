@@ -78,10 +78,10 @@ if __name__ == '__main__':
     # Setup the network and its parameters
     nNin = 1
     nEin = 1
-    nopen = 128
-    nhid = 128
+    nopen = 64
+    nhid = 64
     nNclose = 1
-    nlayer = 18
+    nlayer = 6
 
     model = GN.graphNetwork(nNin, nEin, nopen, nhid, nNclose, nlayer, h=.1)
     model.to(device)

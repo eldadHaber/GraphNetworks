@@ -71,6 +71,17 @@ class graphNetwork(nn.Module):
 
         self.KNclose = nn.Parameter(torch.randn(nNclose, nopen) * stdv)
 
+        self.filters = nn.ModuleList()
+
+        self.filters.append(nn.Sequential(nn.Linear(25, nhid), nn.Tanh(), nn.Linear(nhid, nhid)))
+        self.filters.append(nn.Sequential(nn.Linear(25, nhid), nn.Tanh(), nn.Linear(nhid, nhid)))
+        for i in range(nlayer):
+            self.filters.append(nn.Sequential(nn.Linear(25,nhid*3), nn.Tanh(), nn.Linear(nhid*3,nhid*3)))
+            self.filters.append(nn.Sequential(nn.Linear(25, nhid*3), nn.Tanh(), nn.Linear(nhid*3, nhid*3)))
+            self.filters.append(nn.Sequential(nn.Linear(25, nhid*3), nn.Tanh(), nn.Linear(nhid*3, nhid*3)))
+            self.filters.append(nn.Sequential(nn.Linear(25, nhid*3), nn.Tanh(), nn.Linear(nhid*3, nhid*3)))
+        return
+
     def doubleLayer(self, x, K1, K2):
 
         x = torch.tanh(x)
@@ -92,20 +103,31 @@ class graphNetwork(nn.Module):
         xn = self.Embed(xn.to(dtype=torch.int64)).transpose(2,3).squeeze(1)
         xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
         xe = self.doubleLayer(xe, self.K1Eopen, self.K2Eopen)
-        xn = torch.cat([xn,Graph.edgeDiv(xe), Graph.edgeAve(xe)], dim=1)
+
+        WeDxe = self.filters[0](Graph.GSD).transpose(2,3).squeeze(1)
+        eDxe = Graph.edgeDiv(xe, W=WeDxe)
+
+        WeAxe = self.filters[1](Graph.GSD).transpose(2,3).squeeze(1)
+        eAxe = Graph.edgeAve(xe, W=WeAxe)
+
+        xn = torch.cat([xn,eDxe, eAxe], dim=1)
 
         nlayers = self.KE1.shape[0]
 
         for i in range(nlayers):
 
-            gradX = Graph.nodeGrad(xn)
-            intX = Graph.nodeAve(xn)
+            W = self.filters[i*4+2](Graph.GSD).transpose(2, 3).squeeze(1)
+            gradX = Graph.nodeGrad(xn,W=W)
+            W = self.filters[i*4+3](Graph.GSD).transpose(2, 3).squeeze(1)
+            intX = Graph.nodeAve(xn,W=W)
 
             dxe = torch.cat([gradX, intX], dim=1)
             dxe  = self.doubleLayer(dxe, self.KE1[i], self.KE2[i])
 
-            divE = Graph.edgeDiv(dxe[:,:self.nopen,:])
-            aveE = Graph.edgeAve(dxe[:,self.nopen:,:])
+            W = self.filters[i*4+4](Graph.GSD).transpose(2, 3).squeeze(1)
+            divE = Graph.edgeDiv(dxe[:,:self.nopen,:],W=W)
+            W = self.filters[i*4+5](Graph.GSD).transpose(2, 3).squeeze(1)
+            aveE = Graph.edgeAve(dxe[:,self.nopen:,:],W=W)
 
             xn = xn - self.h * (divE + aveE)
 
@@ -120,10 +142,10 @@ if Test:
     nEin = 3
     nNopen = 32
     nEopen = 16
-    nEhid = 128
+    nEhid = 64
     nNclose = 3
     nEclose = 2
-    nlayer = 18
+    nlayer = 6
     model = graphNetwork(nNin, nEin, nNopen, nEopen, nEhid, nNclose, nEclose, nlayer)
 
     L = 55

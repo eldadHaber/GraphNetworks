@@ -163,7 +163,7 @@ def use_model(model,dataloader,train,max_samples,optimizer,device,batch_size=1, 
         else:
             I, J, xn, xe, nnodes, D2, iD2 = getBatchData_MD17_fast(Ri, zi, use_mean_map=use_mean_map,R_mean=R_mean)
 
-        G = GO.graph(I, J, nnodes, D2, iD2, channels=channels)
+        G = GO.graph(I, J, nnodes, D2)
 
         optimizer.zero_grad()
         t1 = time.time()
