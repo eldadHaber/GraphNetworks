@@ -3,7 +3,7 @@ import os.path as osp
 import torch
 import os
 
-#os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 print(torch.cuda.get_device_name(0))
 print(torch.cuda.get_device_properties('cuda:0'))
 
@@ -103,7 +103,7 @@ nopen = 2048
 nhid = 2048
 nNclose = 2048
 nlayer = 8
-h = 0.1 #1 / nlayer
+h = 0.1  # 1 / nlayer
 dropout = 0.2
 # h = 20 / nlayer
 print("dataset:", dataset)
@@ -129,15 +129,24 @@ if print_files:
         print(line, end='', flush=True)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
 model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=wave,
                                   diffOrder=1, num_output=train_dataset.num_classes, dropOut=dropout, PPI=True,
                                   gated=False,
                                   realVarlet=False, mixDyamics=False)
+
+
+
+model = GN.graphNetwork_seq(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=wave,
+                                  diffOrder=1, num_output=train_dataset.num_classes, dropOut=dropout, PPI=True,
+                                  gated=False,
+                                  realVarlet=False, mixDyamics=False)
+
 model.reset_parameters()
 model.to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 criterion = torch.nn.BCEWithLogitsLoss()
+
+
 # optimizer = torch.optim.Adam([
 #     dict(params=model.KN1, lr=0.001, weight_decay=0),
 #     dict(params=model.KN2, lr=0.001, weight_decay=0),
@@ -168,16 +177,16 @@ def train():
         loss = criterion(out, data.y)
         loss.backward()
 
-        gKN2 = model.KN2.grad.norm().item()
+        #gKN2 = model.KN2.grad.norm().item()
         # gKN1 = model.KN1.grad.norm().item()
-        gKN1 = 0
-        gKo = model.K1Nopen.grad.norm().item()
-        gKc = model.KNclose.grad.norm().item()
-        #gAlpha = model.alpha.grad.norm().item()
-        #print("gKo gKN1  gKN2    gKc gAlpha")
-        #print("%10.3E   %10.3E   %10.3E   %10.3E    %10.3E" %
+        #gKN1 = 0
+        #gKo = model.K1Nopen.grad.norm().item()
+        #gKc = model.KNclose.grad.norm().item()
+        # gAlpha = model.alpha.grad.norm().item()
+        # print("gKo gKN1  gKN2    gKc gAlpha")
+        # print("%10.3E   %10.3E   %10.3E   %10.3E    %10.3E" %
         #      (gKo, gKN1, gKN2, gKc, gAlpha), flush=True)
-        #print("alpha:", model.alpha.data)
+        # print("alpha:", model.alpha.data)
         optimizer.step()
         total_loss += loss.item() * data.num_nodes
         total_examples += data.num_nodes
