@@ -51,7 +51,9 @@ class graphNetwork(nn.Module):
         self.h = h
         stdv = 1.0 #1e-2
         stdvp = 1.0 # 1e-3
-        self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
+        embeddim = 8
+        self.Embed = nn.Embedding(100,embeddim)
+        self.K1Nopen = nn.Parameter(torch.randn(nopen, embeddim) * stdv)
         self.K2Nopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
         self.K1Eopen = nn.Parameter(torch.randn(nopen, nEin) * stdv)
         self.K2Eopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
@@ -86,6 +88,8 @@ class graphNetwork(nn.Module):
         # xn = [B, C, N]
         # xe =  [B, C, E]
         # Opening layer
+
+        xn = self.Embed(xn.to(dtype=torch.int64)).transpose(2,3).squeeze(1)
         xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
         xe = self.doubleLayer(xe, self.K1Eopen, self.K2Eopen)
         xn = torch.cat([xn,Graph.edgeDiv(xe), Graph.edgeAve(xe)], dim=1)
