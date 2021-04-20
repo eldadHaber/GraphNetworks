@@ -43,7 +43,6 @@ def doubleLayer(x, K1, K2):
     return x
 
 
-
 class graphNetwork(nn.Module):
 
     def __init__(self, nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1):
