@@ -147,7 +147,7 @@ class graphNetwork(nn.Module):
         xe = self.doubleLayer(xe, self.K1Eopen, self.K2Eopen)
         xn = torch.cat([xn,Graph.edgeDiv(xe), Graph.edgeAve(xe)], dim=1)
         if self.const:
-            xn = proj(xn, self.KNclose, n=500)
+            xn = proj(xn, self.KNclose, n=100)
             #x3 = F.conv1d(xn, self.KNclose.unsqueeze(-1))
             #c = constraint(x3)
             #print(c.abs().mean().item())
@@ -173,7 +173,7 @@ class graphNetwork(nn.Module):
             #xold = tmp
 
             if self.const:
-                xn = proj(xn, self.KNclose, n=50)
+                xn = proj(xn, self.KNclose, n=5)
                 #x3 = F.conv1d(xn, self.KNclose.unsqueeze(-1))
                 #c = constraint(x3)
                 #print(c.abs().mean().item())

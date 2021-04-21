@@ -86,7 +86,7 @@ nopen = 64
 nhid  = 512
 nNclose = 3
 nEclose = 1
-nlayer = 18
+nlayer = 12
 
 model = GN.graphNetwork(nNin, nEin, nopen, nhid, nNclose, nlayer, h=.01)
 model.to(device)
@@ -152,6 +152,14 @@ for j in range(epochs):
         loss = F.mse_loss(maskMat(Dout,M), maskMat(Dtrue,M))/F.mse_loss(maskMat(Dtrue*0,M), maskMat(Dtrue,M))
 
         loss.backward()
+
+        torch.nn.utils.clip_grad_norm_(model.K1Nopen, 1.0, norm_type=2.0)
+        torch.nn.utils.clip_grad_norm_(model.K2Nopen, 1.0, norm_type=2.0)
+        torch.nn.utils.clip_grad_norm_(model.K1Eopen, 1.0, norm_type=2.0)
+        torch.nn.utils.clip_grad_norm_(model.K2Eopen, 1.0, norm_type=2.0)
+        torch.nn.utils.clip_grad_norm_(model.KE1, 1.0, norm_type=2.0)
+        torch.nn.utils.clip_grad_norm_(model.KE2, 1.0, norm_type=2.0)
+        torch.nn.utils.clip_grad_norm_(model.KNclose, 1.0, norm_type=2.0)
 
         aloss += loss.detach()
         alossAQ += (torch.norm(maskMat(Dout,M) - maskMat(Dtrue,M)) / (torch.sum(M)).detach())
