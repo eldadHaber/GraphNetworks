@@ -136,11 +136,10 @@ for nlayers in num_layers:
         model.to(device)
         # optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=wd)
         optimizer = torch.optim.Adam([
-            dict(params=model.KN1, lr=lrGCN, weight_decay=0),
-            dict(params=model.KN2, lr=lrGCN, weight_decay=0),
+            dict(params=model.graph_convs, lr=lrGCN, weight_decay=0),
             dict(params=model.K1Nopen, weight_decay=wd),
             dict(params=model.KNclose, weight_decay=wd),
-            dict(params=model.alpha, weight_decay=0),
+            #dict(params=model.alpha, weight_decay=0),
 
         ], lr=lr)
 
