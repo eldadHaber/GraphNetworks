@@ -90,7 +90,7 @@ class graph(nn.Module):
 
         return x
 
-    def edgeAve(self, g, method='max', W=[]):
+    def edgeAve(self, g,  W=[], method='max'):
         if len(W)==0:
             W = self.W
         x1 = torch.zeros(g.shape[0], g.shape[1], self.nnodes, device=g.device)
@@ -111,7 +111,9 @@ class graph(nn.Module):
 
     def edgeLength(self, x):
         g = self.nodeGrad(x)
-        L = torch.sqrt(torch.pow(g, 2).sum(dim=1))
+        #L = torch.sqrt(torch.pow(g, 2).sum(dim=1))
+        L = torch.pow(g, 2).sum(dim=1)
+
         return L
 
 

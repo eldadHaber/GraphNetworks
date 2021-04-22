@@ -88,7 +88,7 @@ nNclose = 3
 nEclose = 1
 nlayer = 12
 
-model = GN.graphNetwork(nNin, nEin, nopen, nhid, nNclose, nlayer, h=.01)
+model = GN.graphNetwork(nNin, nEin, nopen, nhid, nNclose, nlayer, h=.01, const=True)
 model.to(device)
 
 total_params = sum(p.numel() for p in model.parameters())
@@ -100,6 +100,7 @@ lrC = 1e-2
 lrN = 1e-2
 lrE1 = 1e-2
 lrE2 = 1e-2
+lrw  = 1e-2
 
 optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO},
                         {'params': model.K2Nopen, 'lr': lrC},
@@ -107,13 +108,14 @@ optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO},
                         {'params': model.K2Eopen, 'lr': lrC},
                         {'params': model.KE1, 'lr': lrE1},
                         {'params': model.KE2, 'lr': lrE2},
-                        {'params': model.KNclose, 'lr': lrE2}])
+                        {'params': model.KNclose, 'lr': lrE2},
+                        {'params': model.Kw, 'lr': lrw}])
 
 
 alossBest = 1e6
 epochs = 100
 
-ndata = n_data_total
+ndata = 1 #n_data_total
 bestModel = model
 hist = torch.zeros(epochs)
 
@@ -131,12 +133,12 @@ for j in range(epochs):
             continue
         nNodes = Ds.shape[0]
         # G = GO.dense_graph(nNodes, Ds)
-        w = Ds[I, J]
+        w = torch.ones(I.shape,device=I.device)
         G = GO.graph(I, J, nNodes, w)
         # Organize the node data
         xn = nodeProperties
         # xe = Ds.unsqueeze(0).unsqueeze(0)  # edgeProperties
-        xe = w.unsqueeze(0).unsqueeze(0)
+        xe = edgeProperties #w.unsqueeze(0).unsqueeze(0)
 
         #M = torch.ger(M.squeeze(), M.squeeze())
 
@@ -149,7 +151,13 @@ for j in range(epochs):
         Dtrue = utils.getDistMat(Coords)
 
         #loss = F.mse_loss(M * Dout, M * Dtrue)
-        loss = F.mse_loss(maskMat(Dout,M), maskMat(Dtrue,M))/F.mse_loss(maskMat(Dtrue*0,M), maskMat(Dtrue,M))
+        DtrueM = maskMat(Dtrue, M)
+        DoutM = maskMat(Dout, M)
+        If, Jf = torch.nonzero(DtrueM < 7*3.8, as_tuple=True)
+        DtrueM = DtrueM[If, Jf]
+        DoutM = DoutM[If, Jf]
+
+        loss = F.mse_loss(DoutM, DtrueM) / F.mse_loss(DtrueM * 0, DtrueM)
 
         loss.backward()
 

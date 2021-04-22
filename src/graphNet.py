@@ -80,7 +80,8 @@ def proj(x,K,n=1, d=3.8):
         #print(j, 0, torch.mean(torch.abs(c)).item())
 
         with torch.no_grad():
-            alpha = 1.0/lam.norm()
+            if j==0:
+                alpha = 1.0/lam.norm()
             lsiter = 0
             while True:
                 xtry = x - alpha * lam
@@ -92,8 +93,13 @@ def proj(x,K,n=1, d=3.8):
                     break
                 alpha = alpha/2
                 lsiter = lsiter+1
-                if lsiter > 5:
+                if lsiter > 10:
                     break
+
+            if lsiter==0:
+                alpha = alpha*1.5
+
+
 
         x = x - alpha * lam
 
@@ -101,10 +107,10 @@ def proj(x,K,n=1, d=3.8):
 
 class graphNetwork(nn.Module):
 
-    def __init__(self, nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1):
+    def __init__(self, nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, const=False):
         super(graphNetwork, self).__init__()
 
-        self.const = True
+        self.const = const
         self.h = h
         stdv = 1.0 #1e-2
         stdvp = 1.0 # 1e-3
@@ -125,6 +131,8 @@ class graphNetwork(nn.Module):
         self.KE2 = nn.Parameter(IdTensort * stdvp)
 
         self.KNclose = nn.Parameter(torch.eye(nNclose, nopen))
+
+        self.Kw = nn.Parameter(torch.ones(nopen,1))
 
     def doubleLayer(self, x, K1, K2):
 
@@ -157,14 +165,22 @@ class graphNetwork(nn.Module):
         #xold = xn
         for i in range(nlayers):
 
-            gradX = Graph.nodeGrad(xn)
-            intX = Graph.nodeAve(xn)
+            # Compute the distance in real space
+            x3    = F.conv1d(xn, self.KNclose.unsqueeze(-1))
+            w     = Graph.edgeLength(x3)
+            w     = self.Kw@w
+            w     = w/(torch.std(w)+1e-4)
+            w     = torch.exp(-(w**2))
+         #w     = torch.ones(xe.shape[2], device=xe.device)
+
+            gradX = Graph.nodeGrad(xn,w)
+            intX = Graph.nodeAve(xn,w)
 
             dxe = torch.cat([gradX, intX], dim=1)
             dxe  = self.doubleLayer(dxe, self.KE1[i], self.KE2[i])
 
-            divE = Graph.edgeDiv(dxe[:,:self.nopen,:])
-            aveE = Graph.edgeAve(dxe[:,self.nopen:,:])
+            divE = Graph.edgeDiv(dxe[:,:self.nopen,:],w)
+            aveE = Graph.edgeAve(dxe[:,self.nopen:,:],w)
 
             xn = xn - self.h * (divE + aveE)
 
