@@ -268,6 +268,22 @@ target = torch.arange(d.num_nodes, dtype=torch.long, device=device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 
 
+print_files = True
+if print_files:
+    file2Open = "src/faust_test.py"
+    print("------------------------------------ Driver file: ------------------------------------")
+
+    f = open(file2Open, "r")
+    for line in f:
+        print(line, end='', flush=True)
+
+    print("------------------------------------ Graph Networks file: ------------------------------------")
+    file2Open = "src/graphNet.py"
+    f = open(file2Open, "r")
+    for line in f:
+        print(line, end='', flush=True)
+
+
 #train_loader = DataLoader(
 #    train_dataset, batch_size=1, shuffle=True, num_workers=1, drop_last=False)
 
