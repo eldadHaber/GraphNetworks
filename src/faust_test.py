@@ -105,7 +105,8 @@ def train(epoch):
         I = data.edge_index[0, :]
         J = data.edge_index[1, :]
         N = data.pos.shape[0]
-        G = GO.graph(I, J, N, pos=data.pos, faces=data.face.t())
+        W = torch.ones(N).to(device)
+        G = GO.graph(I, J, N, W=W, pos=data.pos, faces=data.face.t())
         G = G.to(device)
         xn = data.x.t().unsqueeze(0)
         xe = data.edge_attr.t().unsqueeze(0)
