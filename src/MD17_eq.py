@@ -19,7 +19,7 @@ from torch.autograd import grad
 from torch.utils.data import DataLoader
 
 from src.Equivariant.eq_utils import use_model_eq
-from src.Equivariant.networks import Network
+from src.Equivariant.networks import Network, GraphNet_EQ
 
 from e3nn import o3
 from e3nn.math import soft_one_hot_linspace
@@ -34,12 +34,12 @@ from src.MD17_utils import getIterData_MD17, print_distogram, print_3d_structure
 if __name__ == '__main__':
 
     device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
-    # device='cpu'
+    device='cpu'
     print_distograms = False
     print_3d_structures = False
     use_mean_map = False
     # load training data
-    data = np.load('../../../data/MD/MD17/aspirin_dft.npz')
+    data = np.load('../../data/MD/MD17/aspirin_dft.npz')
     E = data['E']
     Force = data['F']
     R = data['R']
@@ -100,7 +100,7 @@ if __name__ == '__main__':
     radial_neurons = 100
     num_neighbors = 15
     num_nodes = natoms
-    model = Network(irreps_in=irreps_in, irreps_hidden=irreps_hidden, irreps_out=irreps_out, irreps_node_attr=irreps_node_attr, irreps_edge_attr=irreps_edge_attr, layers=layers, max_radius=max_radius,
+    model = GraphNet_EQ(irreps_in=irreps_in, irreps_hidden=irreps_hidden, irreps_out=irreps_out, irreps_node_attr=irreps_node_attr, irreps_edge_attr=irreps_edge_attr, layers=layers, max_radius=max_radius,
                     number_of_basis=number_of_basis, radial_layers=radial_layers, radial_neurons=radial_neurons, num_neighbors=num_neighbors, num_nodes=num_nodes)
     model.to(device)
     total_params = sum(p.numel() for p in model.parameters())
