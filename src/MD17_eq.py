@@ -34,12 +34,12 @@ from src.MD17_utils import getIterData_MD17, print_distogram, print_3d_structure
 if __name__ == '__main__':
 
     device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
-    device='cpu'
+    # device='cpu'
     print_distograms = False
     print_3d_structures = False
     use_mean_map = False
     # load training data
-    data = np.load('../../data/MD/MD17/aspirin_dft.npz')
+    data = np.load('../../../data/MD/MD17/aspirin_dft.npz')
     E = data['E']
     Force = data['F']
     R = data['R']
@@ -59,7 +59,7 @@ if __name__ == '__main__':
     # Following Equivariant paper, we select 1000 configurations from these as our training set, 1000 as our validation set, and the rest are used as test data.
     n_train = 1000
     n_val = 1000
-    batch_size = 5
+    batch_size = 50
 
     ndata_rand = 0 + np.arange(ndata)
     np.random.shuffle(ndata_rand)
@@ -89,20 +89,20 @@ if __name__ == '__main__':
 
 
     irreps_in = o3.Irreps("1x0e")
-    irreps_hidden = o3.Irreps("50x0e+50x0o+10x1e+10x1o")
+    irreps_hidden = o3.Irreps("100x0e+100x0o+50x1e+50x1o")
     irreps_out = o3.Irreps("1x0e")
     irreps_node_attr = o3.Irreps("1x0e")
     irreps_edge_attr = o3.Irreps("1x0e+1x1o")
     layers = 6
     max_radius = 5
-    number_of_basis = 10
+    number_of_basis = 25
     radial_layers = 2
-    radial_neurons = 20
+    radial_neurons = 100
     num_neighbors = 15
     num_nodes = natoms
     model = Network(irreps_in=irreps_in, irreps_hidden=irreps_hidden, irreps_out=irreps_out, irreps_node_attr=irreps_node_attr, irreps_edge_attr=irreps_edge_attr, layers=layers, max_radius=max_radius,
                     number_of_basis=number_of_basis, radial_layers=radial_layers, radial_neurons=radial_neurons, num_neighbors=num_neighbors, num_nodes=num_nodes)
-
+    model.to(device)
     total_params = sum(p.numel() for p in model.parameters())
     print('Number of parameters ', total_params)
 
@@ -127,7 +127,7 @@ if __name__ == '__main__':
         t1 = time.time()
         aloss_t,MAE_t,Fps_t,Fts_t, t_dataload_t, t_prepare_t, t_model_t, t_backprop_t = use_model_eq(model, dataloader_train, train=True, max_samples=1e6, optimizer=optimizer, batch_size=batch_size)
         t2 = time.time()
-        aloss_v,MAE_v,Fps_v,Fts_v,t_dataload_v, t_prepare_v, t_model_v, t_backprop_v = use_model_eq(model, dataloader_val, train=False, max_samples=1, optimizer=optimizer, batch_size=batch_size)
+        aloss_v,MAE_v,Fps_v,Fts_v,t_dataload_v, t_prepare_v, t_model_v, t_backprop_v = use_model_eq(model, dataloader_val, train=False, max_samples=10, optimizer=optimizer, batch_size=batch_size)
         t3 = time.time()
 
         if MAE_v < MAE_best:

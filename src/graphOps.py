@@ -144,7 +144,7 @@ class graph(nn.Module):
         # I, J, nnodesList, W2 = makeBatch(iInd, jInd, nnodes, W)
         self.nnodes = nnodes
         self.D = torch.sqrt(D2)
-        GS = GaussianSmearing(start=0,stop=8,n_gaussians=25)
+        GS = GaussianSmearing(start=0,stop=8,n_gaussians=25).to(device=self.D.device)
         GSD = GS(self.D)
         self.GSD = GSD
         return

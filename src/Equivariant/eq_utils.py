@@ -39,7 +39,7 @@ def use_model_eq(model,dataloader,train,max_samples,optimizer,batch_size=1):
         Ri.requires_grad_(True)
         Ri_vec = Ri.reshape(-1,Ri.shape[-1])
         zi_vec = zi.reshape(-1,zi.shape[-1])
-        batch = torch.arange(Ri.shape[0]).repeat_interleave(Ri.shape[1])
+        batch = torch.arange(Ri.shape[0]).repeat_interleave(Ri.shape[1]).to(device=Ri.device)
 
         data = {
                 'batch': batch,
