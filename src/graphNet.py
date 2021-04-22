@@ -204,8 +204,8 @@ class graphNetwork_try(nn.Module):
         self.diffOrder = diffOrder
         self.num_output = num_output
         self.dropout = dropOut
-        stdv = 1e-3
-        stdvp = 1e-3
+        stdv = 1e-1
+        stdvp = 1e-1
         self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
         self.K2Nopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
         if dense:
@@ -1316,6 +1316,218 @@ class graphNetwork_seq(nn.Module):
         return F.log_softmax(xn, dim=1), Graph
 
 
+    #------------faust ##############
+
+class graphNetwork_faust(nn.Module):
+
+    def __init__(self, nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=False, wave=True,
+                 diffOrder=1, num_nodes=1024):
+        super(graphNetwork_faust, self).__init__()
+        self.wave = wave
+        if not wave:
+            self.heat = True
+        else:
+            self.heat = False
+        self.h = h
+        self.varlet = varlet
+        self.dense = dense
+        self.diffOrder = diffOrder
+        self.num_nodes = num_nodes
+        stdv = 1e-1
+        stdvp = 1e-1
+        self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
+        self.K2Nopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
+        if dense:
+            self.K1Eopen = nn.Parameter(torch.randn(nopen, nEin, 9, 9) * stdv)
+            self.K2Eopen = nn.Parameter(torch.randn(nopen, nopen, 9, 9) * stdv)
+        else:
+            self.K1Eopen = nn.Parameter(torch.randn(nopen, nEin) * stdv)
+            self.K2Eopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
+
+        self.KNclose = nn.Parameter(torch.randn(nNclose, nopen) * stdv)
+
+        if varlet:
+            Nfeatures = 2 * nopen
+        else:
+            Nfeatures = 3 * nopen
+        if dense:
+            self.KE1 = nn.Parameter(torch.rand(nlayer, nhid, Nfeatures, 9, 9) * stdvp)
+            self.KE2 = nn.Parameter(torch.rand(nlayer, nopen, nhid, 9, 9) * stdvp)
+        else:
+            self.KE1 = nn.Parameter(torch.rand(nlayer, nhid, Nfeatures) * stdvp)
+            self.KE2 = nn.Parameter(torch.rand(nlayer, nopen, nhid) * stdvp)
+
+        self.KN1 = nn.Parameter(torch.rand(nlayer, nhid, Nfeatures) * stdvp)
+        self.KN2 = nn.Parameter(torch.rand(nlayer, nopen, nhid) * stdvp)
+
+        self.lin1 = torch.nn.Linear(nopen, 256)
+        self.lin2 = torch.nn.Linear(256, self.num_nodes)
+
+    def edgeConv(self, xe, K):
+        if xe.dim() == 4:
+            if K.dim() == 2:
+                xe = F.conv2d(xe, K.unsqueeze(-1).unsqueeze(-1))
+            else:
+                xe = conv2(xe, K)
+        elif xe.dim() == 3:
+            if K.dim() == 2:
+                xe = F.conv1d(xe, K.unsqueeze(-1))
+            else:
+                xe = conv1(xe, K)
+        return xe
+
+    def doubleLayer(self, x, K1, K2):
+        x = self.edgeConv(x, K1)
+        x = F.layer_norm(x, x.shape)
+        x = torch.tanh(x)
+        x = self.edgeConv(x, K2)
+        #x = torch.tanh(x)
+        return x
+
+    def nodeDeriv(self, features, Graph, order=1, edgeSpace=True):
+        ## if edgeSpace==True, return features in edge space.
+        x = features
+        operators = []
+        for i in torch.arange(0, order):
+            x = Graph.nodeGrad(x)
+            if edgeSpace:
+                operators.append(x)
+
+            # if i == order - 1:
+            #    break
+
+            x = Graph.edgeDiv(x)
+            if not edgeSpace:
+                operators.append(x)
+
+        if edgeSpace:
+            out = x
+        else:
+            out = Graph.edgeAve(x, method='ave')
+        operators.append(out)
+        return operators
+
+    def saveOperatorImages(self, operators):
+        for i in torch.arange(0, len(operators)):
+            op = operators[i]
+            op = op.detach().squeeze().cpu()  # .numpy()
+
+            plt.figure()
+            img = op.reshape(32, 32)
+            img = img / img.max()
+            plt.imshow(img)
+            plt.colorbar()
+            plt.show()
+            plt.savefig('plots/operator' + str(i) + '.jpg')
+            plt.close()
+
+    def savePropagationImage(self, xn, xe, dxe, Graph, i=0):
+        plt.figure()
+        img = xn.clone().detach().squeeze().reshape(32, 32).cpu().numpy()
+        # img = img / img.max()
+        plt.imshow(img)
+        plt.colorbar()
+        plt.show()
+        plt.savefig('plots/img_xn_norm_layer_heat' + str(i) + 'order_nodeDeriv' + str(self.diffOrder) + '.jpg')
+        plt.close()
+
+        divE = Graph.edgeDiv(dxe)
+        plt.figure()
+        img = divE.clone().detach().squeeze().reshape(32, 32).cpu().numpy()
+        # img = img / img.max()
+        plt.imshow(img)
+        plt.colorbar()
+        plt.show()
+        plt.savefig('plots/img_xe_div_norm_layer_heat' + str(i) + 'order_nodeDeriv' + str(self.diffOrder) + '.jpg')
+        plt.close()
+
+    def forward(self, xn, xe, Graph):
+
+        # Opening layer
+        # xn = [B, C, N]
+        # xe = [B, C, N, N] or [B, C, E]
+        # Opening layer
+        xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
+        xe = self.doubleLayer(xe, self.K1Eopen, self.K2Eopen)
+
+        debug = False
+        if debug:
+            image = False
+            if image:
+                plt.figure()
+                img = xn.clone().detach().squeeze().reshape(32, 32).cpu().numpy()
+                img = img / img.max()
+                plt.imshow(img)
+                plt.colorbar()
+                plt.show()
+                plt.savefig('plots/img_xn_norm_layer_verlet' + str(0) + 'order_nodeDeriv' + str(0) + '.jpg')
+                plt.close()
+            else:
+                saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, 0)
+
+        N = Graph.nnodes
+        nlayers = self.KE1.shape[0]
+        xn_old = xn.clone()
+        xe_old = xe.clone()
+        for i in range(nlayers):
+            if i % 200 == 199:  # update graph
+                I, J = getConnectivity(xn.squeeze(0))
+                Graph = GO.graph(I, J, N)
+            tmp_node = xn.clone()
+            tmp_edge = xe.clone()
+
+            gradX = Graph.nodeGrad(xn)
+            intX = Graph.nodeAve(xn)
+
+            operators = self.nodeDeriv(xn, Graph, order=self.diffOrder, edgeSpace=True)
+            if debug and image:
+                self.saveOperatorImages(operators)
+
+            if self.varlet:
+                dxe = torch.cat([intX, gradX], dim=1)
+            else:
+                dxe = torch.cat([intX, xe, gradX], dim=1)
+
+            dxe = self.doubleLayer(dxe, self.KE1[i], self.KE2[i])
+
+            #dxe = F.layer_norm(dxe, dxe.shape)
+
+            if self.wave:
+                xe = xe + self.h * dxe
+                divE = Graph.edgeDiv(xe)
+                aveE = Graph.edgeAve(xe, method='ave')
+
+            if self.heat:
+                dxe = torch.tanh(dxe)
+                divE = Graph.edgeDiv(dxe)
+                aveE = Graph.edgeAve(dxe, method='ave')
+
+            if self.varlet:
+                dxn = torch.cat([aveE, divE], dim=1)
+            else:
+                dxn = torch.cat([aveE, divE, xn], dim=1)
+
+            dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
+
+            if self.wave:
+                xn = xn + self.h * dxn
+            else:
+                xn = xn - self.h * dxn
+
+            if debug:
+                if image:
+                    self.savePropagationImage(xn, xe, dxe, Graph, i + 1)
+                else:
+                    saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, i + 1)
+
+        xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
+        xn = xn.squeeze().t()
+        x = F.elu(self.lin1(xn))
+        x = F.dropout(x, training=self.training)
+        x = self.lin2(x)
+        return F.log_softmax(x, dim=1)
+
+        #return xn, xe
 Test = False
 if Test:
     nNin = 20
