@@ -354,25 +354,25 @@ class graphNetwork_try(nn.Module):
                 Graph = GO.graph(I, J, N)
             tmp_node = xn.clone()
             tmp_edge = xe.clone()
+            if 1==0:
+                features = xn.squeeze()
+                D = torch.relu(torch.sum(features ** 2, dim=0, keepdim=True) + \
+                               torch.sum(features ** 2, dim=0, keepdim=True).t() - \
+                               2 * features.t() @ features)
 
-            features = xn.squeeze()
-            D = torch.relu(torch.sum(features ** 2, dim=0, keepdim=True) + \
-                           torch.sum(features ** 2, dim=0, keepdim=True).t() - \
-                           2 * features.t() @ features)
-
-            D = D / D.std()
-            D = torch.exp(-2 * D)
-            I = Graph.iInd
-            J = Graph.jInd
-            w = D[I, J]
-            Graph = GO.graph(I, J, N, W=w, pos=None, faces=None)
+                D = D / D.std()
+                D = torch.exp(-2 * D)
+                I = Graph.iInd
+                J = Graph.jInd
+                w = D[I, J]
+                Graph = GO.graph(I, J, N, W=w, pos=None, faces=None)
 
             gradX = Graph.nodeGrad(xn)
             intX = Graph.nodeAve(xn)
 
-            operators = self.nodeDeriv(xn, Graph, order=self.diffOrder, edgeSpace=True)
-            if debug and image:
-                self.saveOperatorImages(operators)
+            #operators = self.nodeDeriv(xn, Graph, order=self.diffOrder, edgeSpace=True)
+            #if debug and image:
+            #    self.saveOperatorImages(operators)
 
             if self.varlet:
                 dxe = torch.cat([intX, gradX], dim=1)
@@ -459,6 +459,7 @@ class graphNetwork_nodesOnly(nn.Module):
         self.num_output = num_output
         self.graphUpdate = graphUpdate
         self.gated = gated
+        self.faust = faust
         if dropOut > 0.0:
             self.dropout = dropOut
         else:
@@ -468,7 +469,11 @@ class graphNetwork_nodesOnly(nn.Module):
         stdvp = 1e-3
         self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
         self.K2Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
-        self.KNclose = nn.Parameter(torch.randn(num_output, nopen) * stdv)
+        if not self.faust:
+            self.KNclose = nn.Parameter(torch.randn(num_output, nopen) * stdv)
+        else:
+            self.KNclose = nn.Parameter(torch.randn(nopen, nopen) * stdv)
+
         if varlet:
             Nfeatures = 1 * nopen
         else:
@@ -500,8 +505,12 @@ class graphNetwork_nodesOnly(nn.Module):
             self.lin1 = torch.nn.Linear(nopen, nopen)
             self.lin2 = torch.nn.Linear(nopen, num_output)
 
+        if self.faust:
+            self.lin1 = torch.nn.Linear(nopen, nopen)
+            self.lin2 = torch.nn.Linear(nopen, num_output)
+
         self.modelnet = modelnet
-        self.faust = faust
+
         self.PPI = PPI
         if self.modelnet:
             self.mlp = Seq(

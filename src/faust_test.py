@@ -48,15 +48,14 @@ nEin = 3
 nopen = 64
 nhid = 64
 nNclose = 64
-nlayer = 10
+nlayer = 4
 
 batchSize = 32
-
 
 modelnet_path = '/home/cluster/users/erant_group/ModelNet10'
 faust_path = '/home/cluster/users/erant_group/faust'
 transforms = T.FaceToEdge(remove_faces=False)
-#train_dataset = ModelNet(modelnet_path, '10', train=True, transform=transforms)
+# train_dataset = ModelNet(modelnet_path, '10', train=True, transform=transforms)
 
 
 pre_transform = T.Compose([T.FaceToEdge(remove_faces=False), T.Constant(value=1)])
@@ -65,24 +64,30 @@ test_dataset = FAUST(faust_path, False, T.Cartesian(), pre_transform)
 train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=1)
 
-
-#train_dataset = FAUST(faust_path, train=True, transform=transforms)
+# train_dataset = FAUST(faust_path, train=True, transform=transforms)
 d = train_dataset[0]
 
 model = GN.graphNetwork_try(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=True, wave=True,
-                 diffOrder=1, num_nodes=d.num_nodes)
+                            diffOrder=1, num_output=d.num_nodes)
+# dropout = 0.0
+# wave = True
+# model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=0.01, dense=False, varlet=True, wave=wave,
+#                                   diffOrder=1, num_output=d.num_nodes, dropOut=dropout, faust=True,
+#                                   gated=False,
+#                                   realVarlet=False, mixDyamics=False)
+
 
 model.to(device)
 
 target = torch.arange(d.num_nodes, dtype=torch.long, device=device)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
 
 
-#train_loader = DataLoader(
+# train_loader = DataLoader(
 #    train_dataset, batch_size=1, shuffle=True, num_workers=1, drop_last=False)
 
-#test_dataset = FAUST(faust_path, train=False, transform=transforms)
-#test_loader = DataLoader(
+# test_dataset = FAUST(faust_path, train=False, transform=transforms)
+# test_loader = DataLoader(
 #    train_dataset, batch_size=1, shuffle=False, num_workers=1, drop_last=False)
 
 def train(epoch):
@@ -110,6 +115,10 @@ def train(epoch):
         # print("xn shape:", xn.shape)
         # print("xe shape:", xe.shape)
         xnOut = model(xn, xe, G)
+        # xnOut = model(xn, G)
+        print("xnOut:", xnOut)
+        # print(xnOut.shape)
+        # print(target.shape)
         loss = F.nll_loss(xnOut, target)
         total_loss += loss.item()
         loss.backward()
@@ -136,7 +145,7 @@ def test():
         xn = data.x.t().unsqueeze(0)
         xe = data.edge_attr.t().unsqueeze(0)
         xnOut = model(xn, xe, G)
-
+        # xnOut = model(xn, G)
         pred = xnOut.max(1)[1]
         correct += pred.eq(target).sum().item()
     return correct / (len(test_dataset) * d.num_nodes)
@@ -146,14 +155,6 @@ for epoch in range(1, 101):
     train(epoch)
     test_acc = test()
     print('Epoch: {:02d}, Test: {:.4f}'.format(epoch, test_acc))
-
-
-
-
-
-
-
-
 
 for i, data in enumerate(train_loader):
     print(data.pos)
