@@ -30,7 +30,7 @@ class Dataset_MD17(data.Dataset):
         R = self.R[index]
         F = self.F[index]
         E = self.E[index]
-        z = self.z
+        z = self.z[:,None]
         return R, F, E, z
 
     def __len__(self):
@@ -156,12 +156,7 @@ def use_model(model,dataloader,train,max_samples,optimizer,device,batch_size=1, 
     for i, (Ri, Fi, Ei, zi) in enumerate(dataloader):
         t0 = time.time()
         Ri.requires_grad_(True)
-        if batch_size == 1:
-            _, I, J, xe, Ds, iDs = getIterData_MD17(Ri.squeeze(), device=device)
-            nnodes = Ds.shape[-1]
-            w = iDs[I, J].to(device=device, dtype=torch.float32)
-        else:
-            I, J, xn, xe, nnodes, D2, iD2 = getBatchData_MD17_fast(Ri, zi, use_mean_map=use_mean_map,R_mean=R_mean)
+        I, J, xn, xe, nnodes, D2, iD2 = getBatchData_MD17_fast(Ri, zi, use_mean_map=use_mean_map,R_mean=R_mean)
 
         G = GO.graph(I, J, nnodes, D2)
 
@@ -169,6 +164,9 @@ def use_model(model,dataloader,train,max_samples,optimizer,device,batch_size=1, 
         t1 = time.time()
         xnOut, xeOut = model(xn, xe, G)
         t2 = time.time()
+
+        # E_1 = torch.sum(xnOut[:,:,:21])
+        # F1 = -grad(E_1, Ri, create_graph=True)[0].requires_grad_(True)
 
         E_pred = torch.sum(xnOut)
         if train:
