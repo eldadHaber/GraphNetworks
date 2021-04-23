@@ -38,6 +38,8 @@ else:
     from src import pnetArch as PNA
 
 num_layers = [2, 4, 8, 16, 32, 64]
+print(torch.cuda.get_device_name(0))
+print(torch.cuda.get_device_properties('cuda:0'))
 
 print("**********************************************************************************")
 file2Open = "src/optuna_GNcora.py"
