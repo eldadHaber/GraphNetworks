@@ -181,7 +181,7 @@ for nlayers in num_layers:
             best = 0
             for epoch in range(1000):
                 loss_tra, acc_tra = train_step(model, optimizer, features, labels, edge_index, idx_train)
-                loss_val, acc_val = test_step(model, features, labels, edge_index, idx_test)
+                loss_val, acc_test = test_step(model, features, labels, edge_index, idx_test)
                 if (epoch + 1) % 10000000000 == 0:
                     print('Epoch:{:04d}'.format(epoch + 1),
                           'train',
@@ -189,9 +189,9 @@ for nlayers in num_layers:
                           'acc:{:.2f}'.format(acc_tra * 100),
                           '| test',
                           'loss:{:.3f}'.format(loss_val),
-                          'acc:{:.2f}'.format(acc_val * 100))
-                if acc_val > best:
-                    best = acc_val
+                          'acc:{:.2f}'.format(acc_test * 100))
+                if acc_test > best:
+                    best = acc_test
                     # torch.save(model.state_dict(), checkpt_file)
                     bad_counter = 0
                 else:
