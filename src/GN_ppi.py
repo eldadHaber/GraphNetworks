@@ -114,6 +114,8 @@ print("dropout:", dropout)
 wave = False
 print("Wave = ", wave)
 print_files = False
+if "s" in sys.argv:
+    print_files = True
 if print_files:
     file2Open = "src/GN_ppi.py"
     print("------------------------------------ Driver file: ------------------------------------")
@@ -143,17 +145,17 @@ model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense
 
 model.reset_parameters()
 model.to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+#optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 criterion = torch.nn.BCEWithLogitsLoss()
 
 
-# optimizer = torch.optim.Adam([
-#     dict(params=model.KN1, lr=0.001, weight_decay=0),
-#     dict(params=model.KN2, lr=0.001, weight_decay=0),
-#     dict(params=model.K1Nopen, weight_decay=5e-4),
-#     dict(params=model.KNclose, weight_decay=5e-4),
-#     dict(params=model.alpha, lr=0.1, weight_decay=0),
-# ], lr=0.001)
+optimizer = torch.optim.Adam([
+    dict(params=model.KN1, lr=0.0001, weight_decay=0),
+    dict(params=model.KN2, lr=0.0001, weight_decay=0),
+    dict(params=model.K1Nopen, weight_decay=5e-4),
+    dict(params=model.KNclose, weight_decay=5e-4),
+    #dict(params=model.alpha, lr=0.1, weight_decay=0),
+], lr=0.001)
 
 
 def train():

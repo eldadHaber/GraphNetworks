@@ -235,13 +235,25 @@ else:
 # Setup the network and its parameters
 nNin = 3
 nEin = 3
-nopen = 256
-nhid = 256
-nNclose = 256
-nlayer = 8
+nopen = 64
+nhid = 64
+nNclose = 64
+nlayer = 16
 
 batchSize = 32
+h=0.1
+lr = 0.01
+lrGCN = 0.001
+wdGCN = 0
+wd = 5e-4
 
+print("nchannels:", nopen)
+print("nlayers:", nlayer)
+print("h:", h)
+print("lr:", lr)
+print("lr gcn:", lrGCN)
+print("wdgcn:", wdGCN)
+print("wd:", wd)
 
 modelnet_path = '/home/cluster/users/erant_group/ModelNet10'
 faust_path = '/home/cluster/users/erant_group/faust'
@@ -259,16 +271,26 @@ test_loader = DataLoader(test_dataset, batch_size=1)
 #train_dataset = FAUST(faust_path, train=True, transform=transforms)
 d = train_dataset[0]
 
-model = GN.graphNetwork_faust(nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=True, wave=True,
+model = GN.graphNetwork_faust(nNin, nEin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=True,
                  diffOrder=1, num_nodes=d.num_nodes)
 
 model.to(device)
 
 target = torch.arange(d.num_nodes, dtype=torch.long, device=device)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+
+optimizer = torch.optim.Adam([
+    dict(params=model.KN1, lr=lrGCN, weight_decay=wdGCN),
+    dict(params=model.KN2, lr=lrGCN, weight_decay=wdGCN),
+    dict(params=model.K1Nopen, weight_decay=wd),
+    dict(params=model.KNclose, weight_decay=wd),
+    dict(params=model.lin1.parameters(), weight_decay=wd),
+    dict(params=model.lin2.parameters(), weight_decay=wd)
+    #dict(params=model.alpha, lr=0.1, weight_decay=0),
+], lr=lr)
 
 
-print_files = True
+print_files = False
 if print_files:
     file2Open = "src/faust_test.py"
     print("------------------------------------ Driver file: ------------------------------------")
