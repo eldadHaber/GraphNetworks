@@ -182,9 +182,6 @@
 #     exit()
 
 
-
-
-
 ##--------------------new code is up---------##
 ##below is old code###
 
@@ -233,7 +230,7 @@ else:
     from src import pnetArch as PNA
 
 # Setup the network and its parameters
-nNin = 3
+nNin = 6
 nEin = 3
 nopen = 64
 nhid = 64
@@ -241,7 +238,7 @@ nNclose = 64
 nlayer = 16
 
 batchSize = 32
-h=0.1
+h = 0.1
 lr = 0.01
 lrGCN = 0.001
 wdGCN = 0
@@ -258,7 +255,7 @@ print("wd:", wd)
 modelnet_path = '/home/cluster/users/erant_group/ModelNet10'
 faust_path = '/home/cluster/users/erant_group/faust'
 transforms = T.FaceToEdge(remove_faces=False)
-#train_dataset = ModelNet(modelnet_path, '10', train=True, transform=transforms)
+# train_dataset = ModelNet(modelnet_path, '10', train=True, transform=transforms)
 
 
 pre_transform = T.Compose([T.FaceToEdge(remove_faces=False), T.Constant(value=1)])
@@ -267,12 +264,17 @@ test_dataset = FAUST(faust_path, False, T.Cartesian(), pre_transform)
 train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=1)
 
-
-#train_dataset = FAUST(faust_path, train=True, transform=transforms)
+# train_dataset = FAUST(faust_path, train=True, transform=transforms)
 d = train_dataset[0]
 
-model = GN.graphNetwork_faust(nNin, nEin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=True,
-                 diffOrder=1, num_nodes=d.num_nodes)
+model = GN.graphNetwork_faust(nNin, nEin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
+                              diffOrder=1, num_nodes=d.num_nodes)
+
+# model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=True,
+#                                   diffOrder=1, num_output=d.num_nodes, dropOut=0.0, faust=True,
+#                                   gated=False,
+#                                   realVarlet=False, mixDyamics=False)
+
 
 model.to(device)
 
@@ -286,9 +288,8 @@ optimizer = torch.optim.Adam([
     dict(params=model.KNclose, weight_decay=wd),
     dict(params=model.lin1.parameters(), weight_decay=wd),
     dict(params=model.lin2.parameters(), weight_decay=wd)
-    #dict(params=model.alpha, lr=0.1, weight_decay=0),
+    # dict(params=model.alpha, lr=0.1, weight_decay=0),
 ], lr=lr)
-
 
 print_files = False
 if print_files:
@@ -306,11 +307,11 @@ if print_files:
         print(line, end='', flush=True)
 
 
-#train_loader = DataLoader(
+# train_loader = DataLoader(
 #    train_dataset, batch_size=1, shuffle=True, num_workers=1, drop_last=False)
 
-#test_dataset = FAUST(faust_path, train=False, transform=transforms)
-#test_loader = DataLoader(
+# test_dataset = FAUST(faust_path, train=False, transform=transforms)
+# test_loader = DataLoader(
 #    train_dataset, batch_size=1, shuffle=False, num_workers=1, drop_last=False)
 
 def train(epoch):
@@ -339,7 +340,7 @@ def train(epoch):
         # print("edge index shape:", data.edge_index.shape)
         # print("xn shape:", xn.shape)
         # print("xe shape:", xe.shape)
-        xnOut = model(xn, xe, G)
+        xnOut = model(xn, G, xe=xe)
         loss = F.nll_loss(xnOut, target)
         total_loss += loss.item()
         loss.backward()
@@ -367,7 +368,7 @@ def test():
         xn = data.x.t().unsqueeze(0)
         xn = data.pos.t().unsqueeze(0)
         xe = data.edge_attr.t().unsqueeze(0)
-        xnOut = model(xn, xe, G)
+        xnOut = model(xn, G, xe=xe)
 
         pred = xnOut.max(1)[1]
         correct += pred.eq(target).sum().item()
@@ -378,14 +379,6 @@ for epoch in range(1, 1001):
     train(epoch)
     test_acc = test()
     print('Epoch: {:02d}, Test: {:.4f}'.format(epoch, test_acc))
-
-
-
-
-
-
-
-
 
 for i, data in enumerate(train_loader):
     print(data.pos)

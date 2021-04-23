@@ -354,7 +354,7 @@ class graphNetwork_try(nn.Module):
                 Graph = GO.graph(I, J, N)
             tmp_node = xn.clone()
             tmp_edge = xe.clone()
-            if 1==0:
+            if 1 == 0:
                 features = xn.squeeze()
                 D = torch.relu(torch.sum(features ** 2, dim=0, keepdim=True) + \
                                torch.sum(features ** 2, dim=0, keepdim=True).t() - \
@@ -370,8 +370,8 @@ class graphNetwork_try(nn.Module):
             gradX = Graph.nodeGrad(xn)
             intX = Graph.nodeAve(xn)
 
-            #operators = self.nodeDeriv(xn, Graph, order=self.diffOrder, edgeSpace=True)
-            #if debug and image:
+            # operators = self.nodeDeriv(xn, Graph, order=self.diffOrder, edgeSpace=True)
+            # if debug and image:
             #    self.saveOperatorImages(operators)
 
             if self.varlet:
@@ -467,6 +467,9 @@ class graphNetwork_nodesOnly(nn.Module):
         self.nlayers = nlayer
         stdv = 1e-3
         stdvp = 1e-3
+        if self.faust:
+            stdv = 1e-1
+            stdvp = 1e-1
         self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
         self.K2Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
         if not self.faust:
@@ -676,12 +679,15 @@ class graphNetwork_nodesOnly(nn.Module):
 
         return deg
 
-    def forward(self, xn, Graph, data=None):
+    def forward(self, xn, Graph, data=None, xe=None):
         # Opening layer
         # xn = [B, C, N]
         # xe = [B, C, N, N] or [B, C, E]
         # Opening layer
-        [Graph, edge_index] = self.updateGraph(Graph)
+        if not self.faust:
+            [Graph, edge_index] = self.updateGraph(Graph)
+        if self.faust:
+            xn = torch.cat([xn, Graph.edgeDiv(xe)], dim=1)
 
         if self.realVarlet:
             xe = Graph.nodeGrad(xn)
@@ -1315,8 +1321,8 @@ class graphNetwork_seq(nn.Module):
         ## Otherwise its citation graph node classification:
         return F.log_softmax(xn, dim=1), Graph
 
+    # ------------faust ##############
 
-    #------------faust ##############
 
 class graphNetwork_faust(nn.Module):
 
@@ -1381,7 +1387,7 @@ class graphNetwork_faust(nn.Module):
         x = F.layer_norm(x, x.shape)
         x = torch.tanh(x)
         x = self.edgeConv(x, K2)
-        #x = torch.tanh(x)
+        # x = torch.tanh(x)
         return x
 
     def nodeDeriv(self, features, Graph, order=1, edgeSpace=True):
@@ -1447,6 +1453,8 @@ class graphNetwork_faust(nn.Module):
         # xn = [B, C, N]
         # xe = [B, C, N, N] or [B, C, E]
         # Opening layer
+        if not self.wave:
+            xn = Graph.edgeAve(xe, method="ave")
         xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
         xe = self.doubleLayer(xe, self.K1Eopen, self.K2Eopen)
 
@@ -1490,7 +1498,7 @@ class graphNetwork_faust(nn.Module):
 
             dxe = self.doubleLayer(dxe, self.KE1[i], self.KE2[i])
 
-            #dxe = F.layer_norm(dxe, dxe.shape)
+            # dxe = F.layer_norm(dxe, dxe.shape)
 
             if self.wave:
                 xe = xe + self.h * dxe
@@ -1527,7 +1535,9 @@ class graphNetwork_faust(nn.Module):
         x = self.lin2(x)
         return F.log_softmax(x, dim=1)
 
-        #return xn, xe
+        # return xn, xe
+
+
 Test = False
 if Test:
     nNin = 20
