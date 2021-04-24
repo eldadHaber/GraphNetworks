@@ -79,7 +79,7 @@ for nlayers in num_layers:
         nhid = 512
         nNclose = 512
         nlayer = nlayers
-        h = trial.suggest_discrete_uniform('h', 0.1 / (nlayer), 1, q=0.1 / (nlayer)) #0.05  # 1 / nlayer
+        h = trial.suggest_discrete_uniform('h', 0.1 / (nlayer), 0.2, q=0.1 / (nlayer)) #0.05  # 1 / nlayer
         dropout = trial.suggest_categorical('dropout', [0.1, 0.2, 0.3])
         # h = 20 / nlayer
         print("dataset:", dataset)
