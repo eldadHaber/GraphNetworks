@@ -80,7 +80,7 @@ for nlayers in num_layers:
         nNclose = 512
         nlayer = nlayers
         h = trial.suggest_discrete_uniform('h', 0.1 / (nlayer), 1, q=0.1 / (nlayer)) #0.05  # 1 / nlayer
-        dropout = trial.suggest_discrete_uniform('dropout', 0.0001, 0.3, q=0.1)
+        dropout = trial.suggest_categorical('dropout', [0.1, 0.2, 0.3])
         # h = 20 / nlayer
         print("dataset:", dataset)
         print("n channels:", nopen)
@@ -122,9 +122,9 @@ for nlayers in num_layers:
         # optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
         criterion = torch.nn.BCEWithLogitsLoss()
 
-        lr = trial.suggest_float("lr", 1e-3, 1e-1, log=True)
+        lr = trial.suggest_float("lr", 1e-4, 1e-1, log=True)
         lrGCN = trial.suggest_float("lrGCN", 1e-6, 1e-3, log=True)
-        wd = trial.suggest_float("wd", 5e-5, 1e-2, log=True)
+        wd = trial.suggest_float("wd", 5e-8, 1e-2, log=True)
         wdGCN = trial.suggest_float("wdGCN", 1e-10, 1e-2, log=True)
         optimizer = torch.optim.Adam([
             dict(params=model.KN1, lr=lr, weight_decay=0),
