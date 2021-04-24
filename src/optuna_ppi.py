@@ -127,8 +127,8 @@ for nlayers in num_layers:
         wd = trial.suggest_float("wd", 5e-5, 1e-2, log=True)
         wdGCN = trial.suggest_float("wdGCN", 1e-10, 1e-2, log=True)
         optimizer = torch.optim.Adam([
-            dict(params=model.KN1, lr=lrGCN, weight_decay=0),
-            dict(params=model.KN2, lr=lrGCN, weight_decay=0),
+            dict(params=model.KN1, lr=lr, weight_decay=0),
+            dict(params=model.KN2, lr=lr, weight_decay=0),
             dict(params=model.K1Nopen, weight_decay=wd),
             dict(params=model.KNclose, weight_decay=wd),
             # dict(params=model.alpha, lr=0.1, weight_decay=0),
