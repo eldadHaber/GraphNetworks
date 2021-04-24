@@ -34,15 +34,6 @@ def tv_norm(X, eps=1e-3):
     X = X / torch.sqrt(torch.sum(X ** 2, dim=1, keepdim=True) + eps)
     return X
 
-
-def doubleLayer(x, K1, K2):
-    x = F.conv1d(x, K1.unsqueeze(-1))
-    x = F.layer_norm(x, x.shape)
-    x = torch.relu(x)
-    x = F.conv1d(x, K2.unsqueeze(-1))
-    return x
-
-
 class graphNetwork(nn.Module):
 
     def __init__(self, nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1):
@@ -90,7 +81,6 @@ class graphNetwork(nn.Module):
         x = torch.tanh(x)
         x = F.conv1d(x, K2.unsqueeze(-1))
         x = torch.tanh(x)
-
         return x
 
     def forward(self, xn, xe, Graph):

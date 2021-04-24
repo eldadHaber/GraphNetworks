@@ -18,6 +18,7 @@ from src import graphNet as GN
 from torch.autograd import grad
 from torch.utils.data import DataLoader
 
+from src.Equivariant.NequIP_network import NequIP
 from src.Equivariant.eq_utils import use_model_eq
 from src.Equivariant.networks import Network, GraphNet_EQ
 
@@ -95,12 +96,12 @@ if __name__ == '__main__':
     irreps_edge_attr = o3.Irreps("1x0e+1x1o")
     layers = 6
     max_radius = 5
-    number_of_basis = 25
-    radial_layers = 2
-    radial_neurons = 100
+    number_of_basis = 8
+    radial_layers = 1
+    radial_neurons = 8
     num_neighbors = 15
     num_nodes = natoms
-    model = GraphNet_EQ(irreps_in=irreps_in, irreps_hidden=irreps_hidden, irreps_out=irreps_out, irreps_node_attr=irreps_node_attr, irreps_edge_attr=irreps_edge_attr, layers=layers, max_radius=max_radius,
+    model = NequIP(irreps_in=irreps_in, irreps_hidden=irreps_hidden, irreps_out=irreps_out, irreps_node_attr=irreps_node_attr, irreps_edge_attr=irreps_edge_attr, layers=layers, max_radius=max_radius,
                     number_of_basis=number_of_basis, radial_layers=radial_layers, radial_neurons=radial_neurons, num_neighbors=num_neighbors, num_nodes=num_nodes)
     model.to(device)
     total_params = sum(p.numel() for p in model.parameters())

@@ -150,6 +150,10 @@ class graph(nn.Module):
         return
 
     def nodeGrad(self, x, W=[]):
+        """Takes the gradient of the nodes and puts it on the edges.
+        For each node, we go through all its connections with other nodes and computes the difference between these two set of node features (the gradient if you will)
+        W is a weight, which should be a function of the connection between the different nodes.
+        """
         if len(W)==0:
             W = self.iD2
         g = W * (x[:, :, self.iInd] - x[:, :, self.jInd])
@@ -163,6 +167,13 @@ class graph(nn.Module):
 
 
     def edgeDiv(self, g, W=[]):
+        '''
+        Combines all the edge information leading into each node in a way similar to how a divergence operation would work.
+        Hence g will have the last dimension equal to number of edges, while x will have the dimension equal to the number of nodes.
+        :param g:
+        :param W:
+        :return:
+        '''
         if len(W)==0:
             W = self.iD2
         x = torch.zeros(g.shape[0], g.shape[1], self.nnodes, device=g.device)
