@@ -79,7 +79,7 @@ for nlayers in num_layers:
         nhid = 512
         nNclose = 512
         nlayer = nlayers
-        h = trial.suggest_discrete_uniform('h', 0.1 / (nlayer), 3, q=0.1 / (nlayer)) #0.05  # 1 / nlayer
+        h = trial.suggest_discrete_uniform('h', 0.1 / (nlayer), 1, q=0.1 / (nlayer)) #0.05  # 1 / nlayer
         dropout = trial.suggest_discrete_uniform('dropout', 0.0001, 0.3, q=0.1)
         # h = 20 / nlayer
         print("dataset:", dataset)
@@ -202,14 +202,14 @@ for nlayers in num_layers:
             train_f1 = test(train_dataset)
             val_f1 = test(val_loader)
             test_f1 = test(test_loader)
-            #print('Epoch: {:02d}, Loss: {:.4f}, Val: {:.4f}, Test: {:.4f}'.format(
-            #    epoch, loss, val_f1, test_f1), flush=True)
-            #print("Train F1:", train_f1, flush=True)
+            print('Epoch: {:02d}, Loss: {:.4f}, Val: {:.4f}, Test: {:.4f}'.format(
+                epoch, loss, val_f1, test_f1), flush=True)
+            print("Train F1:", train_f1, flush=True)
             if test_f1 > best_f1:
                 best_f1 = test_f1
-                print('Epoch: {:02d}, Loss: {:.4f}, Val: {:.4f}, Test: {:.4f}'.format(
-                    epoch, loss, val_f1, test_f1), flush=True)
-                print("Train F1:", train_f1, flush=True)
+                # print('Epoch: {:02d}, Loss: {:.4f}, Val: {:.4f}, Test: {:.4f}'.format(
+                #     epoch, loss, val_f1, test_f1), flush=True)
+                # print("Train F1:", train_f1, flush=True)
 
         return best_f1
 
