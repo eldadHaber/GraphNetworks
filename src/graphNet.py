@@ -1288,7 +1288,7 @@ class graphNetwork_seq(nn.Module):
         nlayers = self.nlayers
 
         segment_size = len(self.graph_convs) // segments
-        for start in range(0, segment_size * (segments - 1), segment_size):
+        for start in range(0, segment_size * (segments), segment_size):
             end = start + segment_size - 1
             # Note that if there are multiple inputs, we pass them as as is without
             # wrapping in a tuple etc.
@@ -1298,11 +1298,6 @@ class graphNetwork_seq(nn.Module):
             print("start:", start)
             print("end:", end)
 
-        print("after loop:")
-        print("start:", start)
-        print("end:", end)
-        [xn, xn_old] = checkpoint.checkpoint(
-            self.run_function(start, end), xn, xn_old, I, J, N, W)
 
         xn = F.dropout(xn, p=self.dropout, training=self.training)
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
