@@ -1267,7 +1267,7 @@ class graphNetwork_seq(nn.Module):
 
         return custom_forward
 
-    def forward(self, xn, Graph, data=None, segments=4):
+    def forward(self, xn, Graph, data=None, segments=2):
         [Graph, edge_index] = self.updateGraph(Graph)
         I = Graph.iInd
         J = Graph.jInd
@@ -1289,7 +1289,7 @@ class graphNetwork_seq(nn.Module):
 
         segment_size = len(self.graph_convs) // segments
         for start in range(0, segment_size * (segments), segment_size):
-            end = start + segment_size - 1
+            end = start + segment_size
             # Note that if there are multiple inputs, we pass them as as is without
             # wrapping in a tuple etc.
 
