@@ -111,7 +111,7 @@ print("n channels:", nopen)
 print("n layers:", nlayer)
 print("h step:", h)
 print("dropout:", dropout)
-wave = False
+wave = True
 print("Wave = ", wave)
 print_files = False
 if "s" in sys.argv:
