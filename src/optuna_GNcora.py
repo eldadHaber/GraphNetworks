@@ -65,7 +65,7 @@ for nlayers in num_layers:
 
 
     def objective(trial):
-        dataset = 'PubMed'
+        dataset = 'Cora'
         if dataset == 'Cora':
             nNin = 1433
         elif dataset == 'CiteSeer':
@@ -73,7 +73,7 @@ for nlayers in num_layers:
         elif dataset == 'PubMed':
             nNin = 500
         nEin = 1
-        n_channels = 256  # trial.suggest_categorical('n_channels', [64, 128, 256])
+        n_channels = 64  # trial.suggest_categorical('n_channels', [64, 128, 256])
         nopen = n_channels
         nhid = n_channels
         nNclose = n_channels
@@ -130,7 +130,7 @@ for nlayers in num_layers:
         wd = trial.suggest_float("wd", 5e-8, 1e-4, log=True)
         wdGCN = trial.suggest_float("wdGCN", 1e-10, 1e-2, log=True)
         model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, n_layers, h=h, dense=False, varlet=True,
-                                          wave=False,
+                                          wave=True,
                                           diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, gated=False,
                                           realVarlet=False, mixDyamics=False)
         model.reset_parameters()
