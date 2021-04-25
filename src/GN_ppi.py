@@ -99,9 +99,9 @@ dataset = 'ppi'
 
 nNin = train_dataset.num_features
 nEin = 1
-nopen = 256
-nhid = 256
-nNclose = 256
+nopen = 2048
+nhid = 2048
+nNclose = 2048
 nlayer = 4
 h = 0.05  # 1 / nlayer
 dropout = 0.0
@@ -219,7 +219,7 @@ def test(loader):
     return f1_score(y, pred, average='micro') if pred.sum() > 0 else 0
 
 
-for epoch in range(1, 2001):
+for epoch in range(1, 10001):
     loss = train()
     train_f1 = test(train_dataset)
     val_f1 = test(val_loader)
