@@ -1295,8 +1295,6 @@ class graphNetwork_seq(nn.Module):
 
             [xn, xn_old] = checkpoint.checkpoint(
                 self.run_function(start, end), xn, xn_old, I, J, N, W)
-            print("start:", start)
-            print("end:", end)
 
 
         xn = F.dropout(xn, p=self.dropout, training=self.training)
