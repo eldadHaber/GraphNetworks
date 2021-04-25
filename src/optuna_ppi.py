@@ -75,11 +75,11 @@ for nlayers in num_layers:
         torch.cuda.synchronize()
         nNin = train_dataset.num_features
         nEin = 1
-        nopen = 512
-        nhid = 512
-        nNclose = 512
+        nopen = 64
+        nhid = 64
+        nNclose = 64
         nlayer = nlayers
-        h = trial.suggest_discrete_uniform('h', 0.1 / (nlayer), 0.2, q=0.1 / (nlayer)) #0.05  # 1 / nlayer
+        h = trial.suggest_discrete_uniform('h', 0.01, 0.1, q=0.05) #0.05  # 1 / nlayer
         dropout = trial.suggest_categorical('dropout', [0.1, 0.2, 0.3])
         # h = 20 / nlayer
         print("dataset:", dataset)

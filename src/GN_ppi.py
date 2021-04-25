@@ -99,9 +99,9 @@ dataset = 'ppi'
 
 nNin = train_dataset.num_features
 nEin = 1
-nopen = 512
-nhid = 512
-nNclose = 512
+nopen = 64
+nhid = 64
+nNclose = 64
 nlayer = 8
 h = 0.2  # 1 / nlayer
 dropout = 0.2
