@@ -70,12 +70,12 @@ for nlayers in num_layers:
     def objective(trial):
 
         nEin = 1
-        n_channels = 64  # trial.suggest_categorical('n_channels', [64, 128, 256])
+        n_channels = 256  # trial.suggest_categorical('n_channels', [64, 128, 256])
         nopen = n_channels
         nhid = n_channels
         nNclose = n_channels
         nlayer = nlayers
-        datastr = "cornell"
+        datastr = "citeseer"
         print("DATA SET IS:", datastr)
         # h = 1 / n_layers
         h = trial.suggest_discrete_uniform('h', 0.1 / nlayer, 3, q=0.1 / (nlayer))
@@ -91,7 +91,7 @@ for nlayers in num_layers:
 
         lr = trial.suggest_float("lr", 1e-2, 1e-1, log=True)
         lrGCN = trial.suggest_float("lrGCN", 1e-6, 1e-3, log=True)
-        wd = trial.suggest_float("wd", 5e-5, 1e-2, log=True)
+        wd = trial.suggest_float("wd", 5e-8, 1e-3, log=True)
         #wdGCN = trial.suggest_float("wdGCN", 1e-10, 1e-2, log=True)
 
         def train_step(model, optimizer, features, labels, adj, idx_train):
@@ -164,7 +164,7 @@ for nlayers in num_layers:
             #
 
             model = GN.graphNetwork_nodesOnly(num_features, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True,
-                                              wave=True,
+                                              wave=False,
                                               diffOrder=1, num_output=num_output, dropOut=dropout, gated=False,
                                               realVarlet=realVarlet, mixDyamics=False)
             model = model.to(device)

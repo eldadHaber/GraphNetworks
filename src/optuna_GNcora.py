@@ -65,7 +65,7 @@ for nlayers in num_layers:
 
 
     def objective(trial):
-        dataset = 'Cora'
+        dataset = 'CiteSeer'
         if dataset == 'Cora':
             nNin = 1433
         elif dataset == 'CiteSeer':
@@ -73,7 +73,7 @@ for nlayers in num_layers:
         elif dataset == 'PubMed':
             nNin = 500
         nEin = 1
-        n_channels = 64  # trial.suggest_categorical('n_channels', [64, 128, 256])
+        n_channels = 256  # trial.suggest_categorical('n_channels', [64, 128, 256])
         nopen = n_channels
         nhid = n_channels
         nNclose = n_channels
