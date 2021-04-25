@@ -532,32 +532,32 @@ class graphNetwork_nodesOnly(nn.Module):
         if self.modelnet:
             glorot(self.mlp)
 
-    def edgeConv(self, xe, K):
+    def edgeConv(self, xe, K, groups=1):
         if xe.dim() == 4:
             if K.dim() == 2:
-                xe = F.conv2d(xe, K.unsqueeze(-1).unsqueeze(-1))
+                xe = F.conv2d(xe, K.unsqueeze(-1).unsqueeze(-1), groups=groups)
             else:
-                xe = conv2(xe, K)
+                xe = conv2(xe, K, groups=groups)
         elif xe.dim() == 3:
             if K.dim() == 2:
-                xe = F.conv1d(xe, K.unsqueeze(-1))
+                xe = F.conv1d(xe, K.unsqueeze(-1), groups=groups)
             else:
-                xe = conv1(xe, K)
+                xe = conv1(xe, K, groups=groups)
         return xe
 
-    def singleLayer(self, x, K, relu=True, norm=False):
+    def singleLayer(self, x, K, relu=True, norm=False, groups=1):
         if K.shape[0] != K.shape[1]:
-            x = self.edgeConv(x, K)
+            x = self.edgeConv(x, K, groups=groups)
 
         if K.shape[0] == K.shape[1]:
-            x = self.edgeConv(x, K)
+            x = self.edgeConv(x, K, groups=groups)
 
             x = F.tanh(x)
             if norm:
                 # x = F.layer_norm(x, x.shape)
                 beta = torch.norm(x)
                 x = beta * tv_norm(x)
-            x = self.edgeConv(x, K.t())
+            x = self.edgeConv(x, K.t(), groups=groups)
 
         if not relu:
             return x
@@ -800,10 +800,10 @@ class graphNetwork_nodesOnly(nn.Module):
                 if self.varlet and not self.gated:
                     efficient = True
                     if efficient:
-                        dxn = (self.singleLayer(gradX, self.KN2[i], norm=False, relu=False))
+                        dxn = (self.singleLayer(gradX, self.KN2[i], norm=False, relu=False, groups=1))
                         dxn = Graph.edgeDiv(dxn)  # + Graph.edgeAve(dxe2, method='ave')
                     else:
-                        dxe = (self.singleLayer(gradX, self.KN2[i], norm=False, relu=False))
+                        dxe = (self.singleLayer(gradX, self.KN2[i], norm=False, relu=False, groups=1))
                         dxn = Graph.edgeDiv(dxe)  # + Graph.edgeAve(dxe2, method='ave')
 
                     # dxe2 = (self.singleLayer(gradX, self.KN1[i], norm=False, relu=False))

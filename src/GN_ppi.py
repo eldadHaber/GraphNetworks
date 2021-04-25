@@ -99,12 +99,12 @@ dataset = 'ppi'
 
 nNin = train_dataset.num_features
 nEin = 1
-nopen = 64
-nhid = 64
-nNclose = 64
-nlayer = 8
-h = 0.2  # 1 / nlayer
-dropout = 0.2
+nopen = 256
+nhid = 256
+nNclose = 256
+nlayer = 4
+h = 0.05  # 1 / nlayer
+dropout = 0.0
 # h = 20 / nlayer
 print("dataset:", dataset)
 print("n channels:", nopen)
@@ -155,7 +155,7 @@ optimizer = torch.optim.Adam([
     dict(params=model.K1Nopen, weight_decay=0),
     dict(params=model.KNclose, weight_decay=0),
     #dict(params=model.alpha, lr=0.1, weight_decay=0),
-], lr=0.01)
+], lr=0.001)
 
 
 def train():
