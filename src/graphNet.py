@@ -1288,6 +1288,8 @@ class graphNetwork_seq(nn.Module):
         nlayers = self.nlayers
 
         segment_size = len(self.graph_convs) // segments
+        xn.requires_grad = True
+        xn_old.requires_grad = True
         for start in range(0, segment_size * (segments), segment_size):
             end = start + segment_size
             # Note that if there are multiple inputs, we pass them as as is without
