@@ -155,7 +155,7 @@ optimizer = torch.optim.Adam([
     dict(params=model.K1Nopen, weight_decay=0),
     dict(params=model.KNclose, weight_decay=0),
     #dict(params=model.alpha, lr=0.1, weight_decay=0),
-], lr=0.001)
+], lr=0.01)
 
 
 def train():
