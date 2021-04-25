@@ -150,8 +150,8 @@ criterion = torch.nn.BCEWithLogitsLoss()
 
 
 optimizer = torch.optim.Adam([
-    dict(params=model.KN1, lr=0.0001, weight_decay=0),
-    dict(params=model.KN2, lr=0.0001, weight_decay=0),
+    dict(params=model.KN1, lr=0.001, weight_decay=0),
+    dict(params=model.KN2, lr=0.001, weight_decay=0),
     dict(params=model.K1Nopen, weight_decay=5e-4),
     dict(params=model.KNclose, weight_decay=5e-4),
     #dict(params=model.alpha, lr=0.1, weight_decay=0),
