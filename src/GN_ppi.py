@@ -103,7 +103,7 @@ nopen = 512
 nhid = 512
 nNclose = 512
 nlayer = 8
-h = 0.05  # 1 / nlayer
+h = 0.2  # 1 / nlayer
 dropout = 0.2
 # h = 20 / nlayer
 print("dataset:", dataset)
@@ -152,8 +152,8 @@ criterion = torch.nn.BCEWithLogitsLoss()
 optimizer = torch.optim.Adam([
     dict(params=model.KN1, lr=0.001, weight_decay=0),
     dict(params=model.KN2, lr=0.001, weight_decay=0),
-    dict(params=model.K1Nopen, weight_decay=5e-4),
-    dict(params=model.KNclose, weight_decay=5e-4),
+    dict(params=model.K1Nopen, weight_decay=0),
+    dict(params=model.KNclose, weight_decay=0),
     #dict(params=model.alpha, lr=0.1, weight_decay=0),
 ], lr=0.001)
 
