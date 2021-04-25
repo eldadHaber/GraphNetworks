@@ -127,7 +127,7 @@ for nlayers in num_layers:
         dropout = trial.suggest_discrete_uniform('dropout', 0.5, 0.8, q=0.1)
         lr = trial.suggest_float("lr", 1e-2, 1e-1, log=True)
         lrGCN = trial.suggest_float("lrGCN", 1e-6, 1e-3, log=True)
-        wd = trial.suggest_float("wd", 5e-5, 1e-2, log=True)
+        wd = trial.suggest_float("wd", 5e-8, 1e-4, log=True)
         wdGCN = trial.suggest_float("wdGCN", 1e-10, 1e-2, log=True)
         model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, n_layers, h=h, dense=False, varlet=True,
                                           wave=False,
