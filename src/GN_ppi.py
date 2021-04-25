@@ -145,17 +145,17 @@ model = GN.graphNetwork_seq(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False
 
 model.reset_parameters()
 model.to(device)
-#optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 criterion = torch.nn.BCEWithLogitsLoss()
 
 
-optimizer = torch.optim.Adam([
-    dict(params=model.KN1, lr=0.001, weight_decay=0),
-    dict(params=model.KN2, lr=0.001, weight_decay=0),
-    dict(params=model.K1Nopen, weight_decay=0),
-    dict(params=model.KNclose, weight_decay=0),
-    #dict(params=model.alpha, lr=0.1, weight_decay=0),
-], lr=0.001)
+# optimizer = torch.optim.Adam([
+#     dict(params=model.KN1, lr=0.001, weight_decay=0),
+#     dict(params=model.KN2, lr=0.001, weight_decay=0),
+#     dict(params=model.K1Nopen, weight_decay=0),
+#     dict(params=model.KNclose, weight_decay=0),
+#     #dict(params=model.alpha, lr=0.1, weight_decay=0),
+# ], lr=0.001)
 
 
 def train():
