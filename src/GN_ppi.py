@@ -104,7 +104,7 @@ nhid = 2048
 nNclose = 2048
 nlayer = 8
 h = 0.05  # 1 / nlayer
-dropout = 0.0
+dropout = 0.2
 # h = 20 / nlayer
 print("dataset:", dataset)
 print("n channels:", nopen)
