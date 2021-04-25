@@ -1171,8 +1171,8 @@ class graphNetwork_seq(nn.Module):
                                                dropOut=dropOut,
                                                graphUpdate=None, gated=gated, mixDyamics=mixDyamics))
 
-        stdv = 1e-3
-        stdvp = 1e-3
+        stdv = 1e-1
+        stdvp = 1e-1
         self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
         self.KNclose = nn.Parameter(torch.randn(num_output, nopen) * stdv)
 
@@ -1295,7 +1295,12 @@ class graphNetwork_seq(nn.Module):
 
             [xn, xn_old] = checkpoint.checkpoint(
                 self.run_function(start, end), xn, xn_old, I, J, N, W)
+            print("start:", start)
+            print("end:", end)
 
+        print("after loop:")
+        print("start:", start)
+        print("end:", end)
         [xn, xn_old] = checkpoint.checkpoint(
             self.run_function(start, end), xn, xn_old, I, J, N, W)
 
