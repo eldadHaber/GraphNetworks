@@ -98,7 +98,7 @@ nNin = 3
 nhid = 64
 nNclose = 64
 nlayer = 4
-h = 1 / nlayer
+h = 1 #/ nlayer
 dropout = 0.0
 wave=False
 model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
@@ -111,8 +111,8 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=0)
 
 
 optimizer = torch.optim.Adam([
-    dict(params=model.KN1, lr=0.001, weight_decay=0),
-    dict(params=model.KN2, lr=0.001, weight_decay=0),
+    dict(params=model.KN1, lr=0.0001, weight_decay=0),
+    dict(params=model.KN2, lr=0.0001, weight_decay=0),
     dict(params=model.K1Nopen, weight_decay=1e-5),
     dict(params=model.KNclose, weight_decay=1e-5),
     dict(params=model.mlp.parameters(), weight_decay=1e-5)
