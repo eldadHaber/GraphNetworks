@@ -490,7 +490,8 @@ class graphNetwork_nodesOnly(nn.Module):
             self.KE1 = nn.Parameter(torch.rand(nlayer, nhid, 2 * Nfeatures) * stdvp)
 
         if self.mixDynamics:
-            self.alpha = nn.Parameter(torch.rand(nlayer, 1) * stdvp)
+            #self.alpha = nn.Parameter(torch.rand(nlayer, 1) * stdvp)
+            self.alpha = nn.Parameter(torch.zero(1, 1))
 
         self.KN2 = nn.Parameter(torch.rand(nlayer, nopen, 1 * nhid) * stdvp)
         self.KN2 = nn.Parameter(identityInit(self.KN2))
@@ -834,7 +835,7 @@ class graphNetwork_nodesOnly(nn.Module):
                     xn_heat = (xn - self.h * dxn)
                     xn_old = tmp_xn
 
-                    xn = (1 - F.sigmoid(self.alpha[i])) * xn_wave + F.sigmoid(self.alpha[i]) * xn_heat
+                    xn = (1 - F.sigmoid(self.alpha)) * xn_heat + F.sigmoid(self.alpha) * xn_wave
                 elif self.wave:
                     tmp_xn = xn.clone()
                     xn = 2 * xn - xn_old - (self.h ** 2) * dxn
