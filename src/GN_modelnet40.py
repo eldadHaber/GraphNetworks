@@ -85,13 +85,13 @@ nNclose = 64
 nlayer = 6
 h = 1 / nlayer
 dropout = 0.0
-
+wave=False
 model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
                                   diffOrder=1, num_output=nopen, dropOut=dropout, modelnet=True)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = model.to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=0)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
 
 
