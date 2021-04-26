@@ -23,7 +23,6 @@ if "s" in sys.argv:
     path = '/home/eliasof/GraphNetworks/data/' + dataset
 else:
     path = '/home/cluster/users/erant_group/moshe/' + dataset
-pre_transform = T.Compose([T.GCNNorm(), T.ToSparseTensor()])
 pre_transform = T.Compose([T.GCNNorm()])
 
 train_dataset = PPI(path, split='train', pre_transform=None)
@@ -75,9 +74,9 @@ for nlayers in num_layers:
         torch.cuda.synchronize()
         nNin = train_dataset.num_features
         nEin = 1
-        nopen = 64
-        nhid = 64
-        nNclose = 64
+        nopen = 2048
+        nhid = 2048
+        nNclose = 2048
         nlayer = nlayers
         h = trial.suggest_discrete_uniform('h', 0.01, 0.1, q=0.05) #0.05  # 1 / nlayer
         dropout = trial.suggest_categorical('dropout', [0.1, 0.2, 0.3])
@@ -107,15 +106,15 @@ for nlayers in num_layers:
                 print(line, end='', flush=True)
 
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=wave,
+        #model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=wave,
+        #                                  diffOrder=1, num_output=train_dataset.num_classes, dropOut=dropout, PPI=True,
+        #                                  gated=False,
+        #                                  realVarlet=False, mixDyamics=False)
+
+        model = GN.graphNetwork_seq(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=wave,
                                           diffOrder=1, num_output=train_dataset.num_classes, dropOut=dropout, PPI=True,
                                           gated=False,
                                           realVarlet=False, mixDyamics=False)
-
-        # model = GN.graphNetwork_seq(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=wave,
-        #                                   diffOrder=1, num_output=train_dataset.num_classes, dropOut=dropout, PPI=True,
-        #                                   gated=False,
-        #                                   realVarlet=False, mixDyamics=False)
 
         model.reset_parameters()
         model.to(device)
@@ -196,7 +195,7 @@ for nlayers in num_layers:
             return f1_score(y, pred, average='micro') if pred.sum() > 0 else 0
 
         best_f1 = 0
-        for epoch in range(1, 2001):
+        for epoch in range(1, 3001):
             loss = train()
 
             train_f1 = test(train_dataset)
