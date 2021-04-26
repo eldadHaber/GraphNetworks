@@ -866,7 +866,8 @@ class graphNetwork_nodesOnly(nn.Module):
 
                     beta = F.sigmoid(self.alpha)
                     alpha = 1 - beta
-
+                    print("alpha:", alpha)
+                    print("beta:", beta)
                     alpha = 0.5*alpha / self.h
                     beta = beta / (self.h ** 2)
 
