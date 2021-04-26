@@ -65,7 +65,7 @@ for nlayers in num_layers:
 
 
     def objective(trial):
-        dataset = 'CiteSeer'
+        dataset = 'PubMed'
         if dataset == 'Cora':
             nNin = 1433
         elif dataset == 'CiteSeer':
@@ -183,7 +183,7 @@ for nlayers in num_layers:
             return accs
 
         best_val_acc = test_acc = 0
-        for epoch in range(1, 1001):
+        for epoch in range(1, 2001):
             loss = train()
             train_acc, val_acc, tmp_test_acc = test()
             if tmp_test_acc > best_val_acc:
