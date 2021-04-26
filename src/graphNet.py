@@ -867,7 +867,7 @@ class graphNetwork_nodesOnly(nn.Module):
                     beta = F.sigmoid(self.alpha)
                     alpha = 1 - beta
 
-                    alpha = alpha / self.h
+                    alpha = 0.5*alpha / self.h
                     beta = beta / (self.h ** 2)
 
                     xn = (2 * beta * xn - beta * xn_old + alpha * xn_old - dxn) / (beta + alpha)
@@ -882,7 +882,7 @@ class graphNetwork_nodesOnly(nn.Module):
                     ######## DFF
                     # (beta)dudtt + alpha*dudt = Lu
                     # beta*((xnn - 2xn + xno)/h**2) + 0.5*alpha*((xnn - xno)/h) = dxn
-                    # betah*((xnn - 2xn + xno)) + alphah(((xnn - xno)) = dxn # alphah= alpha/h, betah =(1-alpha)/h**2
+                    # betah*((xnn - 2xn + xno)) + alphah(((xnn - xno)) = dxn # alphah= 0.5*alpha/h, betah =(1-alpha)/h**2
                     # (betah + alphah)xnn = 2*betah*xn - betah*xno + alphah*xno + dxn
                     # xnn = (2*betah*xn - betah*xno + alphah*xno + dxn) / (betah + alphah)
 
