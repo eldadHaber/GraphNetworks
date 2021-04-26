@@ -495,7 +495,7 @@ class graphNetwork_nodesOnly(nn.Module):
 
         if self.mixDynamics:
             # self.alpha = nn.Parameter(torch.rand(nlayer, 1) * stdvp)
-            self.alpha = nn.Parameter(-10 * torch.ones(1, 1))
+            self.alpha = nn.Parameter(-6 * torch.ones(1, 1))
 
         self.KN2 = nn.Parameter(torch.rand(nlayer, nopen, 1 * nhid) * stdvp)
         self.KN2 = nn.Parameter(identityInit(self.KN2))
@@ -599,6 +599,7 @@ class graphNetwork_nodesOnly(nn.Module):
         return x
 
     def finalDoubleLayer(self, x, K1, K2):
+        x = F.tanh(x)
         x = self.edgeConv(x, K1)
         x = F.tanh(x)
         x = self.edgeConv(x, K1.t())
@@ -860,11 +861,35 @@ class graphNetwork_nodesOnly(nn.Module):
                 # dxn = F.tanh(Graph.edgeDiv(F.tanh(dxe)))
                 if self.mixDynamics:
                     tmp_xn = xn.clone()
-                    xn_wave = 2 * xn - xn_old - (self.h ** 2) * dxn
-                    xn_heat = (xn - self.h * dxn)
-                    xn_old = tmp_xn
+                    #xn_wave = 2 * xn - xn_old - (self.h ** 2) * dxn
+                    #xn_heat = (xn - self.h * dxn)
 
-                    xn = (1 - F.sigmoid(self.alpha)) * xn_heat + F.sigmoid(self.alpha) * xn_wave
+                    alpha = F.softmax(self.alpha)
+                    beta = 1 - alpha
+
+                    alpha = alpha / self.h
+                    beta = beta / (self.h ** 2)
+
+                    xn = (2 * beta * xn - beta * xn_old + alpha * xn_old + dxn) / (beta + alpha)
+                    xn_old = tmp_xn
+                    ##########  FE
+                    # (beta)dudtt + alpha*dudt = Lu
+                    # beta*((xnn - 2xn + xno)/h**2) + alpha*((xnn - xn)/h) = dxn
+                    # betah*((xnn - 2xn + xno)) + alphah(((xnn - xn)) = dxn # alphah= alpha/h, betah =beta/h**2
+                    # (betah + alphah)xnn = 2*betah*xn - betah*xno + alphah*xn + dxn
+                    # xnn = (2*betah*xn - betah*xno + alphah*xn + dxn) / (betah + alphah)
+
+                    ######## DFF
+                    # (beta)dudtt + alpha*dudt = Lu
+                    # beta*((xnn - 2xn + xno)/h**2) + 0.5*alpha*((xnn - xno)/h) = dxn
+                    # betah*((xnn - 2xn + xno)) + alphah(((xnn - xno)) = dxn # alphah= alpha/h, betah =(1-alpha)/h**2
+                    # (betah + alphah)xnn = 2*betah*xn - betah*xno + alphah*xno + dxn
+                    # xnn = (2*betah*xn - betah*xno + alphah*xno + dxn) / (betah + alphah)
+
+
+
+                    #softmax
+                    #xn = (1 - F.sigmoid(self.alpha)) * xn_heat + F.sigmoid(self.alpha) * xn_wave
                 elif self.wave:
                     tmp_xn = xn.clone()
                     xn = 2 * xn - xn_old - (self.h ** 2) * dxn
