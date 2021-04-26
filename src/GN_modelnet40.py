@@ -76,6 +76,21 @@ class Net(torch.nn.Module):
         return x.log_softmax(dim=-1)
 
 
+print("**********************************************************************************")
+file2Open = "src/optuna_GNcora.py"
+print("DRIVER CODE:")
+f = open(file2Open, "r")
+for line in f:
+    print(line, end='', flush=True)
+
+print("NETWORKS CODE:")
+file2Open = "src/graphNet.py"
+f = open(file2Open, "r")
+for line in f:
+    print(line, end='', flush=True)
+
+print("**********************************************************************************")
+
 
 nEin = 1
 nopen = 128
@@ -92,6 +107,7 @@ model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = model.to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=0)
+
 
 
 optimizer = torch.optim.Adam([
