@@ -75,7 +75,7 @@ for nlayers in num_layers:
         nhid = n_channels
         nNclose = n_channels
         nlayer = nlayers
-        datastr = "cornell"
+        datastr = "wisconsin"
         print("DATA SET IS:", datastr)
         # h = 1 / n_layers
         h = trial.suggest_discrete_uniform('h', 0.1 / nlayer, 3, q=0.1 / (nlayer))
