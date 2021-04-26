@@ -868,10 +868,10 @@ class graphNetwork_nodesOnly(nn.Module):
                     alpha = 1 - beta
                     print("alpha:", alpha)
                     print("beta:", beta)
-                    alpha = 0.5*alpha / self.h
+                    alpha = alpha / self.h
                     beta = beta / (self.h ** 2)
 
-                    xn = (2 * beta * xn - beta * xn_old + alpha * xn_old - dxn) / (beta + alpha)
+                    xn = (2 * beta * xn - beta * xn_old + alpha * xn - dxn) / (beta + alpha)
                     xn_old = tmp_xn
                     ##########  FE
                     # (beta)dudtt + alpha*dudt = Lu
