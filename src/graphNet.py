@@ -443,7 +443,8 @@ class graphNetwork_nodesOnly(nn.Module):
 
     def __init__(self, nNin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=False, wave=True,
                  diffOrder=1, num_output=1024, dropOut=False, modelnet=False, faust=False, GCNII=False,
-                 graphUpdate=None, PPI=False, gated=False, realVarlet=False, mixDyamics=False, doubleConv=False):
+                 graphUpdate=None, PPI=False, gated=False, realVarlet=False, mixDyamics=False, doubleConv=False,
+                 tripleConv=False):
         super(graphNetwork_nodesOnly, self).__init__()
         self.wave = wave
         self.realVarlet = realVarlet
@@ -459,6 +460,7 @@ class graphNetwork_nodesOnly(nn.Module):
         self.num_output = num_output
         self.graphUpdate = graphUpdate
         self.doubleConv = doubleConv
+        self.tripleConv = tripleConv
         self.gated = gated
         self.faust = faust
         if dropOut > 0.0:
@@ -473,6 +475,7 @@ class graphNetwork_nodesOnly(nn.Module):
             stdvp = 1e-1
         self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
         self.K2Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
+
         if not self.faust:
             self.KNclose = nn.Parameter(torch.randn(num_output, nopen) * stdv)
         else:
@@ -491,11 +494,15 @@ class graphNetwork_nodesOnly(nn.Module):
             self.KE1 = nn.Parameter(torch.rand(nlayer, nhid, 2 * Nfeatures) * stdvp)
 
         if self.mixDynamics:
-            #self.alpha = nn.Parameter(torch.rand(nlayer, 1) * stdvp)
-            self.alpha = nn.Parameter(-10*torch.ones(1, 1))
+            # self.alpha = nn.Parameter(torch.rand(nlayer, 1) * stdvp)
+            self.alpha = nn.Parameter(-10 * torch.ones(1, 1))
 
         self.KN2 = nn.Parameter(torch.rand(nlayer, nopen, 1 * nhid) * stdvp)
         self.KN2 = nn.Parameter(identityInit(self.KN2))
+
+        if self.tripleConv:
+            self.KN3 = nn.Parameter(torch.rand(nlayer, nopen, 1 * nhid) * stdvp)
+            self.KN3 = nn.Parameter(identityInit(self.KN3))
         self.GCNII = GCNII
         if self.GCNII:
             self.convs = torch.nn.ModuleList()
@@ -589,12 +596,9 @@ class graphNetwork_nodesOnly(nn.Module):
         x = self.edgeConv(x, K2)
         x = F.relu(x)
 
-
-
         return x
 
-
-    def finalDoubleLayer(self, x, K1,K2):
+    def finalDoubleLayer(self, x, K1, K2):
         x = self.edgeConv(x, K1)
         x = F.tanh(x)
         x = self.edgeConv(x, K1.t())
@@ -821,12 +825,16 @@ class graphNetwork_nodesOnly(nn.Module):
                         else:
                             dxn = self.finalDoubleLayer(gradX, KN1[i], KN2[i])
                         dxn = Graph.edgeDiv(dxn)  # + Graph.edgeAve(dxe2, method='ave')
+                        if self.tripleConv:
+                            dxn = self.singleLayer(dxn, self.KN3[i], norm=false, relu=False)
                     else:
                         if not self.doubleConv:
                             dxe = (self.singleLayer(gradX, self.KN2[i], norm=False, relu=False, groups=1))
                         else:
                             dxe = self.finalDoubleLayer(gradX, KN1[i], KN2[i])
                         dxn = Graph.edgeDiv(dxe)  # + Graph.edgeAve(dxe2, method='ave')
+                        if self.tripleConv:
+                            dxn = self.singleLayer(dxn, self.KN3[i], norm=false, relu=False)
 
                     # dxe2 = (self.singleLayer(gradX, self.KN1[i], norm=False, relu=False))
                     # gradX = self.singleLayer(gradX, self.KN1[i], norm=False, relu=False)
@@ -1318,7 +1326,6 @@ class graphNetwork_seq(nn.Module):
 
             [xn, xn_old] = checkpoint.checkpoint(
                 self.run_function(start, end), xn, xn_old, I, J, N, W)
-
 
         xn = F.dropout(xn, p=self.dropout, training=self.training)
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))

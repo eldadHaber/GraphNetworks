@@ -65,7 +65,7 @@ for nlayers in num_layers:
 
 
     def objective(trial):
-        dataset = 'PubMed'
+        dataset = 'Cora'
         if dataset == 'Cora':
             nNin = 1433
         elif dataset == 'CiteSeer':
@@ -73,7 +73,7 @@ for nlayers in num_layers:
         elif dataset == 'PubMed':
             nNin = 500
         nEin = 1
-        n_channels = 256 # trial.suggest_categorical('n_channels', [64, 128, 256])
+        n_channels = 64  # trial.suggest_categorical('n_channels', [64, 128, 256])
         nopen = n_channels
         nhid = n_channels
         nNclose = n_channels
@@ -91,19 +91,18 @@ for nlayers in num_layers:
         dataset = Planetoid(path, dataset, transform=transform)
         data = dataset[0]
 
-
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         data = data.to(device)
         dropout = trial.suggest_discrete_uniform('dropout', 0.5, 0.8, q=0.1)
         lr = trial.suggest_float("lr", 1e-3, 1e-1, log=True)
         lrGCN = trial.suggest_float("lrGCN", 1e-6, 1e-3, log=True)
         wd = trial.suggest_float("wd", 5e-8, 1e-4, log=True)
-        #wdGCN = trial.suggest_float("wdGCN", 1e-10, 1e-2, log=True)
+        # wdGCN = trial.suggest_float("wdGCN", 1e-10, 1e-2, log=True)
         lr_alpha = trial.suggest_float("lr_alpha", 1e-5, 1e-2, log=True)
         model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, n_layers, h=h, dense=False, varlet=True,
                                           wave=False,
                                           diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, gated=False,
-                                          realVarlet=False, mixDyamics=False)
+                                          realVarlet=False, mixDyamics=False, doubleConv=True)
         model.reset_parameters()
         model.to(device)
         # optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=wd)
@@ -112,7 +111,7 @@ for nlayers in num_layers:
             dict(params=model.KN2, lr=lrGCN, weight_decay=0),
             dict(params=model.K1Nopen, weight_decay=wd),
             dict(params=model.KNclose, weight_decay=wd),
-            #dict(params=model.alpha, lr=lr_alpha, weight_decay=0),
+            # dict(params=model.alpha, lr=lr_alpha, weight_decay=0),
 
         ], lr=lr)
 
