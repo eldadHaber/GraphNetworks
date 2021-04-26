@@ -97,10 +97,13 @@ class GraphNet_EQ(torch.nn.Module):
         self.doublelayers.append(dl_xe)
 
         self.filters = torch.nn.ModuleList()
-        self.filters.append(FullyConnectedNet(
-            [number_of_basis] + radial_layers * [radial_neurons] + [dl_xe.irreps_out.dim], torch.nn.functional.silu))
-        self.filters.append(FullyConnectedNet(
-            [number_of_basis] + radial_layers * [radial_neurons] + [dl_xe.irreps_out.dim], torch.nn.functional.silu))
+
+        self.filters.append(Filter(number_of_basis,radial_layers,radial_neurons,dl_xe.irreps_out))
+        self.filters.append(Filter(number_of_basis,radial_layers,radial_neurons,dl_xe.irreps_out))
+        # self.filters.append(FullyConnectedNet(
+        #     [number_of_basis] + radial_layers * [radial_neurons] + [dl_xe.irreps_out.dim], torch.nn.functional.silu))
+        # self.filters.append(FullyConnectedNet(
+        #     [number_of_basis] + radial_layers * [radial_neurons] + [dl_xe.irreps_out.dim], torch.nn.functional.silu))
         irreps = dl_xn.irreps_out + 2 * dl_xe.irreps_out
         self.cats = torch.nn.ModuleList()
         cat = Concatenate(irreps)
@@ -108,21 +111,24 @@ class GraphNet_EQ(torch.nn.Module):
         irreps = cat.irreps_out
 
         for _ in range(layers):
-            self.filters.append(FullyConnectedNet(
-                [number_of_basis] + radial_layers * [radial_neurons] + [irreps.dim],
-                torch.nn.functional.silu))
-            self.filters.append(FullyConnectedNet(
-                [number_of_basis] + radial_layers * [radial_neurons] + [irreps.dim],
-                torch.nn.functional.silu))
+            # self.filters.append(FullyConnectedNet(
+            #     [number_of_basis] + radial_layers * [radial_neurons] + [irreps.dim],
+            #     torch.nn.functional.silu))
+            # self.filters.append(FullyConnectedNet(
+            #     [number_of_basis] + radial_layers * [radial_neurons] + [irreps.dim],
+            #     torch.nn.functional.silu))
+            self.filters.append(Filter(number_of_basis, radial_layers, radial_neurons, irreps))
+            self.filters.append(Filter(number_of_basis, radial_layers, radial_neurons, irreps))
             cat = Concatenate(2*irreps)
             self.cats.append(cat)
             irreps2 = cat.irreps_out
             dl = DoubleLayer(irreps2, self.irreps_hidden, irreps2)
             self.doublelayers.append(dl)
             irreps2 = dl.irreps_out
-            self.filters.append(FullyConnectedNet(
-                [number_of_basis] + radial_layers * [radial_neurons] + [irreps2.dim],
-                torch.nn.functional.silu))
+            self.filters.append(Filter(number_of_basis, radial_layers, radial_neurons, irreps2))
+            # self.filters.append(FullyConnectedNet(
+            #     [number_of_basis] + radial_layers * [radial_neurons] + [irreps2.dim],
+            #     torch.nn.functional.silu))
 
 
         self.si_close = SelfInteraction(irreps,self.irreps_out_n)
@@ -302,7 +308,7 @@ if __name__ == '__main__':
 
     irreps_in_n = o3.Irreps("1x0e")
     irreps_in_e = o3.Irreps("1x0e+1x1o")
-    irreps_hidden = o3.Irreps("2x0e+2x0o+2x1e+2x1o")
+    irreps_hidden = o3.Irreps("1x0e+1x0o+1x1e+1x1o")
     irreps_out_n = o3.Irreps("1x0e")
     layers = 2
     max_radius = 5

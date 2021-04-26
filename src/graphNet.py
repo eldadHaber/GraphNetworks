@@ -30,7 +30,7 @@ device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
 
 def tv_norm(X, eps=1e-3):
-    X = X - torch.mean(X, dim=1, keepdim=True)
+    X = X - torch.mean(X, dim=1, keepdim=True) # First we set the mean across all channels to 0
     X = X / torch.sqrt(torch.sum(X ** 2, dim=1, keepdim=True) + eps)
     return X
 

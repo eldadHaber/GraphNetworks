@@ -201,25 +201,33 @@ class Identity(torch.nn.Module):
             return input
 
 class Filter(torch.nn.Module):
-    def __init__(self, irreps_in, irreps_hidden,irreps_out):
+    def __init__(self, number_of_basis, radial_layers, radial_neurons, irrep):
         super().__init__()
-        self.irreps_in = irreps_in
-        self.irreps_out = irreps_out
-        self.irreps_hidden = irreps_hidden
-
-        self.tp1 = o3.FullyConnectedTensorProduct(self.irreps_in,self.irreps_in,self.irreps_hidden)
-        self.g1 = SelfExpandingGate(irreps_in)
-
-
+        self.irrep = irrep
+        nd = irrep.dim
+        nr = irrep.num_irreps
+        self.net = FullyConnectedNet([number_of_basis] + radial_layers * [radial_neurons] + [nr], torch.nn.functional.silu)
+        S = torch.empty(nr,dtype=torch.int64)
+        idx = 0
+        for mul,ir in irrep:
+            li = 2*ir.l+1
+            for i in range(mul):
+                S[idx+i] = li
+            idx += i+1
+        self.register_buffer("degen", S)
         return
 
-    def forward(self, input):
-        return input
+    def forward(self, x):
+        x = self.net(x)
+        y = x.repeat_interleave(self.degen,dim=1)
+        return y
 
 
 class SelfInteraction(torch.nn.Module):
     def __init__(self,irreps_in,irreps_out):
         super().__init__()
+        self.irreps_in = irreps_in
+        self.irreps_out = irreps_out
         self.tp = o3.FullyConnectedTensorProduct(irreps_in, irreps_in, irreps_out)
         return
 
@@ -227,6 +235,38 @@ class SelfInteraction(torch.nn.Module):
         x = self.tp(x,x)
         return x
 
+
+
+class TvNorm(torch.nn.Module):
+        def __init__(self,irreps):
+            super().__init__()
+            self.irreps_in = irreps
+            self.irreps_out = irreps
+
+            nd = irreps.dim
+            nr = irreps.num_irreps
+            degen = torch.empty(nr, dtype=torch.int64)
+            m_scalar = torch.empty(nr,dtype=torch.bool)
+            idx = 0
+            for mul, ir in irreps:
+                li = 2 * ir.l + 1
+                for i in range(mul):
+                    degen[idx + i] = li
+                    m_scalar[idx+i] = ir.l == 0
+                idx += i + 1
+            self.register_buffer("m_scalar", m_scalar)
+            return
+
+        def forward(self, x, eps=1e-6):
+            ms = self.m_scalar
+            x[:,ms] = x[:,ms] - torch.mean(x[:,ms], dim=1, keepdim=True)
+            x[:,ms] /= torch.sqrt(torch.sum(x[:,ms] ** 2, dim=1, keepdim=True) + eps)
+
+            mv = ~ms
+            #We need to decide how to handle the vectors, eps is the tricky part
+
+
+            return x
 
 
 def tv_norm(X, eps=1e-3):
@@ -257,7 +297,7 @@ class DoubleLayer(torch.nn.Module):
     def forward(self, x):
         x = self.g1(x)
         x = self.si1(x)
-        x = tv_norm(x) #Insert TV norm here later
+        # x = tv_norm(x) #Insert TV norm here later
         x = self.g2(x)
         x = self.si2(x)
         x = self.g3(x)
