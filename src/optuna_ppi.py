@@ -125,14 +125,15 @@ for nlayers in num_layers:
         lrGCN = trial.suggest_float("lrGCN", 1e-4, 1e-2, log=True)
         wd = dropout = trial.suggest_categorical('wd', [0, 5e-8, 5e-6, 5e-4])# trial.suggest_float("wd", 5e-8, 1e-2, log=True)
         #wdGCN = trial.suggest_float("wdGCN", 1e-10, 1e-2, log=True)
-        optimizer = torch.optim.Adam([
-            dict(params=model.KN1, lr=lr, weight_decay=0),
-            dict(params=model.KN2, lr=lr, weight_decay=0),
-            dict(params=model.K1Nopen, weight_decay=wd),
-            dict(params=model.KNclose, weight_decay=wd),
-            # dict(params=model.alpha, lr=0.1, weight_decay=0),
-        ], lr=lr)
+        # optimizer = torch.optim.Adam([
+        #     dict(params=model.KN1, lr=lr, weight_decay=0),
+        #     dict(params=model.KN2, lr=lr, weight_decay=0),
+        #     dict(params=model.K1Nopen, weight_decay=wd),
+        #     dict(params=model.KNclose, weight_decay=wd),
+        #     # dict(params=model.alpha, lr=0.1, weight_decay=0),
+        # ], lr=lr)
 
+        optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
         def train():
             model.train()
