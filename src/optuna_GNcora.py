@@ -112,7 +112,7 @@ for nlayers in num_layers:
             #dict(params=model.KN3, lr=lrGCN, weight_decay=0),
             dict(params=model.K1Nopen, weight_decay=wd),
             dict(params=model.KNclose, weight_decay=wd),
-            dict(params=model.alpha, lr=lr_alpha, weight_decay=0),
+            #dict(params=model.alpha, lr=lr_alpha, weight_decay=0),
 
         ], lr=lr)
 

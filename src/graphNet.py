@@ -495,7 +495,7 @@ class graphNetwork_nodesOnly(nn.Module):
 
         if self.mixDynamics:
             # self.alpha = nn.Parameter(torch.rand(nlayer, 1) * stdvp)
-            self.alpha = nn.Parameter(-6 * torch.ones(1, 1))
+            self.alpha = nn.Parameter(-10 * torch.ones(1, 1))
 
         self.KN2 = nn.Parameter(torch.rand(nlayer, nopen, 1 * nhid) * stdvp)
         self.KN2 = nn.Parameter(identityInit(self.KN2))
