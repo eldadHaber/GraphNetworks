@@ -31,7 +31,7 @@ test_dataset = PPI(path, split='test', pre_transform=None)
 train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False)
 test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
-num_layers = [4, 8, 16, 32, 64]
+num_layers = [4]
 
 import sys
 
@@ -121,10 +121,10 @@ for nlayers in num_layers:
         # optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
         criterion = torch.nn.BCEWithLogitsLoss()
 
-        lr = trial.suggest_float("lr", 1e-4, 1e-1, log=True)
-        lrGCN = trial.suggest_float("lrGCN", 1e-6, 1e-3, log=True)
-        wd = trial.suggest_float("wd", 5e-8, 1e-2, log=True)
-        wdGCN = trial.suggest_float("wdGCN", 1e-10, 1e-2, log=True)
+        lr = trial.suggest_float("lr", 1e-3, 1e-1, log=True)
+        lrGCN = trial.suggest_float("lrGCN", 1e-4, 1e-2, log=True)
+        wd = dropout = trial.suggest_categorical('wd', [0, 5e-8, 5e-6, 5e-4])# trial.suggest_float("wd", 5e-8, 1e-2, log=True)
+        #wdGCN = trial.suggest_float("wdGCN", 1e-10, 1e-2, log=True)
         optimizer = torch.optim.Adam([
             dict(params=model.KN1, lr=lr, weight_decay=0),
             dict(params=model.KN2, lr=lr, weight_decay=0),
