@@ -823,7 +823,7 @@ class graphNetwork_nodesOnly(nn.Module):
                         if not self.doubleConv:
                             dxn = (self.singleLayer(gradX, self.KN2[i], norm=False, relu=False, groups=1))
                         else:
-                            dxn = self.finalDoubleLayer(gradX, KN1[i], KN2[i])
+                            dxn = self.finalDoubleLayer(gradX, self.KN1[i], self.KN2[i])
                         dxn = Graph.edgeDiv(dxn)  # + Graph.edgeAve(dxe2, method='ave')
                         if self.tripleConv:
                             dxn = self.singleLayer(dxn, self.KN3[i], norm=false, relu=False)
@@ -831,7 +831,7 @@ class graphNetwork_nodesOnly(nn.Module):
                         if not self.doubleConv:
                             dxe = (self.singleLayer(gradX, self.KN2[i], norm=False, relu=False, groups=1))
                         else:
-                            dxe = self.finalDoubleLayer(gradX, KN1[i], KN2[i])
+                            dxe = self.finalDoubleLayer(gradX, self.KN1[i], self.KN2[i])
                         dxn = Graph.edgeDiv(dxe)  # + Graph.edgeAve(dxe2, method='ave')
                         if self.tripleConv:
                             dxn = self.singleLayer(dxn, self.KN3[i], norm=false, relu=False)
