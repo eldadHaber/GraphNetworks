@@ -870,7 +870,7 @@ class graphNetwork_nodesOnly(nn.Module):
                     alpha = alpha / self.h
                     beta = beta / (self.h ** 2)
 
-                    xn = (2 * beta * xn - beta * xn_old + alpha * xn_old + dxn) / (beta + alpha)
+                    xn = (2 * beta * xn - beta * xn_old + alpha * xn_old - dxn) / (beta + alpha)
                     xn_old = tmp_xn
                     ##########  FE
                     # (beta)dudtt + alpha*dudt = Lu
