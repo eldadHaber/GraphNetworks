@@ -20,7 +20,7 @@ from torch.utils.data import DataLoader
 
 from src.Equivariant.NequIP_network import NequIP
 from src.Equivariant.eq_utils import use_model_eq
-from src.Equivariant.networks import Network, GraphNet_EQ
+# from src.Equivariant.networks import Network, GraphNet_EQ
 
 from e3nn import o3
 from e3nn.math import soft_one_hot_linspace
@@ -35,12 +35,12 @@ from src.MD17_utils import getIterData_MD17, print_distogram, print_3d_structure
 if __name__ == '__main__':
 
     device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
-    device='cpu'
+    # device='cpu'
     print_distograms = False
     print_3d_structures = False
     use_mean_map = False
     # load training data
-    data = np.load('../../data/MD/MD17/aspirin_dft.npz')
+    data = np.load('../../../data/MD/MD17/aspirin_dft.npz')
     E = data['E']
     Force = data['F']
     R = data['R']
@@ -60,7 +60,7 @@ if __name__ == '__main__':
     # Following Equivariant paper, we select 1000 configurations from these as our training set, 1000 as our validation set, and the rest are used as test data.
     n_train = 1000
     n_val = 1000
-    batch_size = 50
+    batch_size = 25
 
     ndata_rand = 0 + np.arange(ndata)
     np.random.shuffle(ndata_rand)
@@ -143,6 +143,6 @@ if __name__ == '__main__':
                 epochs_since_best = 0
 
         # print(f' t_dataloader(train): {t_dataload_t:.3f}s  t_dataloader(val): {t_dataload_v:.3f}s  t_prepare(train): {t_prepare_t:.3f}s  t_prepare(val): {t_prepare_v:.3f}s  t_model(train): {t_model_t:.3f}s  t_model(val): {t_model_v:.3f}s  t_backprop(train): {t_backprop_t:.3f}s  t_backprop(val): {t_backprop_v:.3f}s')
-        print(f'{epoch:2d}  Loss(train): {aloss_t:.2f}  Loss(val): {aloss_v:.2f}  MAE(train): {MAE_t:.2f}  MAE(val): {MAE_v:.2f}  |F_pred|(train): {Fps_t:.2f}  |F_pred|(val): {Fps_v:.2f}  |F_true|(train): {Fts_t:.2f}  |F_true|(val): {Fts_v:.2f}  MAE(best): {MAE_best:.2f}  Time(train): {t2-t1:.1f}s  Time(val): {t3-t2:.1f}s  Lr: {lr:2.2e} ')
+        print(f'{epoch:2d}  Loss(train): {aloss_t:.2e}  Loss(val): {aloss_v:.2f}  MAE(train): {MAE_t:.2f}  MAE(val): {MAE_v:.2f}  |F_pred|(train): {Fps_t:.2f}  |F_pred|(val): {Fps_v:.2f}  |F_true|(train): {Fts_t:.2f}  |F_true|(val): {Fts_v:.2f}  MAE(best): {MAE_best:.2f}  Time(train): {t2-t1:.1f}s  Time(val): {t3-t2:.1f}s  Lr: {lr:2.2e} ')
 
 

@@ -282,9 +282,9 @@ class Concatenate(torch.nn.Module):
         for i,Ii in enumerate(I):
             idx_conversion[ii0:ii0+S[Ii]] = torch.arange(idx_cum[Ii],idx_cum[Ii]+S[Ii])
             ii0 += S[Ii]
-        self.idx_conversion = idx_conversion
-        self.idx_conversion_rev = torch.argsort(idx_conversion)
-
+        idx_conversion_rev = torch.argsort(idx_conversion)
+        self.register_buffer("idx_conversion", idx_conversion)
+        self.register_buffer("idx_conversion_rev", idx_conversion_rev)
         return
 
     def forward(self, x,dim):

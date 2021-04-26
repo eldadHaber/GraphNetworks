@@ -35,7 +35,7 @@ from src.MD17_utils import getIterData_MD17, print_distogram, print_3d_structure
 if __name__ == '__main__':
 
     device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
-    device='cpu'
+    # device='cpu'
     print_distograms = False
     print_3d_structures = False
     use_mean_map = False
@@ -58,9 +58,9 @@ if __name__ == '__main__':
     print('Number of data: {:}, Number of atoms {:}'.format(ndata, natoms))
 
     # Following Equivariant paper, we select 1000 configurations from these as our training set, 1000 as our validation set, and the rest are used as test data.
-    n_train = 10
+    n_train = 1000
     n_val = 1000
-    batch_size = 10
+    batch_size = 5
 
     ndata_rand = 0 + np.arange(ndata)
     np.random.shuffle(ndata_rand)
