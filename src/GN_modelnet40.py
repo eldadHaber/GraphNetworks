@@ -78,10 +78,10 @@ class Net(torch.nn.Module):
 
 
 nEin = 1
-nopen = 64
+nopen = 128
 nNin = 3
-nhid = 64
-nNclose = 64
+nhid = 128
+nNclose = 128
 nlayer = 6
 h = 1 / nlayer
 dropout = 0.0
@@ -92,6 +92,17 @@ model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = model.to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=0)
+
+
+optimizer = torch.optim.Adam([
+    dict(params=model.KN1, lr=0.001, weight_decay=0),
+    dict(params=model.KN2, lr=0.001, weight_decay=0),
+    dict(params=model.K1Nopen, weight_decay=1e-4),
+    dict(params=model.KNclose, weight_decay=1e-4),
+    dict(params=model.mlp.parameters(), weight_decay=1e-4)
+    #dict(params=model.alpha, lr=0.1, weight_decay=0),
+], lr=0.001)
+
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
 
 
