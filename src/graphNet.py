@@ -864,7 +864,7 @@ class graphNetwork_nodesOnly(nn.Module):
                     #xn_wave = 2 * xn - xn_old - (self.h ** 2) * dxn
                     #xn_heat = (xn - self.h * dxn)
 
-                    alpha = F.softmax(self.alpha)
+                    alpha = F.sigmoid(self.alpha)
                     beta = 1 - alpha
 
                     alpha = alpha / self.h
