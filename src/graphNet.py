@@ -598,7 +598,7 @@ class graphNetwork_nodesOnly(nn.Module):
         x = self.edgeConv(x, K1)
         x = F.tanh(x)
         x = self.edgeConv(x, K1.t())
-
+        x = F.tanh(x)
         x = self.edgeConv(x, K2)
         x = F.tanh(x)
         x = self.edgeConv(x, K2.t())
