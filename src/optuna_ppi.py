@@ -31,7 +31,7 @@ test_dataset = PPI(path, split='test', pre_transform=None)
 train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False)
 test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
-num_layers = [4]
+num_layers = [8]
 
 import sys
 
@@ -74,9 +74,9 @@ for nlayers in num_layers:
         torch.cuda.synchronize()
         nNin = train_dataset.num_features
         nEin = 1
-        nopen = 2048
-        nhid = 2048
-        nNclose = 2048
+        nopen = 1024
+        nhid = 1024
+        nNclose = 1024
         nlayer = nlayers
         h = trial.suggest_discrete_uniform('h', 0.01, 0.1, q=0.05) #0.05  # 1 / nlayer
         dropout = trial.suggest_categorical('dropout', [0.1, 0.2, 0.3])
