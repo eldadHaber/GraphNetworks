@@ -369,7 +369,7 @@ def test():
         xn = data.x.t().unsqueeze(0)
         xn = data.pos.t().unsqueeze(0)
         xe = data.edge_attr.t().unsqueeze(0)
-        xnOut = model(xn, G, xe=xe)
+        [xnOut, _] = model(xn, G, xe=xe)
 
         pred = xnOut.max(1)[1]
         correct += pred.eq(target).sum().item()
