@@ -270,39 +270,39 @@ d = train_dataset[0]
 model = GN.graphNetwork_faust(nNin, nEin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=True,
                               diffOrder=1, num_nodes=d.num_nodes, mixDynamics=True)
 
-# model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=True,
-#                                   diffOrder=1, num_output=d.num_nodes, dropOut=0.0, faust=True,
-#                                   gated=False,
-#                                   realVarlet=False, mixDyamics=True)
+model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=True,
+                                  diffOrder=1, num_output=d.num_nodes, dropOut=0.0, faust=True,
+                                  gated=False,
+                                  realVarlet=False, mixDyamics=True)
 
 
 model.to(device)
 
-target = torch.arange(d.num_nodes, dtype=torch.long, device=device)
-optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+# target = torch.arange(d.num_nodes, dtype=torch.long, device=device)
+# optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+# optimizer = torch.optim.Adam([
+#     dict(params=model.KN1, lr=lrGCN, weight_decay=0),
+#     dict(params=model.KN2, lr=lrGCN, weight_decay=0),
+#     dict(params=model.K1Eopen, lr=lr),
+#     dict(params=model.K2Eopen, lr=lr),
+#     dict(params=model.KE1, lr=lrGCN),
+#     dict(params=model.KE2, lr=lrGCN),
+#     dict(params=model.K1Nopen, weight_decay=0),
+#     dict(params=model.KNclose, weight_decay=0),
+#     dict(params=model.lin1.parameters(), weight_decay=0),
+#     dict(params=model.lin2.parameters(), weight_decay=0),
+#     dict(params=model.alpha, lr=0.01, weight_decay=0),
+# ], lr=lr)
+
 optimizer = torch.optim.Adam([
-    dict(params=model.KN1, lr=lrGCN, weight_decay=0),
-    dict(params=model.KN2, lr=lrGCN, weight_decay=0),
-    dict(params=model.K1Eopen, lr=lr),
-    dict(params=model.K2Eopen, lr=lr),
-    dict(params=model.KE1, lr=lrGCN),
-    dict(params=model.KE2, lr=lrGCN),
+    dict(params=model.KN1, lr=lrGCN, weight_decay=wdGCN),
+    dict(params=model.KN2, lr=lrGCN, weight_decay=wdGCN),
     dict(params=model.K1Nopen, weight_decay=0),
     dict(params=model.KNclose, weight_decay=0),
     dict(params=model.lin1.parameters(), weight_decay=0),
     dict(params=model.lin2.parameters(), weight_decay=0),
-    dict(params=model.alpha, lr=0.01, weight_decay=0),
+    dict(params=model.alpha, lr=lr, weight_decay=0),
 ], lr=lr)
-
-# optimizer = torch.optim.Adam([
-#     dict(params=model.KN1, lr=lrGCN, weight_decay=wdGCN),
-#     dict(params=model.KN2, lr=lrGCN, weight_decay=wdGCN),
-#     dict(params=model.K1Nopen, weight_decay=wd),
-#     dict(params=model.KNclose, weight_decay=wd),
-#     dict(params=model.lin1.parameters(), weight_decay=wd),
-#     dict(params=model.lin2.parameters(), weight_decay=wd),
-#     dict(params=model.alpha, lr=0.01, weight_decay=0),
-# ], lr=lr)
 
 print_files = False
 if print_files:
