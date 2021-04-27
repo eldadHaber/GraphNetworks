@@ -187,11 +187,11 @@ def test():
 
 
 best_val_acc = test_acc = 0
-acc_hist =  []
+acc_hist = []
 for epoch in range(1, 10):
     loss = train()
     train_acc, val_acc, tmp_test_acc = test()
-    acc_hist.append(tmp_test_acc.item())
+    acc_hist.append(tmp_test_acc)
     if tmp_test_acc > test_acc:
         best_val_acc = val_acc
         test_acc = tmp_test_acc
