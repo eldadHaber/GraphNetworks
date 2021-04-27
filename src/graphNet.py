@@ -1572,6 +1572,9 @@ class graphNetwork_faust(nn.Module):
                 alpha = 1 - beta
                 # print("heat portion:", alpha)
                 # print("wave portion:", beta)
+                alpha = alpha / self.h
+                beta = beta / (self.h ** 2)
+
 
                 xe = beta*xe + alpha*dxe
                 divE = Graph.edgeDiv(xe)
