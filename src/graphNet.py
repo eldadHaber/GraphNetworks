@@ -600,7 +600,7 @@ class graphNetwork_nodesOnly(nn.Module):
         return x
 
     def finalDoubleLayer(self, x, K1, K2):
-        #x = F.tanh(x)
+        x = F.tanh(x)
         x = self.edgeConv(x, K1)
         x = F.tanh(x)
         x = self.edgeConv(x, K2)
@@ -608,7 +608,7 @@ class graphNetwork_nodesOnly(nn.Module):
         x = self.edgeConv(x, K2.t())
         x = F.tanh(x)
         x = self.edgeConv(x, K1.t())
-        #x = F.tanh(x)
+        x = F.tanh(x)
         return x
 
     def nodeDeriv(self, features, Graph, order=1, edgeSpace=True):
