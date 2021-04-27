@@ -236,7 +236,7 @@ def saveMesh(xn, faces, pos, i=0):
                    c=xn.squeeze(0).norm(dim=1).clone().detach().cpu().numpy(), vmin=0.0, vmax=1.0)
     fig.colorbar(p)
     plt.savefig(
-        "/users/others/eliasof/GraphNetworks/plots/xn_norm_verlet_layer_" + str(i))
+        "/users/others/eliasof/GraphNetworks/plots_new/xn_norm_wave_layer_" + str(i))
     plt.close()
 
     mesh = trimesh.Trimesh(vertices=pos, faces=faces, process=False)

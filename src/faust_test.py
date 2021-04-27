@@ -231,7 +231,7 @@ else:
     from src import pnetArch as PNA
 
 # Setup the network and its parameters
-nNin = 1 #6  # 6
+nNin = 3 #6  # 6
 nEin = 1 #3
 nopen = 1 #64
 nhid = 1 #64
@@ -415,10 +415,12 @@ if debug:
         print("data:", data)
         G = GO.graph(I, J, N, pos=data.pos, faces=data.face.t())
 
-        xn = torch.randn(1, 1, N).float()
-        xn = torch.zeros(1, 1, N).float()
-        xn[:, :, 1:100] = 1.0
-        xn[:, :, 1000:1700] = 1.0
+        #xn = torch.randn(1, 1, N).float()
+        #xn = torch.zeros(1, 1, N).float()
+        #xn[:, :, 1:100] = 1.0
+        #xn[:, :, 1000:1700] = 1.0
+        pos, batch = data.pos, data.batch
+        xn = torch.zeros(pos.shape[0], 3).float()
         xe = torch.ones(1, 1, data.edge_index.shape[1])
 
         xnOut, xeOut = model(xn, xe, G)
