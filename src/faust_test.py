@@ -235,12 +235,12 @@ nEin = 3
 nopen = 64
 nhid = 64
 nNclose = 64
-nlayer = 16
+nlayer = 8#16
 
 batchSize = 32
 h = 0.1
 lr = 0.01
-lrGCN = 0.001
+lrGCN = 0.01
 wdGCN = 0
 wd = 5e-4
 
@@ -280,6 +280,19 @@ model.to(device)
 
 target = torch.arange(d.num_nodes, dtype=torch.long, device=device)
 optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+optimizer = torch.optim.Adam([
+    dict(params=model.KN1, lr=lrGCN, weight_decay=0),
+    dict(params=model.KN2, lr=lrGCN, weight_decay=0),
+    dict(params=model.K1Eopen, lr=lr),
+    dict(params=model.K2Eopen, lr=lr),
+    dict(params=model.KE1, lr=lrGCN),
+    dict(params=model.KE2, lr=lrGCN),
+    dict(params=model.K1Nopen, weight_decay=0),
+    dict(params=model.KNclose, weight_decay=0),
+    dict(params=model.lin1.parameters(), weight_decay=0),
+    dict(params=model.lin2.parameters(), weight_decay=0),
+    #dict(params=model.alpha, lr=0.01, weight_decay=0),
+], lr=lr)
 
 # optimizer = torch.optim.Adam([
 #     dict(params=model.KN1, lr=lrGCN, weight_decay=wdGCN),
