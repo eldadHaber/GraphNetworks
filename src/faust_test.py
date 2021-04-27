@@ -376,7 +376,7 @@ def test():
     return correct / (len(test_dataset) * d.num_nodes)
 
 
-for epoch in range(1, 1001):
+for epoch in range(1, 101):
     train(epoch)
     test_acc = test()
     acc_hist.append(test_acc)
