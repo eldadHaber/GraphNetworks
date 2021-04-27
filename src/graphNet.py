@@ -1416,7 +1416,8 @@ class graphNetwork_faust(nn.Module):
         if self.mixDynamics:
             # self.alpha = nn.Parameter(torch.rand(nlayer, 1) * stdvp)
             self.alpha = nn.Parameter(-0 * torch.ones(1, 1))
-
+        else:
+            self.alpha = 0
         if varlet:
             Nfeatures = 2 * nopen
         else:

@@ -230,7 +230,7 @@ else:
     from src import pnetArch as PNA
 
 # Setup the network and its parameters
-nNin = 3 #6
+nNin = 3  # 6
 nEin = 3
 nopen = 64
 nhid = 64
@@ -261,14 +261,14 @@ transforms = T.FaceToEdge(remove_faces=False)
 pre_transform = T.Compose([T.FaceToEdge(remove_faces=False), T.Constant(value=1)])
 train_dataset = FAUST(faust_path, True, T.Cartesian(), pre_transform)
 test_dataset = FAUST(faust_path, False, T.Cartesian(), pre_transform)
-train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=1)
+train_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
+test_loader = DataLoader(test_dataset, batch_size=2)
 
 # train_dataset = FAUST(faust_path, train=True, transform=transforms)
 d = train_dataset[0]
 
-model = GN.graphNetwork_faust(nNin, nEin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
-                              diffOrder=1, num_nodes=d.num_nodes, mixDynamics=True)
+model = GN.graphNetwork_faust(nNin, nEin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=True,
+                              diffOrder=1, num_nodes=d.num_nodes, mixDynamics=False)
 
 # model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=True,
 #                                   diffOrder=1, num_output=d.num_nodes, dropOut=0.0, faust=True,
@@ -306,7 +306,6 @@ if print_files:
     for line in f:
         print(line, end='', flush=True)
 
-
 # train_loader = DataLoader(
 #    train_dataset, batch_size=1, shuffle=True, num_workers=1, drop_last=False)
 
@@ -314,6 +313,8 @@ if print_files:
 # test_loader = DataLoader(
 #    train_dataset, batch_size=1, shuffle=False, num_workers=1, drop_last=False)
 betas = []
+
+
 def train(epoch):
     model.train()
 
@@ -340,8 +341,8 @@ def train(epoch):
         # print("edge index shape:", data.edge_index.shape)
         # print("xn shape:", xn.shape)
         # print("xe shape:", xe.shape)
-        [xnOut, beta] = model(xn ,xe, G)
-        #betas.append(beta)
+        [xnOut, beta] = model(xn, xe, G)
+        # betas.append(beta)
         print("beta:", beta)
         loss = F.nll_loss(xnOut, target)
         total_loss += loss.item()
@@ -352,7 +353,10 @@ def train(epoch):
             print("train loss:", total_loss / 10)
             total_loss = 0
 
+
 acc_hist = []
+
+
 def test():
     model.eval()
     correct = 0
@@ -412,9 +416,7 @@ with open('acc_hist_faust_wave.txt', 'w') as filehandle:
     for listitem in acc_hist:
         filehandle.write('%s\n' % listitem)
 
-
 print("bye")
-
 
 for i, data in enumerate(train_loader):
     print(data.pos)
