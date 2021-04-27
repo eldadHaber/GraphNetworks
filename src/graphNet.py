@@ -1564,7 +1564,7 @@ class graphNetwork_faust(nn.Module):
             dxe = self.doubleLayer(dxe, self.KE1[i], self.KE2[i])
 
             # dxe = F.layer_norm(dxe, dxe.shape)
-            if self.mixdynamics:
+            if self.mixDynamics:
                 xe = xe + self.h * dxe
 
                 beta = F.sigmoid(self.alpha)
