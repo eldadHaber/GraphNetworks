@@ -99,9 +99,9 @@ dataset = 'ppi'
 
 nNin = train_dataset.num_features
 nEin = 1
-nopen = 2048
-nhid = 2048
-nNclose = 2048
+nopen = 512
+nhid = 512
+nNclose = 512
 nlayer = 4
 h = 0.05  # 1 / nlayer
 dropout = 0.2
@@ -138,10 +138,10 @@ model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense
 
 
 
-model = GN.graphNetwork_seq(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=wave,
-                                  diffOrder=1, num_output=train_dataset.num_classes, dropOut=dropout, PPI=True,
-                                  gated=False,
-                                  realVarlet=False, mixDyamics=False)
+# model = GN.graphNetwork_seq(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=wave,
+#                                   diffOrder=1, num_output=train_dataset.num_classes, dropOut=dropout, PPI=True,
+#                                   gated=False,
+#                                   realVarlet=False, mixDyamics=False)
 
 model.reset_parameters()
 model.to(device)
