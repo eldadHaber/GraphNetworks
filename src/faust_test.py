@@ -278,7 +278,9 @@ model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense
 
 model.to(device)
 
-# target = torch.arange(d.num_nodes, dtype=torch.long, device=device)
+target = torch.arange(d.num_nodes, dtype=torch.long, device=device)
+
+
 # optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 # optimizer = torch.optim.Adam([
 #     dict(params=model.KN1, lr=lrGCN, weight_decay=0),
