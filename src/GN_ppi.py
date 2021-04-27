@@ -102,8 +102,8 @@ nEin = 1
 nopen = 2048
 nhid = 2048
 nNclose = 2048
-nlayer = 8
-h = 0.025  # 1 / nlayer
+nlayer = 4
+h = 0.05  # 1 / nlayer
 dropout = 0.0
 # h = 20 / nlayer
 print("dataset:", dataset)
@@ -136,17 +136,16 @@ model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense
                                   gated=False,
                                   realVarlet=False, mixDyamics=False)
 
-
-
 model = GN.graphNetwork_seq(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=wave,
-                                  diffOrder=1, num_output=train_dataset.num_classes, dropOut=dropout, PPI=True,
-                                  gated=False,
-                                  realVarlet=False, mixDyamics=False)
+                            diffOrder=1, num_output=train_dataset.num_classes, dropOut=dropout, PPI=True,
+                            gated=False,
+                            realVarlet=False, mixDyamics=False)
 
 model.reset_parameters()
 model.to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 criterion = torch.nn.BCEWithLogitsLoss()
+scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.1, patience=100, min_lr=0.0001)
 
 
 # optimizer = torch.optim.Adam([
@@ -179,11 +178,11 @@ def train():
         loss = criterion(out, data.y)
         loss.backward()
 
-        #gKN2 = model.KN2.grad.norm().item()
+        # gKN2 = model.KN2.grad.norm().item()
         # gKN1 = model.KN1.grad.norm().item()
-        #gKN1 = 0
-        #gKo = model.K1Nopen.grad.norm().item()
-        #gKc = model.KNclose.grad.norm().item()
+        # gKN1 = 0
+        # gKo = model.K1Nopen.grad.norm().item()
+        # gKc = model.KNclose.grad.norm().item()
         # gAlpha = model.alpha.grad.norm().item()
         # print("gKo gKN1  gKN2    gKc gAlpha")
         # print("%10.3E   %10.3E   %10.3E   %10.3E    %10.3E" %
@@ -224,6 +223,7 @@ for epoch in range(1, 10001):
     train_f1 = test(train_dataset)
     val_f1 = test(val_loader)
     test_f1 = test(test_loader)
+    scheduler.step(test_f1)
     print('Epoch: {:02d}, Loss: {:.4f}, Val: {:.4f}, Test: {:.4f}'.format(
         epoch, loss, val_f1, test_f1), flush=True)
     print("Train F1:", train_f1, flush=True)
