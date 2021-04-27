@@ -420,7 +420,7 @@ if debug:
         #xn[:, :, 1:100] = 1.0
         #xn[:, :, 1000:1700] = 1.0
         pos, batch = data.pos, data.batch
-        xn = pos.t() # torch.zeros(pos.shape[0], 3).float()
+        xn = pos.t().unsqueeze(0) # torch.zeros(pos.shape[0], 3).float()
         xe = torch.ones(1, 1, data.edge_index.shape[1])
 
         xnOut, xeOut = model(xn, xe, G)
