@@ -463,6 +463,7 @@ class graphNetwork_nodesOnly(nn.Module):
         self.tripleConv = tripleConv
         self.gated = gated
         self.faust = faust
+        self.PPI = PPI
         if dropOut > 0.0:
             self.dropout = dropOut
         else:
