@@ -51,7 +51,7 @@ nopen = 64
 nhid = 64
 nNclose = 64
 nlayer = 8
-h = 2  # 16 / nlayer
+h = 1.5  # 16 / nlayer
 
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
@@ -188,7 +188,7 @@ def test():
 
 best_val_acc = test_acc = 0
 acc_hist = []
-for epoch in range(1, 10):
+for epoch in range(1, 500):
     loss = train()
     train_acc, val_acc, tmp_test_acc = test()
     acc_hist.append(tmp_test_acc)
