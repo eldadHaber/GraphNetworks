@@ -136,7 +136,7 @@ def train():
 
     # out = model(xn, xe, G)
     [out, G, beta] = model(xn, G)
-    betas.append(beta)
+    betas.append(beta.item())
     g = G.nodeGrad(out.t().unsqueeze(0))
     eps = 1e-4
     absg = torch.sum(g ** 2, dim=1)
@@ -187,9 +187,11 @@ def test():
 
 
 best_val_acc = test_acc = 0
-for epoch in range(1, 1000):
+acc_hist =  []
+for epoch in range(1, 10):
     loss = train()
     train_acc, val_acc, tmp_test_acc = test()
+    acc_hist.append(tmp_test_acc.item())
     if tmp_test_acc > test_acc:
         best_val_acc = val_acc
         test_acc = tmp_test_acc
@@ -197,8 +199,34 @@ for epoch in range(1, 1000):
           f'Val: {val_acc:.4f}, Test: {tmp_test_acc:.4f}, '
           f'Final Test: {test_acc:.4f}', flush=True)
 
+
+import matplotlib.pyplot as plt
+
+fig, ax1 = plt.subplots()
+
+color = 'tab:red'
+ax1.set_xlabel('Epoch #')
+ax1.set_ylabel('Wave portion', color=color)
+ax1.plot(betas, color=color)
+ax1.tick_params(axis='y', labelcolor=color)
+
+ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+
+color = 'tab:blue'
+ax2.set_ylabel('Test acc (%)', color=color)  # we already handled the x-label with ax1
+ax2.plot(acc_hist, color=color)
+ax2.tick_params(axis='y', labelcolor=color)
+
+fig.tight_layout()  # otherwise the right y-label is slightly clipped
+plt.show()
+plt.savefig("cora_heat_graph.png")
+
 with open('betas_cora_heat.txt', 'w') as filehandle:
     for listitem in betas:
+        filehandle.write('%s\n' % listitem)
+
+with open('acc_hist_cora_heat.txt', 'w') as filehandle:
+    for listitem in acc_hist:
         filehandle.write('%s\n' % listitem)
 
 
