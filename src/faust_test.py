@@ -261,8 +261,8 @@ transforms = T.FaceToEdge(remove_faces=False)
 pre_transform = T.Compose([T.FaceToEdge(remove_faces=False), T.Constant(value=1)])
 train_dataset = FAUST(faust_path, True, T.Cartesian(), pre_transform)
 test_dataset = FAUST(faust_path, False, T.Cartesian(), pre_transform)
-train_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=2)
+train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True)
+test_loader = DataLoader(test_dataset, batch_size=1)
 
 # train_dataset = FAUST(faust_path, train=True, transform=transforms)
 d = train_dataset[0]
