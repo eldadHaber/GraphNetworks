@@ -104,17 +104,17 @@ for nlayers in num_layers:
         model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, n_layers, h=h, dense=False, varlet=True,
                                           wave=False,
                                           diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, gated=False,
-                                          realVarlet=False, mixDyamics=False, doubleConv=True, tripleConv=True)
+                                          realVarlet=False, mixDyamics=True, doubleConv=False, tripleConv=False)
         model.reset_parameters()
         model.to(device)
         # optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=wd)
         optimizer = torch.optim.Adam([
             dict(params=model.KN1, lr=lrGCN, weight_decay=0),
             dict(params=model.KN2, lr=lrGCN, weight_decay=0),
-            dict(params=model.KN3, lr=lrGCN, weight_decay=0),
+            #dict(params=model.KN3, lr=lrGCN, weight_decay=0),
             dict(params=model.K1Nopen, weight_decay=wd),
             dict(params=model.KNclose, weight_decay=wd),
-            #dict(params=model.alpha, lr=lr_alpha, weight_decay=0),
+            dict(params=model.alpha, lr=lr_alpha, weight_decay=0),
 
         ], lr=lr)
 
