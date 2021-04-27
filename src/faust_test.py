@@ -415,7 +415,7 @@ if debug:
         print("data:", data)
         N = data.pos.shape[0]
         W = torch.ones(N).to(device)
-        G = GO.graph(I, J, N, W=W pos=data.pos, faces=data.face.t())
+        G = GO.graph(I, J, N, W=W , pos=data.pos, faces=data.face.t())
 
         #xn = torch.randn(1, 1, N).float()
         #xn = torch.zeros(1, 1, N).float()
