@@ -867,8 +867,8 @@ class graphNetwork_nodesOnly(nn.Module):
 
                     beta = F.sigmoid(self.alpha)
                     alpha = 1 - beta
-                    print("heat portion:", alpha)
-                    print("wave portion:", beta)
+                    #print("heat portion:", alpha)
+                    #print("wave portion:", beta)
                     if 1==1:
                         alpha = alpha / self.h
                         beta = beta / (self.h ** 2)
