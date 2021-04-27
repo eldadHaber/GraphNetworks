@@ -99,12 +99,12 @@ dataset = 'ppi'
 
 nNin = train_dataset.num_features
 nEin = 1
-nopen = 256
-nhid = 256
-nNclose = 256
+nopen = 128
+nhid = 128
+nNclose = 128
 nlayer = 4
 h = 0.1  # 1 / nlayer
-dropout = 0.2
+dropout = 0.1
 # h = 20 / nlayer
 print("dataset:", dataset)
 print("n channels:", nopen)
