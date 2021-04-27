@@ -229,15 +229,16 @@ def dRMSD(X, Xobs, M):
 
 def saveMesh(xn, faces, pos, i=0):
     # xn of shape [points, features]
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    p = ax.scatter(pos[:, 0].clone().detach().cpu().numpy(), pos[:, 1].clone().detach().cpu().numpy(),
-                   pos[:, 2].clone().detach().cpu().numpy(),
-                   c=xn.squeeze(0).norm(dim=1).clone().detach().cpu().numpy(), vmin=0.0, vmax=1.0)
-    fig.colorbar(p)
-    plt.savefig(
-        "/users/others/eliasof/GraphNetworks/plots_new/xn_norm_wave_layer_" + str(i))
-    plt.close()
+    if 1==1:
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        p = ax.scatter(pos[:, 0].clone().detach().cpu().numpy(), pos[:, 1].clone().detach().cpu().numpy(),
+                       pos[:, 2].clone().detach().cpu().numpy(),
+                       c=xn.squeeze(0).norm(dim=1).clone().detach().cpu().numpy(), vmin=0.0, vmax=1.0)
+        fig.colorbar(p)
+        plt.savefig(
+            "/users/others/eliasof/GraphNetworks/plots_new/xn_norm_wave_layer_" + str(i))
+        plt.close()
 
     mesh = trimesh.Trimesh(vertices=pos, faces=faces, process=False)
     colors = xn.squeeze(0).clone().detach().cpu().numpy()[:, 0]
