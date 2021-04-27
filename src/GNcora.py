@@ -50,8 +50,14 @@ nEin = 1
 nopen = 64
 nhid = 64
 nNclose = 64
-nlayer = 24
-h = 1  # 16 / nlayer
+nlayer = 8
+h = 2  # 16 / nlayer
+
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+print(torch.cuda.get_device_name(0))
+print(torch.cuda.get_device_properties('cuda:0'))
+
 
 dropout = 0.6
 # h = 20 / nlayer
@@ -106,7 +112,7 @@ else:
 # ], lr=0.01)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=500, gamma=0.5)
 
-
+betas = []
 def train():
     model.train()
     optimizer.zero_grad()
@@ -129,8 +135,8 @@ def train():
     xe = torch.ones(1, 1, I.shape[0]).to(device)
 
     # out = model(xn, xe, G)
-    [out, G] = model(xn, G)
-
+    [out, G, beta] = model(xn, G)
+    betas.append(beta)
     g = G.nodeGrad(out.t().unsqueeze(0))
     eps = 1e-4
     absg = torch.sum(g ** 2, dim=1)
@@ -181,7 +187,7 @@ def test():
 
 
 best_val_acc = test_acc = 0
-for epoch in range(1, 20001):
+for epoch in range(1, 1000):
     loss = train()
     train_acc, val_acc, tmp_test_acc = test()
     if tmp_test_acc > test_acc:
@@ -190,3 +196,10 @@ for epoch in range(1, 20001):
     print(f'Epoch: {epoch:04d}, Loss: {loss:.4f} Train: {train_acc:.4f}, '
           f'Val: {val_acc:.4f}, Test: {tmp_test_acc:.4f}, '
           f'Final Test: {test_acc:.4f}', flush=True)
+
+with open('betas_cora_heat.txt', 'w') as filehandle:
+    for listitem in betas:
+        filehandle.write('%s\n' % listitem)
+
+
+print("bye")

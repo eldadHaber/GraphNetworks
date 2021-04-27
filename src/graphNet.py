@@ -934,7 +934,7 @@ class graphNetwork_nodesOnly(nn.Module):
             return xn, Graph
 
         ## Otherwise its citation graph node classification:
-        return F.log_softmax(xn, dim=1), Graph
+        return F.log_softmax(xn, dim=1), Graph, F.sigmoid(self.alpha)
 
         # if self.dropout:
         #     # for cora
