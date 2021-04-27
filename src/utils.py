@@ -239,14 +239,14 @@ def saveMesh(xn, faces, pos, i=0):
         ax = fig.add_subplot(111, projection='3d')
         p = ax.scatter(pos[:, 0].clone().detach().cpu().numpy(), pos[:, 1].clone().detach().cpu().numpy(),
                        pos[:, 2].clone().detach().cpu().numpy(),
-                       c=xn.squeeze(0).norm(dim=0).clone().detach().cpu().numpy(), vmin=0.0, vmax=1.0)
+                       c=xn.squeeze(0).norm(dim=1).clone().detach().cpu().numpy(), vmin=0.0, vmax=1.0)
         fig.colorbar(p)
         plt.savefig(
             "/users/others/eliasof/GraphNetworks/plots_new/xn_norm_wave_layer_" + str(i))
         plt.close()
 
     mesh = trimesh.Trimesh(vertices=pos, faces=faces, process=False)
-    colors = xn.squeeze(0).norm(dim=0).clone().detach().cpu().numpy() # xn.squeeze(0).clone().detach().cpu().numpy()[:, 0]
+    colors = xn.squeeze(0).norm(dim=1).clone().detach().cpu().numpy() # xn.squeeze(0).clone().detach().cpu().numpy()[:, 0]
     colors[colors < 0.0] = 0.0
     colors[colors > 1.0] = 1.0
     add = np.array([[1.0], [0.0]], dtype=np.float).squeeze()
