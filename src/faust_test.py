@@ -342,6 +342,7 @@ def train(epoch):
         # print("xe shape:", xe.shape)
         [xnOut, beta] = model(xn ,xe, G)
         #betas.append(beta)
+        print("beta:", beta)
         loss = F.nll_loss(xnOut, target)
         total_loss += loss.item()
         loss.backward()
