@@ -81,7 +81,7 @@ for nlayers in num_layers:
         print("DATA SET IS:", dataset)
         # h = 1 / n_layers
         #h = trial.suggest_discrete_uniform('h', 1 / (n_layers), 3, q=1 / (n_layers))
-        h = trial.suggest_discrete_uniform('h', 0.1, 4, q=0.1)
+        h = trial.suggest_discrete_uniform('h', 0.1, 3, q=0.1)
 
         batchSize = 32
 
@@ -104,7 +104,7 @@ for nlayers in num_layers:
         model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, n_layers, h=h, dense=False, varlet=True,
                                           wave=False,
                                           diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, gated=False,
-                                          realVarlet=False, mixDyamics=True, doubleConv=False, tripleConv=False)
+                                          realVarlet=False, mixDyamics=False, doubleConv=False, tripleConv=False)
         model.reset_parameters()
         model.to(device)
         # optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=wd)
@@ -114,7 +114,7 @@ for nlayers in num_layers:
             #dict(params=model.KN3, lr=lrGCN, weight_decay=0),
             dict(params=model.K1Nopen, weight_decay=wd),
             dict(params=model.KNclose, weight_decay=wd),
-            dict(params=model.alpha, lr=lr_alpha, weight_decay=0),
+            #dict(params=model.alpha, lr=lr_alpha, weight_decay=0),
 
         ], lr=lr)
 

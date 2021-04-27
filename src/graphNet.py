@@ -495,7 +495,7 @@ class graphNetwork_nodesOnly(nn.Module):
 
         if self.mixDynamics:
             # self.alpha = nn.Parameter(torch.rand(nlayer, 1) * stdvp)
-            self.alpha = nn.Parameter(-10 * torch.ones(1, 1))
+            self.alpha = nn.Parameter(-0 * torch.ones(1, 1))
 
         self.KN2 = nn.Parameter(torch.rand(nlayer, nopen, 1 * nhid) * stdvp)
         self.KN2 = nn.Parameter(identityInit(self.KN2))
@@ -559,7 +559,7 @@ class graphNetwork_nodesOnly(nn.Module):
             x = self.edgeConv(x, K, groups=groups)
 
         if K.shape[0] == K.shape[1]:
-            x = F.tanh(x)
+            #x = F.tanh(x)
             x = self.edgeConv(x, K, groups=groups)
 
             x = F.tanh(x)
@@ -568,7 +568,7 @@ class graphNetwork_nodesOnly(nn.Module):
                 beta = torch.norm(x)
                 x = beta * tv_norm(x)
             x = self.edgeConv(x, K.t(), groups=groups)
-            F.tanh(x)
+            #F.tanh(x)
         if not relu:
             return x
         x = F.relu(x)
@@ -600,15 +600,15 @@ class graphNetwork_nodesOnly(nn.Module):
         return x
 
     def finalDoubleLayer(self, x, K1, K2):
-        x = F.tanh(x)
+        #x = F.tanh(x)
         x = self.edgeConv(x, K1)
-        x = F.tanh(x)
-        x = self.edgeConv(x, K1.t())
         x = F.tanh(x)
         x = self.edgeConv(x, K2)
         x = F.tanh(x)
         x = self.edgeConv(x, K2.t())
-
+        x = F.tanh(x)
+        x = self.edgeConv(x, K1.t())
+        #x = F.tanh(x)
         return x
 
     def nodeDeriv(self, features, Graph, order=1, edgeSpace=True):
@@ -867,11 +867,18 @@ class graphNetwork_nodesOnly(nn.Module):
 
                     beta = F.sigmoid(self.alpha)
                     alpha = 1 - beta
+                    print("heat portion:", alpha)
+                    print("wave portion:", beta)
+                    if 1==1:
+                        alpha = alpha / self.h
+                        beta = beta / (self.h ** 2)
 
-                    alpha = alpha / self.h
-                    beta = beta / (self.h ** 2)
+                        xn = (2 * beta * xn - beta * xn_old + alpha * xn - dxn) / (beta + alpha)
+                    else:
+                        alpha = 0.5*alpha / self.h
+                        beta = beta / (self.h ** 2)
 
-                    xn = (2 * beta * xn - beta * xn_old + alpha * xn - dxn) / (beta + alpha)
+                        xn = (2 * beta * xn - beta * xn_old + alpha * xn_old - dxn) / (beta + alpha)
                     xn_old = tmp_xn
                     ##########  FE
                     # (beta)dudtt + alpha*dudt = Lu

@@ -50,8 +50,8 @@ nEin = 1
 nopen = 64
 nhid = 64
 nNclose = 64
-nlayer = 4
-h = 2  # 16 / nlayer
+nlayer = 24
+h = 1  # 16 / nlayer
 
 dropout = 0.6
 # h = 20 / nlayer
@@ -84,7 +84,7 @@ if not realVarlet:
         dict(params=model.KN2, lr=0.00001, weight_decay=0),
         dict(params=model.K1Nopen, weight_decay=5e-4),
         dict(params=model.KNclose, weight_decay=5e-4),
-        dict(params=model.alpha, lr=0.001, weight_decay=0)
+        dict(params=model.alpha, lr=0.01, weight_decay=0)
     ], lr=0.01)
 else:
     optimizer = torch.optim.Adam([
