@@ -470,7 +470,7 @@ class graphNetwork_nodesOnly(nn.Module):
         self.nlayers = nlayer
         stdv = 1e-3
         stdvp = 1e-3
-        if self.faust:
+        if self.faust or self.PPI:
             stdv = 1e-1
             stdvp = 1e-1
         self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
