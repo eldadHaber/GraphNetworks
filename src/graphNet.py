@@ -562,8 +562,8 @@ class graphNetwork_nodesOnly(nn.Module):
             #x = F.tanh(x)
             x = self.edgeConv(x, K, groups=groups)
 
-            x = F.tanh(x)
-            #x = F.relu(x)
+            #x = F.tanh(x)
+            x = F.relu(x)
             if norm:
                 # x = F.layer_norm(x, x.shape)
                 beta = torch.norm(x)
