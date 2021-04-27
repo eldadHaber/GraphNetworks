@@ -1388,7 +1388,7 @@ class graphNetwork_seq(nn.Module):
 class graphNetwork_faust(nn.Module):
 
     def __init__(self, nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=False, wave=True,
-                 diffOrder=1, num_nodes=1024):
+                 diffOrder=1, num_nodes=1024,mixDynamics=False):
         super(graphNetwork_faust, self).__init__()
         self.wave = wave
         if not wave:
@@ -1396,6 +1396,7 @@ class graphNetwork_faust(nn.Module):
         else:
             self.heat = False
         self.h = h
+        self.mixDynamics = mixDynamics
         self.varlet = varlet
         self.dense = dense
         self.diffOrder = diffOrder
@@ -1412,6 +1413,9 @@ class graphNetwork_faust(nn.Module):
             self.K2Eopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
 
         self.KNclose = nn.Parameter(torch.randn(nNclose, nopen) * stdv)
+        if self.mixDynamics:
+            # self.alpha = nn.Parameter(torch.rand(nlayer, 1) * stdvp)
+            self.alpha = nn.Parameter(-0 * torch.ones(1, 1))
 
         if varlet:
             Nfeatures = 2 * nopen
@@ -1560,16 +1564,27 @@ class graphNetwork_faust(nn.Module):
             dxe = self.doubleLayer(dxe, self.KE1[i], self.KE2[i])
 
             # dxe = F.layer_norm(dxe, dxe.shape)
+            if self.mixdynamics:
+                xe = xe + self.h * dxe
 
-            if self.wave:
+                beta = F.sigmoid(self.alpha)
+                alpha = 1 - beta
+                # print("heat portion:", alpha)
+                # print("wave portion:", beta)
+
+                xe = beta*xe + alpha*dxe
+                divE = Graph.edgeDiv(xe)
+                aveE = Graph.edgeAve(xe, method='ave')
+            elif self.wave:
                 xe = xe + self.h * dxe
                 divE = Graph.edgeDiv(xe)
                 aveE = Graph.edgeAve(xe, method='ave')
 
-            if self.heat:
+            elif self.heat:
                 dxe = torch.tanh(dxe)
                 divE = Graph.edgeDiv(dxe)
                 aveE = Graph.edgeAve(dxe, method='ave')
+
 
             if self.varlet:
                 dxn = torch.cat([aveE, divE], dim=1)
@@ -1594,7 +1609,7 @@ class graphNetwork_faust(nn.Module):
         x = F.elu(self.lin1(xn))
         x = F.dropout(x, training=self.training)
         x = self.lin2(x)
-        return F.log_softmax(x, dim=1)
+        return F.log_softmax(x, dim=1), beta
 
         # return xn, xe
 

@@ -268,12 +268,12 @@ test_loader = DataLoader(test_dataset, batch_size=1)
 d = train_dataset[0]
 
 model = GN.graphNetwork_faust(nNin, nEin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
-                              diffOrder=1, num_nodes=d.num_nodes)
+                              diffOrder=1, num_nodes=d.num_nodes, mixDynamics=True)
 
-model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=True,
-                                  diffOrder=1, num_output=d.num_nodes, dropOut=0.0, faust=True,
-                                  gated=False,
-                                  realVarlet=False, mixDyamics=True)
+# model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=True,
+#                                   diffOrder=1, num_output=d.num_nodes, dropOut=0.0, faust=True,
+#                                   gated=False,
+#                                   realVarlet=False, mixDyamics=True)
 
 
 model.to(device)
@@ -281,15 +281,15 @@ model.to(device)
 target = torch.arange(d.num_nodes, dtype=torch.long, device=device)
 optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
-optimizer = torch.optim.Adam([
-    dict(params=model.KN1, lr=lrGCN, weight_decay=wdGCN),
-    dict(params=model.KN2, lr=lrGCN, weight_decay=wdGCN),
-    dict(params=model.K1Nopen, weight_decay=wd),
-    dict(params=model.KNclose, weight_decay=wd),
-    dict(params=model.lin1.parameters(), weight_decay=wd),
-    dict(params=model.lin2.parameters(), weight_decay=wd),
-    dict(params=model.alpha, lr=0.01, weight_decay=0),
-], lr=lr)
+# optimizer = torch.optim.Adam([
+#     dict(params=model.KN1, lr=lrGCN, weight_decay=wdGCN),
+#     dict(params=model.KN2, lr=lrGCN, weight_decay=wdGCN),
+#     dict(params=model.K1Nopen, weight_decay=wd),
+#     dict(params=model.KNclose, weight_decay=wd),
+#     dict(params=model.lin1.parameters(), weight_decay=wd),
+#     dict(params=model.lin2.parameters(), weight_decay=wd),
+#     dict(params=model.alpha, lr=0.01, weight_decay=0),
+# ], lr=lr)
 
 print_files = False
 if print_files:
@@ -341,7 +341,7 @@ def train(epoch):
         # print("xn shape:", xn.shape)
         # print("xe shape:", xe.shape)
         [xnOut, beta] = model(xn, G, xe=xe)
-        betas.append(beta)
+        #betas.append(beta)
         loss = F.nll_loss(xnOut, target)
         total_loss += loss.item()
         loss.backward()
@@ -369,8 +369,8 @@ def test():
         xn = data.x.t().unsqueeze(0)
         xn = data.pos.t().unsqueeze(0)
         xe = data.edge_attr.t().unsqueeze(0)
-        [xnOut, _] = model(xn, G, xe=xe)
-
+        [xnOut, beta] = model(xn, G, xe=xe)
+        betas.append(beta)
         pred = xnOut.max(1)[1]
         correct += pred.eq(target).sum().item()
     return correct / (len(test_dataset) * d.num_nodes)
