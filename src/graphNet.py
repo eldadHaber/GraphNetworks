@@ -1236,8 +1236,8 @@ class graphNetwork_seq(nn.Module):
                                                dropOut=dropOut,
                                                graphUpdate=None, gated=gated, mixDyamics=mixDyamics))
 
-        stdv = 1e-1
-        stdvp = 1e-1
+        stdv = 1e-2
+        stdvp = 1e-2
         self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
         self.KNclose = nn.Parameter(torch.randn(num_output, nopen) * stdv)
 
