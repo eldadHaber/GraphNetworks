@@ -233,9 +233,9 @@ else:
 # Setup the network and its parameters
 nNin = 3 #6  # 6
 nEin = 1 #3
-nopen = 1 #64
-nhid = 1 #64
-nNclose = 1 #64
+nopen = 3 #64
+nhid = 3 #64
+nNclose = 3 #64
 nlayer = 1 #8#16
 
 batchSize = 32
