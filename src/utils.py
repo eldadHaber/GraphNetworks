@@ -229,7 +229,7 @@ def dRMSD(X, Xobs, M):
 
 def saveMesh(xn, faces, pos, i=0):
     # xn of shape [points, features]
-    if 1==0:
+    if 1==1:
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
         p = ax.scatter(pos[:, 0].clone().detach().cpu().numpy(), pos[:, 1].clone().detach().cpu().numpy(),
