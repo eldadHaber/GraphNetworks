@@ -1403,8 +1403,8 @@ class graphNetwork_faust(nn.Module):
         self.dense = dense
         self.diffOrder = diffOrder
         self.num_nodes = num_nodes
-        stdv = 1e-1
-        stdvp = 1e-1
+        stdv = 1e-3
+        stdvp = 1e-3
         self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
         self.K2Nopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
         if dense:
@@ -1521,6 +1521,7 @@ class graphNetwork_faust(nn.Module):
         # xn = [B, C, N]
         # xe = [B, C, N, N] or [B, C, E]
         # Opening layer
+        saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, -1)
         if not self.wave:
             xn = Graph.edgeAve(xe, method="ave")
         xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)

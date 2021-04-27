@@ -201,7 +201,7 @@ import torch_geometric.transforms as T
 import os
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
-#device = 'cpu'
+# device = 'cpu'
 caspver = "casp11"  # Change this to choose casp version
 
 if "s" in sys.argv:
@@ -231,12 +231,12 @@ else:
     from src import pnetArch as PNA
 
 # Setup the network and its parameters
-nNin = 3 #6  # 6
-nEin = 3 #3
-nopen = 3 #64
-nhid = 3 #64
-nNclose = 3 #64
-nlayer = 50 #8#16
+nNin = 3  # 6  # 6
+nEin = 3  # 3
+nopen = 3  # 64
+nhid = 3  # 64
+nNclose = 3  # 64
+nlayer = 50  # 8#16
 
 batchSize = 32
 h = 0.1
@@ -260,9 +260,9 @@ transforms = T.FaceToEdge(remove_faces=False)
 
 
 pre_transform = T.Compose([T.FaceToEdge(remove_faces=False), T.Constant(value=1)])
-train_dataset = FAUST(faust_path, False, T.Cartesian(), pre_transform)
+train_dataset = FAUST(faust_path, True, T.Cartesian(), pre_transform)
 test_dataset = FAUST(faust_path, False, T.Cartesian(), pre_transform)
-train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True)
+train_loader = DataLoader(train_dataset, batch_size=1, shuffle=False)
 test_loader = DataLoader(test_dataset, batch_size=1)
 
 # train_dataset = FAUST(faust_path, train=True, transform=transforms)
@@ -280,7 +280,6 @@ model = GN.graphNetwork_faust(nNin, nEin, nopen, nhid, nNclose, nlayer, h=h, den
 model.to(device)
 
 target = torch.arange(d.num_nodes, dtype=torch.long, device=device)
-
 
 optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 # optimizer = torch.optim.Adam([
@@ -379,7 +378,7 @@ def test():
     model.eval()
     correct = 0
 
-    for idx,data in enumerate(test_loader):
+    for idx, data in enumerate(test_loader):
         data = data.to(device)
         optimizer.zero_grad()
 
@@ -393,14 +392,14 @@ def test():
         xn = data.pos.t().unsqueeze(0)
         xe = data.edge_attr.t().unsqueeze(0)
         [xnOut, beta] = model(xn, G, xe=xe)
-        if idx==0:
+        if idx == 0:
             betas.append(beta)
         pred = xnOut.max(1)[1]
         correct += pred.eq(target).sum().item()
     return correct / (len(test_dataset) * d.num_nodes)
 
 
-debug=True
+debug = True
 if debug:
     for i, data in enumerate(train_loader):
         print(data.pos)
@@ -415,19 +414,18 @@ if debug:
         print("data:", data)
         N = data.pos.shape[0]
         W = torch.ones(N).to(device)
-        G = GO.graph(I, J, N, W=W , pos=data.pos, faces=data.face.t())
+        G = GO.graph(I, J, N, W=W, pos=data.pos, faces=data.face.t())
 
-        #xn = torch.randn(1, 1, N).float()
-        #xn = torch.zeros(1, 1, N).float()
-        #xn[:, :, 1:100] = 1.0
-        #xn[:, :, 1000:1700] = 1.0
+        # xn = torch.randn(1, 1, N).float()
+        # xn = torch.zeros(1, 1, N).float()
+        # xn[:, :, 1:100] = 1.0
+        # xn[:, :, 1000:1700] = 1.0
         pos, batch = data.pos, data.batch
-        xn = pos.t().unsqueeze(0) # torch.zeros(pos.shape[0], 3).float()
-        xe = data.edge_attr.t().unsqueeze(0) # torch.ones(1, 1, data.edge_index.shape[1])
+        xn = pos.t().unsqueeze(0)  # torch.zeros(pos.shape[0], 3).float()
+        xe = data.edge_attr.t().unsqueeze(0)  # torch.ones(1, 1, data.edge_index.shape[1])
 
         xnOut, xeOut = model(xn, xe, G)
         exit()
-
 
 for epoch in range(1, 101):
     train(epoch)
