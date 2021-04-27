@@ -102,7 +102,7 @@ nEin = 1
 nopen = 2048
 nhid = 2048
 nNclose = 2048
-nlayer = 8
+nlayer = 4
 h = 0.05  # 1 / nlayer
 dropout = 0.2
 # h = 20 / nlayer
@@ -111,7 +111,7 @@ print("n channels:", nopen)
 print("n layers:", nlayer)
 print("h step:", h)
 print("dropout:", dropout)
-wave = False
+wave = True
 print("Wave = ", wave)
 print_files = False
 if "s" in sys.argv:
