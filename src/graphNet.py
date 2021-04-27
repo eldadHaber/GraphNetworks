@@ -1583,6 +1583,7 @@ class graphNetwork_faust(nn.Module):
                 aveE = Graph.edgeAve(xe, method='ave')
             elif self.wave:
                 xe = xe + self.h * dxe
+                print("xe shape:", xe.shape)
                 divE = Graph.edgeDiv(xe)
                 aveE = Graph.edgeAve(xe, method='ave')
 
