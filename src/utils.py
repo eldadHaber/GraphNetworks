@@ -258,7 +258,7 @@ def saveMesh(xn, faces, pos, i=0):
         smooth = False
 
     trimesh.exchange.export.export_mesh(mesh,
-                                        "/users/others/eliasof/GraphNetworks/plots/xn_norm_verlet_layer_" + str(
+                                        "/users/others/eliasof/GraphNetworks/plots_new/xn_norm_wave_layer_" + str(
                                             i) + ".ply", "ply")
 
 

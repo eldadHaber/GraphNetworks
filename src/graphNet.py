@@ -1526,7 +1526,7 @@ class graphNetwork_faust(nn.Module):
         xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
         xe = self.doubleLayer(xe, self.K1Eopen, self.K2Eopen)
 
-        debug = False
+        debug = True
         if debug:
             image = False
             if image:

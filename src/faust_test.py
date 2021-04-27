@@ -230,12 +230,12 @@ else:
     from src import pnetArch as PNA
 
 # Setup the network and its parameters
-nNin = 6  # 6
-nEin = 3
-nopen = 64
-nhid = 64
-nNclose = 64
-nlayer = 8#16
+nNin = 1 #6  # 6
+nEin = 1 #3
+nopen = 1 #64
+nhid = 1 #64
+nNclose = 1 #64
+nlayer = 1 #8#16
 
 batchSize = 32
 h = 0.1
@@ -270,10 +270,10 @@ d = train_dataset[0]
 model = GN.graphNetwork_faust(nNin, nEin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=True,
                               diffOrder=1, num_nodes=d.num_nodes, mixDynamics=True)
 
-model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=True,
-                                  diffOrder=1, num_output=d.num_nodes, dropOut=0.0, faust=True,
-                                  gated=False,
-                                  realVarlet=False, mixDyamics=True)
+# model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=True,
+#                                   diffOrder=1, num_output=d.num_nodes, dropOut=0.0, faust=True,
+#                                   gated=False,
+#                                   realVarlet=False, mixDyamics=True)
 
 
 model.to(device)
@@ -395,6 +395,31 @@ def test():
         pred = xnOut.max(1)[1]
         correct += pred.eq(target).sum().item()
     return correct / (len(test_dataset) * d.num_nodes)
+
+
+debug=True
+if debug:
+    for i, data in enumerate(train_loader):
+        print(data.pos)
+        print("pos:", data.pos.shape)
+        print(data.edge_index)
+        print("edge index:", data.edge_index.shape)
+
+        I = data.edge_index[0, :]
+        print("I shape:", I.shape)
+        J = data.edge_index[1, :]
+        N = data.pos.shape[0]
+        print("data:", data)
+        G = GO.graph(I, J, N, pos=data.pos, faces=data.face.t())
+
+        xn = torch.randn(1, 1, N).float()
+        xn = torch.zeros(1, 1, N).float()
+        xn[:, :, 1:100] = 1.0
+        xn[:, :, 1000:1700] = 1.0
+        xe = torch.ones(1, 1, data.edge_index.shape[1])
+
+        xnOut, xeOut = model(xn, xe, G)
+        exit()
 
 
 for epoch in range(1, 101):
