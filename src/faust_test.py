@@ -340,7 +340,7 @@ def train(epoch):
         # print("edge index shape:", data.edge_index.shape)
         # print("xn shape:", xn.shape)
         # print("xe shape:", xe.shape)
-        [xnOut, beta] = model(xn xe, G)
+        [xnOut, beta] = model(xn ,xe, G)
         #betas.append(beta)
         loss = F.nll_loss(xnOut, target)
         total_loss += loss.item()
