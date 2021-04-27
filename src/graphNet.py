@@ -928,7 +928,7 @@ class graphNetwork_nodesOnly(nn.Module):
             if self.dropout:
                 x = F.dropout(x, p=self.dropout, training=self.training)
             x = self.lin2(x)
-            return F.log_softmax(x, dim=1)
+            return F.log_softmax(x, dim=1), F.sigmoid(self.alpha)
 
         if self.PPI:
             return xn, Graph

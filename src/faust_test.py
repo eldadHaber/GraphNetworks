@@ -313,7 +313,7 @@ if print_files:
 # test_dataset = FAUST(faust_path, train=False, transform=transforms)
 # test_loader = DataLoader(
 #    train_dataset, batch_size=1, shuffle=False, num_workers=1, drop_last=False)
-
+betas = []
 def train(epoch):
     model.train()
 
@@ -340,7 +340,8 @@ def train(epoch):
         # print("edge index shape:", data.edge_index.shape)
         # print("xn shape:", xn.shape)
         # print("xe shape:", xe.shape)
-        xnOut = model(xn, G, xe=xe)
+        [xnOut, beta] = model(xn, G, xe=xe)
+        betas.append(beta)
         loss = F.nll_loss(xnOut, target)
         total_loss += loss.item()
         loss.backward()
@@ -350,7 +351,7 @@ def train(epoch):
             print("train loss:", total_loss / 10)
             total_loss = 0
 
-
+acc_hist = []
 def test():
     model.eval()
     correct = 0
@@ -378,7 +379,41 @@ def test():
 for epoch in range(1, 1001):
     train(epoch)
     test_acc = test()
+    acc_hist.append(test_acc)
     print('Epoch: {:02d}, Test: {:.4f}'.format(epoch, test_acc))
+
+import matplotlib.pyplot as plt
+
+fig, ax1 = plt.subplots()
+
+color = 'tab:red'
+ax1.set_xlabel('Epoch #')
+ax1.set_ylabel('Wave portion', color=color)
+ax1.plot(betas, color=color)
+ax1.tick_params(axis='y', labelcolor=color)
+
+ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+
+color = 'tab:blue'
+ax2.set_ylabel('Test acc (%)', color=color)  # we already handled the x-label with ax1
+ax2.plot(acc_hist, color=color)
+ax2.tick_params(axis='y', labelcolor=color)
+
+fig.tight_layout()  # otherwise the right y-label is slightly clipped
+plt.show()
+plt.savefig("faust_wave_graph.png")
+
+with open('betas_faust_wave.txt', 'w') as filehandle:
+    for listitem in betas:
+        filehandle.write('%s\n' % listitem)
+
+with open('acc_hist_faust_wave.txt', 'w') as filehandle:
+    for listitem in acc_hist:
+        filehandle.write('%s\n' % listitem)
+
+
+print("bye")
+
 
 for i, data in enumerate(train_loader):
     print(data.pos)
