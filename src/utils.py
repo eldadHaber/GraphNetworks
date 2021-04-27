@@ -246,7 +246,7 @@ def saveMesh(xn, faces, pos, i=0):
         plt.close()
 
     mesh = trimesh.Trimesh(vertices=pos, faces=faces, process=False)
-    colors = xn.squeeze(0).clone().detach().cpu().numpy()[:, 0]
+    colors = xn.squeeze(0).norm(dim=0).clone().detach().cpu().numpy() # xn.squeeze(0).clone().detach().cpu().numpy()[:, 0]
     colors[colors < 0.0] = 0.0
     colors[colors > 1.0] = 1.0
     add = np.array([[1.0], [0.0]], dtype=np.float).squeeze()
