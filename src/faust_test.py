@@ -232,7 +232,7 @@ else:
 
 # Setup the network and its parameters
 nNin = 3 #6  # 6
-nEin = 1 #3
+nEin = 3 #3
 nopen = 3 #64
 nhid = 3 #64
 nNclose = 3 #64
@@ -423,7 +423,7 @@ if debug:
         #xn[:, :, 1000:1700] = 1.0
         pos, batch = data.pos, data.batch
         xn = pos.t().unsqueeze(0) # torch.zeros(pos.shape[0], 3).float()
-        xe = torch.ones(1, 1, data.edge_index.shape[1])
+        xe = data.edge_attr.t().unsqueeze(0) # torch.ones(1, 1, data.edge_index.shape[1])
 
         xnOut, xeOut = model(xn, xe, G)
         exit()
