@@ -79,7 +79,9 @@ for nlayers in num_layers:
         print("DATA SET IS:", datastr)
         # h = 1 / n_layers
         h = trial.suggest_discrete_uniform('h', 0.1 / nlayer, 3, q=0.1 / (nlayer))
+        h = trial.suggest_discrete_uniform(0.1, 2, q=0.1)
         dropout = trial.suggest_discrete_uniform('dropout', 0.5, 0.7, q=0.1)
+        dropout = 0.6
         # h = 20 / nlayer
         print("n channels:", nopen)
         print("n layers:", nlayer)
