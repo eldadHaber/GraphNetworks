@@ -354,7 +354,7 @@ def train(epoch):
         # print("edge index shape:", data.edge_index.shape)
         # print("xn shape:", xn.shape)
         # print("xe shape:", xe.shape)
-        [xnOut, beta] = model(xn, xe, G)
+        [xnOut, beta] = model(xn, G, xe=xe)
         # betas.append(beta)
         print("beta:", beta)
         loss = F.nll_loss(xnOut, target)
@@ -387,7 +387,7 @@ def test():
         xn = data.x.t().unsqueeze(0)
         xn = data.pos.t().unsqueeze(0)
         xe = data.edge_attr.t().unsqueeze(0)
-        [xnOut, beta] = model(xn, xe, G)
+        [xnOut, beta] = model(xn, G, xe=xe)
         betas.append(beta)
         pred = xnOut.max(1)[1]
         correct += pred.eq(target).sum().item()
