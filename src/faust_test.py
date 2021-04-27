@@ -198,9 +198,10 @@ import math
 from torch_geometric.datasets import ModelNet, FAUST
 from torch_geometric.data import DataLoader
 import torch_geometric.transforms as T
+import os
 
-device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
-
+device = 'cuda:1' if torch.cuda.is_available() else 'cpu'
+#device = 'cpu'
 caspver = "casp11"  # Change this to choose casp version
 
 if "s" in sys.argv:
@@ -281,7 +282,7 @@ model.to(device)
 target = torch.arange(d.num_nodes, dtype=torch.long, device=device)
 
 
-# optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 # optimizer = torch.optim.Adam([
 #     dict(params=model.KN1, lr=lrGCN, weight_decay=0),
 #     dict(params=model.KN2, lr=lrGCN, weight_decay=0),
@@ -296,15 +297,17 @@ target = torch.arange(d.num_nodes, dtype=torch.long, device=device)
 #     dict(params=model.alpha, lr=0.01, weight_decay=0),
 # ], lr=lr)
 
-optimizer = torch.optim.Adam([
-    dict(params=model.KN1, lr=lrGCN, weight_decay=wdGCN),
-    dict(params=model.KN2, lr=lrGCN, weight_decay=wdGCN),
-    dict(params=model.K1Nopen, weight_decay=0),
-    dict(params=model.KNclose, weight_decay=0),
-    dict(params=model.lin1.parameters(), weight_decay=0),
-    dict(params=model.lin2.parameters(), weight_decay=0),
-    dict(params=model.alpha, lr=0.1, weight_decay=0),
-], lr=lr)
+
+## bring this opt:
+# optimizer = torch.optim.Adam([
+#     dict(params=model.KN1, lr=lrGCN, weight_decay=wdGCN),
+#     dict(params=model.KN2, lr=lrGCN, weight_decay=wdGCN),
+#     dict(params=model.K1Nopen, weight_decay=0),
+#     dict(params=model.KNclose, weight_decay=0),
+#     dict(params=model.lin1.parameters(), weight_decay=0),
+#     dict(params=model.lin2.parameters(), weight_decay=0),
+#     dict(params=model.alpha, lr=0.1, weight_decay=0),
+# ], lr=lr)
 
 print_files = False
 if print_files:
