@@ -303,7 +303,7 @@ optimizer = torch.optim.Adam([
     dict(params=model.KNclose, weight_decay=0),
     dict(params=model.lin1.parameters(), weight_decay=0),
     dict(params=model.lin2.parameters(), weight_decay=0),
-    dict(params=model.alpha, lr=lr, weight_decay=0),
+    dict(params=model.alpha, lr=0.001, weight_decay=0),
 ], lr=lr)
 
 print_files = False
