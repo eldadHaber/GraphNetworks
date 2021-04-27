@@ -1555,9 +1555,9 @@ class graphNetwork_faust(nn.Module):
             gradX = Graph.nodeGrad(xn)
             intX = Graph.nodeAve(xn)
 
-            operators = self.nodeDeriv(xn, Graph, order=self.diffOrder, edgeSpace=True)
-            if debug and image:
-                self.saveOperatorImages(operators)
+            #operators = self.nodeDeriv(xn, Graph, order=self.diffOrder, edgeSpace=True)
+            #if debug and image:
+            #    self.saveOperatorImages(operators)
 
             if self.varlet:
                 dxe = torch.cat([intX, gradX], dim=1)
