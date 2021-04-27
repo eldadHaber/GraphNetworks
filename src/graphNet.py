@@ -568,7 +568,7 @@ class graphNetwork_nodesOnly(nn.Module):
                 beta = torch.norm(x)
                 x = beta * tv_norm(x)
             x = self.edgeConv(x, K.t(), groups=groups)
-
+            F.tanh(x)
         if not relu:
             return x
         x = F.relu(x)

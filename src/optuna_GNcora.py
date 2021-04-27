@@ -81,7 +81,7 @@ for nlayers in num_layers:
         print("DATA SET IS:", dataset)
         # h = 1 / n_layers
         #h = trial.suggest_discrete_uniform('h', 1 / (n_layers), 3, q=1 / (n_layers))
-        h = trial.suggest_discrete_uniform('h', 0.1, 2, q=0.1)
+        h = trial.suggest_discrete_uniform('h', 0.1, 4, q=0.1)
 
         batchSize = 32
 
