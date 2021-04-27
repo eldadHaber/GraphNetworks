@@ -268,7 +268,7 @@ test_loader = DataLoader(test_dataset, batch_size=1)
 d = train_dataset[0]
 
 model = GN.graphNetwork_faust(nNin, nEin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=True,
-                              diffOrder=1, num_nodes=d.num_nodes, mixDynamics=False)
+                              diffOrder=1, num_nodes=d.num_nodes, mixDynamics=True)
 
 # model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=True,
 #                                   diffOrder=1, num_output=d.num_nodes, dropOut=0.0, faust=True,
@@ -291,7 +291,7 @@ optimizer = torch.optim.Adam([
     dict(params=model.KNclose, weight_decay=0),
     dict(params=model.lin1.parameters(), weight_decay=0),
     dict(params=model.lin2.parameters(), weight_decay=0),
-    #dict(params=model.alpha, lr=0.01, weight_decay=0),
+    dict(params=model.alpha, lr=0.01, weight_decay=0),
 ], lr=lr)
 
 # optimizer = torch.optim.Adam([
