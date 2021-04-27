@@ -232,6 +232,7 @@ def saveMesh(xn, faces, pos, i=0):
     print("xn shape:", xn.shape)
     print("pos shape:", pos.shape)
     print("faces.shape:", faces.shape)
+    print("colors:", xn.squeeze(0).norm(dim=1).clone().detach().cpu().numpy())
     if 1==1:
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
