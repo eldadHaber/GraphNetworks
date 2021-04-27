@@ -111,7 +111,7 @@ print("n channels:", nopen)
 print("n layers:", nlayer)
 print("h step:", h)
 print("dropout:", dropout)
-wave = True
+wave = False
 print("Wave = ", wave)
 print_files = False
 if "s" in sys.argv:
@@ -145,7 +145,7 @@ model = GN.graphNetwork_seq(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False
 
 model.reset_parameters()
 model.to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 criterion = torch.nn.BCEWithLogitsLoss()
 
 
