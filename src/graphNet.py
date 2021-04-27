@@ -1610,7 +1610,7 @@ class graphNetwork_faust(nn.Module):
         x = F.elu(self.lin1(xn))
         x = F.dropout(x, training=self.training)
         x = self.lin2(x)
-        return F.log_softmax(x, dim=1), beta
+        return F.log_softmax(x, dim=1), F.sigmoid(self.alpha)
 
         # return xn, xe
 
