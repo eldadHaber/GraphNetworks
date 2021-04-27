@@ -376,7 +376,7 @@ def test():
     model.eval()
     correct = 0
 
-    for data in test_loader:
+    for idx,data in enumerate(test_loader):
         data = data.to(device)
         optimizer.zero_grad()
 
@@ -390,7 +390,8 @@ def test():
         xn = data.pos.t().unsqueeze(0)
         xe = data.edge_attr.t().unsqueeze(0)
         [xnOut, beta] = model(xn, G, xe=xe)
-        betas.append(beta)
+        if idx==0:
+            betas.append(beta)
         pred = xnOut.max(1)[1]
         correct += pred.eq(target).sum().item()
     return correct / (len(test_dataset) * d.num_nodes)
