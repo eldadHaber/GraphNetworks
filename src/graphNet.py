@@ -559,6 +559,7 @@ class graphNetwork_nodesOnly(nn.Module):
             x = self.edgeConv(x, K, groups=groups)
 
         if K.shape[0] == K.shape[1]:
+            x = F.tanh(x)
             x = self.edgeConv(x, K, groups=groups)
 
             x = F.tanh(x)

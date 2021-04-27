@@ -96,9 +96,9 @@ for nlayers in num_layers:
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         data = data.to(device)
         dropout = trial.suggest_discrete_uniform('dropout', 0.5, 0.8, q=0.1)
-        lr = trial.suggest_float("lr", 1e-2, 1e-1, log=True)
+        lr = trial.suggest_float("lr", 1e-3, 1e-1, log=True)
         lrGCN = trial.suggest_float("lrGCN", 1e-5, 1e-2, log=True)
-        wd = trial.suggest_float("wd", 5e-8, 1e-4, log=True)
+        wd = trial.suggest_float("wd", 5e-12, 1e-5, log=True)
         # wdGCN = trial.suggest_float("wdGCN", 1e-10, 1e-2, log=True)
         lr_alpha = trial.suggest_float("lr_alpha", 1e-5, 1e-2, log=True)
         model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, n_layers, h=h, dense=False, varlet=True,
