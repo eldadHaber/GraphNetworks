@@ -239,7 +239,7 @@ nNclose = 3  # 64
 nlayer = 50  # 8#16
 
 batchSize = 32
-h = 0.05
+h = 0.02
 lr = 0.01
 lrGCN = 0.01
 wdGCN = 0
