@@ -268,7 +268,7 @@ test_loader = DataLoader(test_dataset, batch_size=1)
 # train_dataset = FAUST(faust_path, train=True, transform=transforms)
 d = train_dataset[0]
 
-model = GN.graphNetwork_faust(nNin, nEin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=True,
+model = GN.graphNetwork_faust(nNin, nEin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
                               diffOrder=1, num_nodes=d.num_nodes, mixDynamics=False)
 
 # model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=True,
