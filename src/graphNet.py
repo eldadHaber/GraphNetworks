@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import torch.optim as optim
 ## r=1
 from src import graphOps as GO
+from torch_scatter import scatter
 
 
 def conv2(X, Kernel):
@@ -24,7 +25,6 @@ def conv1T(X, Kernel):
 
 def conv2T(X, Kernel):
     return F.conv_transpose2d(X, Kernel, padding=int((Kernel.shape[-1] - 1) / 2))
-
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
@@ -134,15 +134,25 @@ class graphNetwork(nn.Module):
 
         self.Kw = nn.Parameter(torch.ones(nopen,1))
 
-    def doubleLayer(self, x, K1, K2):
+        self.filters = nn.ModuleList()
+        self.filters.append(nn.Sequential(nn.Linear(self.nopen//3, 25), nn.Tanh(), nn.Linear(25, self.nopen//3)))
+        self.filters.append(nn.Sequential(nn.Linear(self.nopen//3, 25), nn.Tanh(), nn.Linear(25, self.nopen//3)))
+        for i in range(nlayer):
+            self.filters.append(nn.Sequential(nn.Linear(self.nopen//3,25), nn.Tanh(), nn.Linear(25,self.nopen)))
+            self.filters.append(nn.Sequential(nn.Linear(self.nopen//3,25), nn.Tanh(), nn.Linear(25,self.nopen)))
+            self.filters.append(nn.Sequential(nn.Linear(self.nopen//3,25), nn.Tanh(), nn.Linear(25,self.nopen)))
+            self.filters.append(nn.Sequential(nn.Linear(self.nopen//3,25), nn.Tanh(), nn.Linear(25,self.nopen)))
+        return
 
+
+
+    def doubleLayer(self, x, K1, K2):
         x = torch.tanh(x)
         x = F.conv1d(x, K1.unsqueeze(-1))  # self.edgeConv(x, K1)
         x = tv_norm(x)
         x = torch.tanh(x)
         x = F.conv1d(x, K2.unsqueeze(-1))
         x = torch.tanh(x)
-
         return x
 
     def forward(self, xn, xe, Graph):
@@ -151,9 +161,13 @@ class graphNetwork(nn.Module):
         # xn = [B, C, N]
         # xe =  [B, C, E]
         # Opening layer
+
         xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
         xe = self.doubleLayer(xe, self.K1Eopen, self.K2Eopen)
-        xn = torch.cat([xn,Graph.edgeDiv(xe), Graph.edgeAve(xe)], dim=1)
+
+        w1 = self.filters[0](xe.transpose(1,2)).transpose(1,2)
+        w2 = self.filters[1](xe.transpose(1,2)).transpose(1,2)
+        xn = torch.cat([xn, Graph.edgeDiv(xe,w1), Graph.edgeAve(xe,w2)], dim=1)
         if self.const:
             xn = proj(xn, self.KNclose, n=100)
             #x3 = F.conv1d(xn, self.KNclose.unsqueeze(-1))
@@ -166,20 +180,26 @@ class graphNetwork(nn.Module):
         for i in range(nlayers):
 
             # Compute the distance in real space
-            x3    = F.conv1d(xn, self.KNclose.unsqueeze(-1))
-            w     = Graph.edgeLength(x3)
-            w     = self.Kw@w
-            w     = w/(torch.std(w)+1e-4)
-            w     = torch.exp(-(w**2))
+            # x3    = F.conv1d(xn, self.KNclose.unsqueeze(-1))
+            # w     = Graph.edgeLength(x3)
+            # w     = self.Kw@w
+            # w     = w/(torch.std(w)+1e-4)
+            # w     = torch.exp(-(w**2))
+
          #w     = torch.ones(xe.shape[2], device=xe.device)
 
+            w = self.filters[4*i+2](xe.transpose(1,2)).transpose(1,2)
             gradX = Graph.nodeGrad(xn,w)
+            w = self.filters[4*i+3](xe.transpose(1,2)).transpose(1,2)
             intX = Graph.nodeAve(xn,w)
 
             dxe = torch.cat([gradX, intX], dim=1)
             dxe  = self.doubleLayer(dxe, self.KE1[i], self.KE2[i])
 
+            w = self.filters[4*i+4](xe.transpose(1,2)).transpose(1,2)
             divE = Graph.edgeDiv(dxe[:,:self.nopen,:],w)
+            # w = self.filters[4*i+5](xn.transpose(1,2)).transpose(1,2)
+            w = self.filters[4*i+5](xe.transpose(1,2)).transpose(1,2)
             aveE = Graph.edgeAve(dxe[:,self.nopen:,:],w)
 
             xn = xn - self.h * (divE + aveE)
