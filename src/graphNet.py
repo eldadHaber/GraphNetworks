@@ -738,9 +738,9 @@ class graphNetwork_nodesOnly(nn.Module):
 
         xn = self.singleLayer(xn, self.K1Nopen, relu=True)
         x0 = xn.clone()
-        debug = False
+        debug = True
         if debug:
-            image = True
+            image = False
             if image:
                 plt.figure()
                 print("xn shape:", xn.shape)
