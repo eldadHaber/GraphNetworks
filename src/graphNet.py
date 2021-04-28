@@ -740,8 +740,8 @@ class graphNetwork_nodesOnly(nn.Module):
 
         xn = self.singleLayer(xn, self.K1Nopen, relu=True)
         xnnorm = torch.norm(xn, dim=1)
-        vmin= xnnorm.min()
-        vmax= xnnorm.max()
+        vmin= xnnorm.min().detach().numpy()
+        vmax= xnnorm.max().detach().numpy()
         x0 = xn.clone()
         debug = True
         if debug:
