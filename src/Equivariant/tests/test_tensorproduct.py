@@ -5,88 +5,84 @@ from torch_scatter import scatter
 import numpy as np
 from e3nn import o3
 from e3nn.nn import FullyConnectedNet, Gate
-from e3nn.o3 import TensorProduct
+from e3nn.o3 import TensorProduct, FullyConnectedTensorProduct, ElementwiseTensorProduct, FullTensorProduct
 from e3nn.math import soft_one_hot_linspace
+import matplotlib.pyplot as plt
+# irreps = o3.Irreps("1x0e+1x1o")
+plt.figure()
+# plt.show()
+import math
+# tp = FullTensorProduct("1x0e+1x1o","1x0e+1x1o", normalization='norm')
+# tp2 = FullTensorProduct("1x0e+1x1o","1x0e+1x1o", normalization='component')
+tp = FullTensorProduct("2x1o","2x1o")
+ftp = FullyConnectedTensorProduct("2x1o","2x1o",tp.irreps_out)
+print(tp)
+print(ftp)
 
 
-def nodeAve(x, esrc, edst):
-    # W = torch.randn((1, x.shape[-1]))
-    g = (x[edst, :] + x[esrc, :]) / 2.0
-    #
-    # edge_features = self.tp(x[esrc], edge_attr, weight)
-    # x = scatter(edge_features, edge_dst, dim=0, dim_size=x.shape[0]).div(self.num_neighbors ** 0.5)
-    return g
+
+print("__________________________")
+irrep = "1x0e+1x1o"
+tp = FullTensorProduct(irrep,irrep)
+ftp = FullyConnectedTensorProduct(irrep,irrep,tp.irreps_out) # So a fullyconnected tensorproduct also mixes the outputs if they are of similar kinds, which is what the last number of paths are. However it seems like this last mixing is done differently than normal
+#The last mixing is done purely on a level of elements
+# ftp.weight.requires_grad_(False)
+# ftp.weight[:] = 1
+print(tp)
+print(ftp)
+s = torch.tensor([[1]])
+v = torch.tensor([[1.0,1.0,1]])
+print(v.norm(dim=1))
+x = torch.cat((s,v),dim=1)
+otp = tp(x,x)
+oftp = ftp(x,x)
 
 
-tp = TensorProduct(
-    "1x0e", "1x0e", "1x0e",
-    [
-        (0,0,0,'uvw',True),
-        ],
-        internal_weights = False,
-        shared_weights = False,
-)
-r = torch.tensor([[0,0,0],[1,0,0],[0,1,0]],dtype=torch.float32)
-batch = torch.zeros(r.shape[0],dtype=torch.int64)
-edge_index = radius_graph(r, 3, batch)
-edge_src = edge_index[0]
-edge_dst = edge_index[1]
-x = torch.tensor([[0],[1],[2]],dtype=torch.float32)
-print("here")
-xsrc = x[edge_src]
-xdst = x[edge_dst]
-ones = torch.ones_like(xsrc)
-w = torch.ones_like(xsrc)
-y = tp(xsrc,ones,w)
 
-y1 = nodeAve(x, edge_src, edge_dst)
+filter = iter([o3.Irrep("0e"),o3.Irrep("0e"),o3.Irrep("1o"),o3.Irrep("1o")])
+tp3 = FullTensorProduct("1x1o","1x1o",filter)
 
+x = torch.tensor([[2,0.0,0.0]])
+y = torch.tensor([[0.0,2,0.0]])
+out = tp3(x,y)
+out2 = x.norm()*y.norm()/math.sqrt(2)
+# tp2 = FullyConnectedTensorProduct("1x0e+1x1o","1x0e+1x1o",tp.irreps_out)
 
-x = torch.tensor([[1,0,0,0],[0,1,1,1]],dtype=torch.float32)
-x1 = torch.tensor([[1,1,1,1],[0,1,1,1]],dtype=torch.float32)
-x2 = torch.tensor([[1,1,1,1],[0,0,0,0]],dtype=torch.float32)
-
-tp = TensorProduct(
-    "1x0e+1x1o", "1x0e+1x1o", "1x0e+1x1o",
-    [
-        (0,1,1,'uvw',True),
-        (1, 0, 1, 'uvw', True),
-
-    ]
-)
-
+# normalization: str = 'component',
+# internal_weights: Optional[bool] = None,
+# shared_weights: Optional[bool] = None,
+print(tp)
+print(tp2)
+s = torch.tensor([[10]])
+v = torch.tensor([[11.123,1.31234,0.764]])
+u = v[0]
+print(v.norm(dim=1))
+x = torch.cat((s,v),dim=1)
 y = tp(x,x)
-y1 = tp(x1,x1)
+y2 = tp2(x,x)
+y3 = tp3(v,v)
 
 
-ftp = o3.FullyConnectedTensorProduct(
-"1x0e+1x1o", "1x0e+1x1o", "1x0e+1x1o"
-)
+yy = u.dot(u)/math.sqrt(3)
+plt.subplot(1,2,1)
+tp.visualize()
+plt.subplot(1,2,2)
+tp2.visualize()
+plt.show()
+tp = FullyConnectedTensorProduct("1x0e+1x1o","1x0e+1x1o","1x0e+1x1o")
 
-y2 = ftp(x2,x2)
+x = torch.tensor([[1,0.5,0.5,0.5]],dtype=torch.float32)
+x = torch.randn(1000000,4)
+y = tp(x,x)
 
 
-x = torch.randn((7,16),dtype=torch.float32)
 
-module = TensorProduct(
-    "2x0e+2x0o+2x1e+2x1o", "2x0e+2x0o+2x1e+2x1o", "2x0e+2x0o+2x1e+2x1o",
-    [
-        (0, 0, 0, "uuu", True),
-        (1, 1, 0, "uuu", True),
-        (2, 2, 0, "uuu", True),
-        (3, 3, 0, "uuu", True),
-        (0, 1, 1, "uuu", True),
-        (2, 3, 1, "uuu", True),
-        (2, 2, 2, "uuu", True),
-        (0, 2, 2, "uuu", True),
-        (1, 3, 2, "uuu", True),
-        (2, 3, 3, "uuu", True),
-        (1, 2, 3, "uuu", True),
-        (0, 3, 3, "uuu", True),
-    ]
-)
-y = module(x,x)
-y1 = module(x[0],x[0])
+tp = FullyConnectedTensorProduct("1x0e+1x1o","1x0e+1x1o","1x0e+1x1e+1x1o")
+
+x = torch.tensor([[1,0.5,0.5,0.5]],dtype=torch.float32)
+y = tp(x,x)
+
+
 
 
 

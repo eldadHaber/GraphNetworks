@@ -78,8 +78,8 @@ if __name__ == '__main__':
     # Setup the network and its parameters
     nNin = 1
     nEin = 1
-    nopen = 4
-    nhid = 4
+    nopen = 64
+    nhid = 64
     nNclose = 1
     nlayer = 6
 

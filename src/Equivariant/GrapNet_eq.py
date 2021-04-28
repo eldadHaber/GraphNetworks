@@ -78,7 +78,7 @@ class GraphNet_EQ(torch.nn.Module):
         self.num_nodes = num_nodes
         self.reduce_output = reduce_output
         self.nlayers = layers
-        embed_dim = 100
+        embed_dim = 8
         nmax_atoms = 20
         self.h = 0.1
         self.irreps_in_n = o3.Irreps(irreps_in_n) if irreps_in_n is not None else None
@@ -308,7 +308,7 @@ if __name__ == '__main__':
 
     irreps_in_n = o3.Irreps("1x0e")
     irreps_in_e = o3.Irreps("1x0e+1x1o")
-    irreps_hidden = o3.Irreps("1x0e+1x0o+1x1e+1x1o")
+    irreps_hidden = o3.Irreps("10x0e+10x1o")
     irreps_out_n = o3.Irreps("1x0e")
     layers = 2
     max_radius = 5
@@ -335,7 +335,7 @@ if __name__ == '__main__':
             'x': z[:,None]
             }
 
-    test_equivariance(model,irreps_in_n,irreps_out_n)
+    # test_equivariance(model,irreps_in_n,irreps_out_n)
 
 
     niter = 100000

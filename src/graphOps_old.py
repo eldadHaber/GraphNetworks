@@ -136,49 +136,63 @@ def makeBatch(Ilist, Jlist, nnodesList, Wlist=[1.0]):
 
 class graph(nn.Module):
 
-    def __init__(self, iInd, jInd, nnodes, W=torch.tensor([1.0])):
+    def __init__(self, iInd, jInd, nnodes, D2):
         super(graph, self).__init__()
-        self.iInd = iInd.long()
-        self.jInd = jInd.long()
+        self.iInd = iInd.view(-1).long()
+        self.jInd = jInd.view(-1).long()
+
+        # I, J, nnodesList, W2 = makeBatch(iInd, jInd, nnodes, W)
         self.nnodes = nnodes
-        self.W = W
+        self.D = torch.sqrt(D2)
+        GS = GaussianSmearing(start=0,stop=8,n_gaussians=25).to(device=self.D.device)
+        GSD = GS(self.D)
+        self.iD2 = self.D
+        self.GSD = GSD
+        return
 
     def nodeGrad(self, x, W=[]):
+        """Takes the gradient of the nodes and puts it on the edges.
+        For each node, we go through all its connections with other nodes and computes the difference between these two set of node features (the gradient if you will)
+        W is a weight, which should be a function of the connection between the different nodes.
+        """
         if len(W)==0:
-            W = self.W
+            W = 1
         g = W * (x[:, :, self.iInd] - x[:, :, self.jInd])
         return g
 
     def nodeAve(self, x, W=[]):
         if len(W)==0:
-            W = self.W
+            W = 1
         g = W * (x[:, :, self.iInd] + x[:, :, self.jInd]) / 2.0
         return g
 
 
     def edgeDiv(self, g, W=[]):
+        '''
+        Combines all the edge information leading into each node in a way similar to how a divergence operation would work.
+        Hence g will have the last dimension equal to number of edges, while x will have the dimension equal to the number of nodes.
+        :param g:
+        :param W:
+        :return:
+        '''
         if len(W)==0:
-            W = self.W
+            W = self.iD2
         x = torch.zeros(g.shape[0], g.shape[1], self.nnodes, device=g.device)
-        # z = torch.zeros(g.shape[0],g.shape[1],self.nnodes,device=g.device)
-        # for i in range(self.iInd.numel()):
-        #    x[:,:,self.iInd[i]]  += w*g[:,:,i]
-        # for j in range(self.jInd.numel()):
-        #    x[:,:,self.jInd[j]] -= w*g[:,:,j]
 
-        x.index_add_(2, self.iInd, W * g)
-        x.index_add_(2, self.jInd, -W * g)
+        x.index_add_(2, self.iInd, W[:,:g.shape[1],:] * g)
+        x.index_add_(2, self.jInd, -W[:,:g.shape[1],:] * g)
 
         return x
 
-    def edgeAve(self, g,  W=[], method='max'):
+    def edgeAve(self, g, method='max', W=[]):
         if len(W)==0:
-            W = self.W
+            W = self.iD2
         x1 = torch.zeros(g.shape[0], g.shape[1], self.nnodes, device=g.device)
         x2 = torch.zeros(g.shape[0], g.shape[1], self.nnodes, device=g.device)
 
-        x1.index_add_(2, self.iInd, W * g)
-        x2.index_add_(2, self.jInd, W * g)
+        x1.index_add_(2, self.iInd, W[:,:g.shape[1],:] * g)
+        x2.index_add_(2, self.jInd, W[:,:g.shape[1],:] * g)
+
         if method == 'max':
             x = torch.max(x1, x2)
         elif method == 'ave':
@@ -192,9 +206,7 @@ class graph(nn.Module):
 
     def edgeLength(self, x):
         g = self.nodeGrad(x)
-        #L = torch.sqrt(torch.pow(g, 2).sum(dim=1))
-        L = torch.pow(g, 2).sum(dim=1)
-
+        L = torch.sqrt(torch.pow(g, 2).sum(dim=1))
         return L
 
 

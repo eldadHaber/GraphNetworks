@@ -10,6 +10,7 @@ from torch_geometric.data import Data
 from torch_cluster import radius_graph
 from torch_scatter import scatter
 
+import e3nn
 from e3nn import o3
 from e3nn.math import soft_one_hot_linspace
 from e3nn.nn import FullyConnectedNet, Gate, ExtractIr, Activation
@@ -246,26 +247,30 @@ class TvNorm(torch.nn.Module):
             nd = irreps.dim
             nr = irreps.num_irreps
             degen = torch.empty(nr, dtype=torch.int64)
-            m_scalar = torch.empty(nr,dtype=torch.bool)
+            m_degen = torch.empty(nr,dtype=torch.bool)
             idx = 0
             for mul, ir in irreps:
                 li = 2 * ir.l + 1
                 for i in range(mul):
                     degen[idx + i] = li
-                    m_scalar[idx+i] = ir.l == 0
+                    m_degen[idx+i] = ir.l == 0
                 idx += i + 1
-            self.register_buffer("m_scalar", m_scalar)
+            M = m_degen.repeat_interleave(degen)
+            self.register_buffer("m_scalar", M)
             return
 
         def forward(self, x, eps=1e-6):
+            nb,_ = x.shape
             ms = self.m_scalar
-            x[:,ms] = x[:,ms] - torch.mean(x[:,ms], dim=1, keepdim=True)
+            # x[:,ms] = x[:,ms] - torch.mean(x[:,ms], dim=1, keepdim=True)
             x[:,ms] /= torch.sqrt(torch.sum(x[:,ms] ** 2, dim=1, keepdim=True) + eps)
 
             mv = ~ms
             #We need to decide how to handle the vectors, eps is the tricky part
-
-
+            xx = x[:,mv].view(nb,-1,3)
+            norm = xx.norm(dim=-1)
+            xx /= norm[:,:,None]
+            x[:,mv] = xx.view(nb,-1)
             return x
 
 
@@ -281,27 +286,39 @@ class DoubleLayer(torch.nn.Module):
         self.irreps_in = irreps_in
         self.irreps_hidden = irreps_hidden
         self.irreps_out_intended = irreps_out
+        self.non_linear_act1 = e3nn.nn.NormActivation(self.irreps_in,torch.sigmoid,normalize=False,bias=True)
+        # self.g1 = SelfExpandingGate(irreps_in)
 
-        self.g1 = SelfExpandingGate(irreps_in)
+
         irreps = o3.Irreps([(mul, ir) for mul, ir in irreps_hidden if
                    tp_path_exists(irreps_in, irreps_in, ir)])
         self.si1 = SelfInteraction(self.irreps_in,irreps)
-        self.g2 = SelfExpandingGate(irreps)
+        self.normalize_and_non_linear_act2 = e3nn.nn.NormActivation(irreps,torch.sigmoid,normalize=True,bias=False)
+
+        # self.tv = TvNorm(irreps)
+        # self.g2 = SelfExpandingGate(irreps)
         irreps2 = o3.Irreps([(mul, ir) for mul, ir in irreps_out if
                    tp_path_exists(irreps, irreps, ir)])
         self.si2 = SelfInteraction(irreps,irreps2)
-        self.g3 = SelfExpandingGate(irreps2)
+        # self.g3 = SelfExpandingGate(irreps2)
+        self.non_linear_act3 = e3nn.nn.NormActivation(irreps2, torch.sigmoid, normalize=False, bias=True)
+
         self.irreps_out = irreps2
         return
 
     def forward(self, x):
-        x = self.g1(x)
+        x = self.non_linear_act1(x)
         x = self.si1(x)
-        # x = tv_norm(x) #Insert TV norm here later
-        x = self.g2(x)
+        x = self.normalize_and_non_linear_act2(x)
         x = self.si2(x)
-        x = self.g3(x)
+        x = self.non_linear_act3(x)
         return x
+
+def zero_small_numbers(x,eps=1e-6):
+    M = torch.abs(x) < eps
+    x[M] = 0
+    return x
+
 
 class Concatenate(torch.nn.Module):
     def __init__(self,irreps_in):
@@ -335,6 +352,8 @@ class Concatenate(torch.nn.Module):
     def reverse_idx(self,x,dim):
         x = torch.index_select(x, dim, self.idx_conversion_rev)
         return x
+
+
 
 
 
