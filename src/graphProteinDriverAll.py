@@ -82,8 +82,8 @@ n_data_total = len(S)
 # Setup the network and its parameters
 nNin = 40
 nEin = 1
-nopen = 512
-nhid  = 256
+nopen = 64
+nhid  = 512
 nNclose = 3
 nEclose = 1
 nlayer = 12
@@ -115,7 +115,7 @@ optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO},
 alossBest = 1e6
 epochs = 100
 
-ndata = n_data_total
+ndata = 1 #n_data_total
 bestModel = model
 hist = torch.zeros(epochs)
 

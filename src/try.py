@@ -97,3 +97,25 @@ for i in range(81):
     torch.save(xnOut, txt)
     txt = 'CoordsTrue'+str(i)
     torch.save(Coords, txt)
+
+
+###
+
+for i in [70]: #range(80):
+    a = 'CoordsPred' + str(i)
+    b = 'CoordsTrue' + str(i)
+    x1 = torch.load(a)
+    x2 = torch.load(b)
+
+    x1 = x1.squeeze()
+    x2 = x2.squeeze()
+
+    D1 = torch.sqrt(torch.relu(
+         torch.sum(x1 ** 2, dim=0, keepdim=True) +
+         torch.sum(x1 ** 2, dim=0, keepdim=True).t() - 2 * x1.t() @ x1))
+
+    D2 = torch.sqrt(torch.relu(
+         torch.sum(x2 ** 2, dim=0, keepdim=True) +
+         torch.sum(x2 ** 2, dim=0, keepdim=True).t() - 2 * x2.t() @ x2))
+
+    print(i, torch.norm(D1-D2)/torch.norm(D1))

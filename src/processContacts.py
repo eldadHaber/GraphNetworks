@@ -95,7 +95,7 @@ def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
 
     # X = Yobs[i][0, 0, :n, :n]
     X = Yobs[i].t()
-    X = utils.linearInterp1D(X, M)
+    #X = utils.linearInterp1D(X, M)
     X = torch.tensor(X)
 
     X = X - torch.mean(X, dim=1, keepdim=True)

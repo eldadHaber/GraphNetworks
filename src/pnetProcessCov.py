@@ -6,6 +6,7 @@ import glob
 import matplotlib.pyplot as plt
 import torch
 from scipy.io import savemat
+import sys
 
 def read_a2m_gz_folder(folder):
     """
@@ -221,7 +222,7 @@ def dcaFast(msa_1hot, w, penalty=4.5, kw=1000):
 
 
 if __name__ == "__main__":
-    path = "/Users/eldadhaber/Your team Dropbox/eldad haber/ComputationalBio/data/raw_MSA/" # Path to a folder with a2m.gz files in it.
+    path = "../../../data/raw_MSA/" # Path to a folder with a2m.gz files in it.
     msas = read_a2m_gz_folder(path)
 
     msa = msas[0]

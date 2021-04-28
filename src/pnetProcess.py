@@ -438,3 +438,18 @@ def convertCoordToAnglesVec(rN, rCa, rCb, mask=1.0):
     THETA[indnan] = 0.0
 
     return OMEGA, PHI, THETA
+
+
+fl = '../../../data/casp11/training_90'
+#id, seq, pssm, entropy, dssp, coord, mask = read_record(fl)
+id, seq, pssm2, entropy, dssp, r1, r2, r3, mask = parse_pnet(fl)
+
+n = len(id)
+for i in range(n):
+    seq[i]     = (torch.eye(20)[seq[i]]).t()
+    pssm2[i]   = torch.tensor(pssm2[i]).t()
+    entropy[i] = torch.tensor(entropy[i])
+    r1[i]      = torch.tensor(r1[i]).t()
+    r2[i]      = torch.tensor(r2[i]).t()
+    r3[i]      = torch.tensor(r3[i]).t()
+    mask[i]    = torch.tensor(mask[i]).t()
