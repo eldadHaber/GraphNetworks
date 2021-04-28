@@ -242,7 +242,7 @@ def saveMesh(xn, faces, pos, i=0, vmax=None, vmin=None):
                        c=xn.squeeze(0).norm(dim=1).clone().detach().cpu().numpy(), vmin=0.0, vmax=1.0)
         fig.colorbar(p)
         plt.savefig(
-            "/users/others/eliasof/GraphNetworks/plots_heat/xn_norm_heat_layer_" + str(i))
+            "/users/others/eliasof/GraphNetworks/plots_wave/xn_norm_wave_layer_" + str(i))
         plt.close()
 
     mesh = trimesh.Trimesh(vertices=pos, faces=faces, process=False)
@@ -269,7 +269,7 @@ def saveMesh(xn, faces, pos, i=0, vmax=None, vmin=None):
         smooth = False
 
     trimesh.exchange.export.export_mesh(mesh,
-                                        "/users/others/eliasof/GraphNetworks/plots_heat/xn_norm_heat_layer_" + str(
+                                        "/users/others/eliasof/GraphNetworks/plots_wave/xn_norm_wave_layer_" + str(
                                             i) + ".ply", "ply")
 
 
