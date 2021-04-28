@@ -739,6 +739,9 @@ class graphNetwork_nodesOnly(nn.Module):
             plt.close()
 
         xn = self.singleLayer(xn, self.K1Nopen, relu=True)
+        xnnorm = torch.norm(xn, dim=1)
+        vmin= xnnorm.min()
+        vmax= xnnorm.max()
         x0 = xn.clone()
         debug = True
         if debug:
@@ -756,7 +759,7 @@ class graphNetwork_nodesOnly(nn.Module):
                 plt.savefig('plots/img_xn_norm_layer_verlet' + str(0) + 'order_nodeDeriv' + str(0) + '.jpg')
                 plt.close()
             else:
-                saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, 0)
+                saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, 0, vmax=vmax, vmin=vmin)
 
         if 1 == 0:
             deg = self.getDegreeMat(Graph)
@@ -916,7 +919,7 @@ class graphNetwork_nodesOnly(nn.Module):
                 if image:
                     self.savePropagationImage(xn, Graph, i + 1, minv=minv, maxv=maxv)
                 else:
-                    saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, i + 1)
+                    saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, i + 1, vmax=vmax, vmin=vmin)
 
         xn = F.dropout(xn, p=self.dropout, training=self.training)
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))

@@ -227,7 +227,7 @@ def dRMSD(X, Xobs, M):
     return loss
 
 
-def saveMesh(xn, faces, pos, i=0):
+def saveMesh(xn, faces, pos, i=0, vmax=None, vmin=None):
     # xn of shape [points, features]
     # if with our net dim = 2 else 1
     print("xn shape:", xn.shape)
@@ -247,9 +247,14 @@ def saveMesh(xn, faces, pos, i=0):
 
     mesh = trimesh.Trimesh(vertices=pos, faces=faces, process=False)
     colors = xn.squeeze(0).norm(dim=1).clone().detach().cpu().numpy() # xn.squeeze(0).clone().detach().cpu().numpy()[:, 0]
-    colors[colors < 0.0] = 0.0
-    colors[colors > 1.0] = 1.0
-    add = np.array([[1.0], [0.0]], dtype=np.float).squeeze()
+    if vmax is not None:
+        colors[colors < vmin] = vmin
+        colors[colors > vmax] = vmax
+        add = np.array([[vmax], [vmin]], dtype=np.float).squeeze()
+    else:
+        colors[colors < 0.0] = 0.0
+        colors[colors > 1.0] = 1.0
+        add = np.array([[1.0], [0.0]], dtype=np.float).squeeze()
     vect_col_map2 = trimesh.visual.color.interpolate(colors,
                                                      color_map='jet')
 
