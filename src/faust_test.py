@@ -271,10 +271,10 @@ d = train_dataset[0]
 model = GN.graphNetwork_faust(nNin, nEin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=True,
                               diffOrder=1, num_nodes=d.num_nodes, mixDynamics=False)
 
-model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
+model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=True,
                                   diffOrder=1, num_output=d.num_nodes, dropOut=0.0, faust=True,
                                   gated=False,
-                                   realVarlet=False, mixDyamics=True)
+                                   realVarlet=False, mixDyamics=False)
 
 
 model.to(device)
