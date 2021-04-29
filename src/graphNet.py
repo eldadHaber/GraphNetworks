@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 import torch.optim as optim
 ## r=1
 from src import graphOps as GO
-from torch_scatter import scatter
 
 
 def conv2(X, Kernel):
@@ -218,7 +217,7 @@ class graphNetwork(nn.Module):
         if self.const:
             c = constraint(xn)
             if c.abs().mean() > 0.1:
-                xn = proj(xn, torch.eye(3, 3), n=500)
+                xn = proj(xn, torch.eye(3, 3, device=xn.device), n=500)
                 #c = constraint(xn)
             #print(c.abs().mean().item())
 
