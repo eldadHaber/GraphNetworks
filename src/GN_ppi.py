@@ -143,9 +143,9 @@ model = GN.graphNetwork_seq(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False
 
 model.reset_parameters()
 model.to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 criterion = torch.nn.BCEWithLogitsLoss()
-scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.1, patience=100, min_lr=0.0001)
+#scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.1, patience=100, min_lr=0.0001)
 
 
 # optimizer = torch.optim.Adam([
@@ -223,7 +223,7 @@ for epoch in range(1, 10001):
     train_f1 = test(train_dataset)
     val_f1 = test(val_loader)
     test_f1 = test(test_loader)
-    scheduler.step(test_f1)
+    #scheduler.step(test_f1)
     print('Epoch: {:02d}, Loss: {:.4f}, Val: {:.4f}, Test: {:.4f}'.format(
         epoch, loss, val_f1, test_f1), flush=True)
     print("Train F1:", train_f1, flush=True)
