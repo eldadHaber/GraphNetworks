@@ -33,7 +33,7 @@ from src.MD17_utils import getIterData_MD17, print_distogram, print_3d_structure
 
 
 if __name__ == '__main__':
-
+    torch.autograd.set_detect_anomaly(True)
     device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
     # device='cpu'
     print_distograms = False
@@ -58,9 +58,9 @@ if __name__ == '__main__':
     print('Number of data: {:}, Number of atoms {:}'.format(ndata, natoms))
 
     # Following Equivariant paper, we select 1000 configurations from these as our training set, 1000 as our validation set, and the rest are used as test data.
-    n_train = 1000
+    n_train = 1
     n_val = 1000
-    batch_size = 5
+    batch_size = 1
 
     ndata_rand = 0 + np.arange(ndata)
     np.random.shuffle(ndata_rand)
@@ -92,7 +92,7 @@ if __name__ == '__main__':
 
     irreps_in_n = o3.Irreps("1x0e")
     irreps_in_e = o3.Irreps("1x0e+1x1o")
-    irreps_hidden = o3.Irreps("4x0e+4x0o+4x1e+4x1o")
+    irreps_hidden = o3.Irreps("10x0e+10x1o")
     irreps_out_n = o3.Irreps("1x0e")
     layers = 6
     max_radius = 5
@@ -128,7 +128,7 @@ if __name__ == '__main__':
         t1 = time.time()
         aloss_t,MAE_t,Fps_t,Fts_t, t_dataload_t, t_prepare_t, t_model_t, t_backprop_t = use_model_eq(model, dataloader_train, train=True, max_samples=1e6, optimizer=optimizer, batch_size=batch_size)
         t2 = time.time()
-        aloss_v,MAE_v,Fps_v,Fts_v,t_dataload_v, t_prepare_v, t_model_v, t_backprop_v = use_model_eq(model, dataloader_val, train=False, max_samples=10, optimizer=optimizer, batch_size=batch_size)
+        aloss_v,MAE_v,Fps_v,Fts_v,t_dataload_v, t_prepare_v, t_model_v, t_backprop_v = use_model_eq(model, dataloader_val, train=False, max_samples=1, optimizer=optimizer, batch_size=batch_size)
         t3 = time.time()
 
         if MAE_v < MAE_best:

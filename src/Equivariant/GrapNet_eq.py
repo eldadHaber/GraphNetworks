@@ -231,15 +231,22 @@ class GraphNet_EQ(torch.nn.Module):
             aveX = self.nodeAve(xn,edge_src,edge_dst,W)
 
             dxe = self.cats[i+1]([gradX, aveX], dim=1)
+            assert ~dxe.isnan().any()
             dxe = self.doublelayers[i+2](dxe)
+            assert ~dxe.isnan().any()
             dxe = self.cats[i+1].reverse_idx(dxe, dim=1)
 
             W = self.filters[i*3+4](edge_length_embedded)
             xn_div = self.edgeDiv(dxe[:,:dxe.shape[-1]//2],nnodes,edge_src,edge_dst,W[:,:dxe.shape[-1]//2])
+            assert ~xn_div.isnan().any()
             xn_ave = self.edgeAve(dxe[:,dxe.shape[-1]//2:],nnodes,edge_src,edge_dst,W[:,dxe.shape[-1]//2:])
+            assert ~xn_ave.isnan().any()
 
             xn = xn - self.h * (xn_div + xn_ave)
+            assert ~xn.isnan().any()
 
+        # if (xn < 1e-6).any():
+        #     print("stop here")
         xn = self.si_close(xn)
 
 

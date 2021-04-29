@@ -266,18 +266,98 @@ class TvNorm(torch.nn.Module):
             x[:,ms] /= torch.sqrt(torch.sum(x[:,ms] ** 2, dim=1, keepdim=True) + eps)
 
             mv = ~ms
-            #We need to decide how to handle the vectors, eps is the tricky part
-            xx = x[:,mv].view(nb,-1,3)
-            norm = xx.norm(dim=-1)
-            xx /= norm[:,:,None]
-            x[:,mv] = xx.view(nb,-1)
+            if torch.sum(mv) > 0:
+                #We need to decide how to handle the vectors, eps is the tricky part
+                tmp = x[:,mv].clone()
+                xx = tmp.view(nb,-1,3).clone()
+                norm1 = torch.sqrt(torch.sum(xx**2,dim=1))
+                # if (norm1 < 1e-6).any():
+                #     print("Stop here")
+                norm_mean = torch.mean(norm1,dim=1)
+                xx2 = xx / (norm_mean[:,None,None]+eps)
+                x[:,mv] = xx2.view(nb,-1)
             return x
 
 
-def tv_norm(X, eps=1e-3):
-    X = X - torch.mean(X, dim=1, keepdim=True)
-    X = X / torch.sqrt(torch.sum(X ** 2, dim=1, keepdim=True) + eps)
-    return X
+
+class Norm(torch.nn.Module):
+        def __init__(self,irreps):
+            super().__init__()
+            self.irreps_in = irreps
+            self.irreps_out = irreps
+
+            nd = irreps.dim
+            nr = irreps.num_irreps
+            degen = torch.empty(nr, dtype=torch.int64)
+            m_degen = torch.empty(nr,dtype=torch.bool)
+            idx = 0
+            for mul, ir in irreps:
+                li = 2 * ir.l + 1
+                for i in range(mul):
+                    degen[idx + i] = li
+                    m_degen[idx+i] = ir.l == 0
+                idx += i + 1
+            M = m_degen.repeat_interleave(degen)
+            self.register_buffer("m_scalar", M)
+            return
+
+        def forward(self, x, eps=1e-6):
+            nb,_ = x.shape
+            ms = self.m_scalar
+            # x[:,ms] = x[:,ms] - torch.mean(x[:,ms], dim=1, keepdim=True)
+            x[:,ms] /= torch.sqrt(torch.sum(x[:,ms] ** 2, dim=1, keepdim=True) + eps)
+
+            mv = ~ms
+            if torch.sum(mv) > 0:
+                #We need to decide how to handle the vectors, eps is the tricky part
+                xx = x[:,mv].view(nb,-1,3)
+                norm = xx.norm(dim=-1)
+                xx /= norm[:,:,None]
+                x[:,mv] = xx.view(nb,-1)
+            return x
+
+
+class Activation(torch.nn.Module):
+    def __init__(self, irreps, activation_fnc):
+        super().__init__()
+        self.irreps_in = irreps
+        self.irreps_out = irreps
+        self.activation_fnc = activation_fnc
+
+        nd = irreps.dim
+        nr = irreps.num_irreps
+        degen = torch.empty(nr, dtype=torch.int64)
+        m_degen = torch.empty(nr, dtype=torch.bool)
+        idx = 0
+        for mul, ir in irreps:
+            li = 2 * ir.l + 1
+            for i in range(mul):
+                degen[idx + i] = li
+                m_degen[idx + i] = ir.l == 0
+            idx += i + 1
+        M = m_degen.repeat_interleave(degen)
+        self.register_buffer("m_scalar", M)
+        return
+
+    def forward(self, x, eps=1e-6):
+        nb, _ = x.shape
+        ms = self.m_scalar
+        # x[:,ms] = x[:,ms] - torch.mean(x[:,ms], dim=1, keepdim=True)
+        x[:, ms] = self.activation_fnc(x[:, ms])
+
+        mv = ~ ms
+        # if torch.sum(mv) > 0:
+        #     tmp = x[:, mv].clone()
+        #     xx = tmp.view(nb, -1, 3).clone()
+        #     norm1 = xx.norm(dim=-1)
+        #     if (norm1 < 1e-6).any():
+        #         print("stop here")
+        #     xx_normalized = xx / (norm1[:,:,None])
+        #     norm_activated = self.activation_fnc(norm1)
+        #     xx_activated = norm_activated[:,:,None] * xx_normalized
+        #     x[:, mv] = xx_activated.view(nb, -1)
+        return x
+
 
 
 class DoubleLayer(torch.nn.Module):
@@ -286,33 +366,41 @@ class DoubleLayer(torch.nn.Module):
         self.irreps_in = irreps_in
         self.irreps_hidden = irreps_hidden
         self.irreps_out_intended = irreps_out
-        self.non_linear_act1 = e3nn.nn.NormActivation(self.irreps_in,torch.sigmoid,normalize=False,bias=True)
+        # self.non_linear_act1 = e3nn.nn.NormActivation(self.irreps_in,torch.sigmoid,normalize=False,bias=True)
+        self.non_linear_act1 = Activation(self.irreps_in,torch.tanh)
         # self.g1 = SelfExpandingGate(irreps_in)
 
 
         irreps = o3.Irreps([(mul, ir) for mul, ir in irreps_hidden if
                    tp_path_exists(irreps_in, irreps_in, ir)])
         self.si1 = SelfInteraction(self.irreps_in,irreps)
-        self.normalize_and_non_linear_act2 = e3nn.nn.NormActivation(irreps,torch.sigmoid,normalize=True,bias=False)
+        # self.normalize_and_non_linear_act2 = e3nn.nn.NormActivation(irreps,torch.sigmoid,normalize=True,bias=False)
 
-        # self.tv = TvNorm(irreps)
+        self.tv = TvNorm(irreps)
         # self.g2 = SelfExpandingGate(irreps)
         irreps2 = o3.Irreps([(mul, ir) for mul, ir in irreps_out if
                    tp_path_exists(irreps, irreps, ir)])
         self.si2 = SelfInteraction(irreps,irreps2)
         # self.g3 = SelfExpandingGate(irreps2)
-        self.non_linear_act3 = e3nn.nn.NormActivation(irreps2, torch.sigmoid, normalize=False, bias=True)
+        self.non_linear_act2 = Activation(irreps2,torch.sigmoid)
+        # self.non_linear_act3 = e3nn.nn.NormActivation(irreps2, torch.sigmoid, normalize=False, bias=True)
 
         self.irreps_out = irreps2
         return
 
     def forward(self, x):
-        x = self.non_linear_act1(x)
-        x = self.si1(x)
-        x = self.normalize_and_non_linear_act2(x)
-        x = self.si2(x)
-        x = self.non_linear_act3(x)
-        return x
+        assert ~x.isnan().any()
+        x1 = self.non_linear_act1(x)
+        assert ~x1.isnan().any()
+        x2 = self.si1(x1)
+        assert ~x2.isnan().any()
+        x3 = self.tv(x2)
+        assert ~x3.isnan().any()
+        x4 = self.si2(x3)
+        assert ~x4.isnan().any()
+        x5 = self.non_linear_act2(x4)
+        assert ~x5.isnan().any()
+        return x5
 
 def zero_small_numbers(x,eps=1e-6):
     M = torch.abs(x) < eps
