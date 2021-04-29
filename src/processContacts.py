@@ -124,11 +124,26 @@ def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
 
     nsparse = 16
     vals, indices = torch.topk(D, k=min(nsparse, D.shape[0]), dim=1)
+    indices_ext = torch.empty((n,nsparse+4),dtype=torch.int64)
+    indices_ext[:,:16] = indices
+    indices_ext[:,16] = torch.arange(n) - 1
+    indices_ext[:,17] = torch.arange(n) - 2
+    indices_ext[:,18] = torch.arange(n) + 1
+    indices_ext[:,19] = torch.arange(n) + 2
     nd = D.shape[0]
-    I = torch.ger(torch.arange(nd), torch.ones(nsparse, dtype=torch.long))
+    I = torch.ger(torch.arange(nd), torch.ones(nsparse+4, dtype=torch.long))
     I = I.view(-1)
-    J = indices.view(-1).type(torch.LongTensor)
-    # IJ = torch.stack([I, J], dim=1)
+    J = indices_ext.view(-1).type(torch.LongTensor)
+
+    IJ = torch.stack([I, J], dim=1)
+    IJ_unique = torch.unique(IJ,dim=0)
+    I = IJ_unique[:,0]
+    J = IJ_unique[:,1]
+    M1 = torch.sum(IJ_unique < 0,dim=1).to(dtype=torch.bool)
+    M2 = torch.sum(IJ_unique > nd-1,dim=1).to(dtype=torch.bool)
+    M = ~ (M1 + M2)
+    I = I[M]
+    J = J[M]
 
     # print("IJ shape:", IJ.shape)
     # Organize the edge data
