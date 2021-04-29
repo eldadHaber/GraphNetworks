@@ -106,9 +106,9 @@ def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
 
     PSSM = PSSM.type(torch.float32)
 
-    A = torch.zeros(20, n)
-    A[a, torch.arange(0, n)] = 1.0
-    Seq = torch.cat((PSSM, A))
+    # A = torch.zeros(20, n)
+    # A[a, torch.arange(0, n)] = 1.0
+    Seq = torch.cat((PSSM, a[None,:]),dim=0)
     Seq = Seq.to(device=device, non_blocking=True)
 
     Coords = Coords.to(device=device, non_blocking=True)

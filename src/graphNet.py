@@ -107,7 +107,7 @@ def proj(x,K,n=1, d=3.8):
 
 class graphNetwork(nn.Module):
 
-    def __init__(self, nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, const=False):
+    def __init__(self, nNin, nEin, nopen, nhid, nNclose, nEclose, nlayer, h=0.1, const=False):
         super(graphNetwork, self).__init__()
 
         self.const = const
@@ -118,7 +118,7 @@ class graphNetwork(nn.Module):
         self.K2Nopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
         self.K1Eopen = nn.Parameter(torch.randn(nopen, nEin) * stdv)
         self.K2Eopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
-
+        self.embed_seq = nn.Embedding(20,20)
         nopen      = 3*nopen
         self.nopen = nopen
         Nfeatures  = 2 * nopen
@@ -130,7 +130,9 @@ class graphNetwork(nn.Module):
         self.KE1 = nn.Parameter(IdTensor * stdvp)
         self.KE2 = nn.Parameter(IdTensort * stdvp)
 
+        self.Kxe_prop = nn.Parameter(torch.eye(nopen//3, nopen*2))
         self.KNclose = nn.Parameter(torch.eye(nNclose, nopen))
+        self.KEclose = nn.Parameter(torch.eye(nEclose, nopen//3))
 
         self.Kw = nn.Parameter(torch.ones(nopen,1))
 
@@ -161,6 +163,9 @@ class graphNetwork(nn.Module):
         # xn = [B, C, N]
         # xe =  [B, C, E]
         # Opening layer
+        seq = xn[:,-1,:]
+        seq_embedded = self.embed_seq(seq[:,:].to(dtype=torch.int64)).transpose(1,2)
+        xn = torch.cat([xn[:,:-1,:],seq_embedded],dim=1)
 
         xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
         xe = self.doubleLayer(xe, self.K1Eopen, self.K2Eopen)
@@ -202,6 +207,8 @@ class graphNetwork(nn.Module):
             w = self.filters[4*i+5](xe.transpose(1,2)).transpose(1,2)
             aveE = Graph.edgeAve(dxe[:,self.nopen:,:],w)
 
+            dxe_conv = F.conv1d(dxe,self.Kxe_prop.unsqueeze(-1))
+            xe = xe - self.h * dxe_conv
             xn = xn - self.h * (divE + aveE)
 
             #tmp = xn
@@ -215,6 +222,8 @@ class graphNetwork(nn.Module):
                 #print(c.abs().mean().item())
 
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
+
+        xe = F.conv1d(xe, self.KEclose.unsqueeze(-1))
         if self.const:
             c = constraint(xn)
             if c.abs().mean() > 0.1:

@@ -88,7 +88,7 @@ nNclose = 3
 nEclose = 1
 nlayer = 12
 
-model = GN.graphNetwork(nNin, nEin, nopen, nhid, nNclose, nlayer, h=.01, const=True)
+model = GN.graphNetwork(nNin, nEin, nopen, nhid, nNclose, nEclose, nlayer, h=.01, const=False)
 model.to(device)
 
 total_params = sum(p.numel() for p in model.parameters())
@@ -113,9 +113,10 @@ optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO},
 
 
 alossBest = 1e6
-epochs = 100
+epochs = 1000
 
 ndata = n_data_total
+ndata = 1
 bestModel = model
 hist = torch.zeros(epochs)
 
@@ -123,6 +124,8 @@ hist = torch.zeros(epochs)
 for j in range(epochs):
     # Prepare the data
     aloss = 0.0
+    aloss_xn = 0.0
+    aloss_xe = 0.0
     alossAQ = 0.0
     for i in range(ndata):
 
@@ -145,21 +148,29 @@ for j in range(epochs):
         optimizer.zero_grad()
 
         xnOut, xeOut = model(xn, xe, G)
-        #xnOut = utils.distConstraint(xnOut)
-
+        #xnOut = utils.distC;onstraint(xnOut)
+        IJ = torch.cat([I[None,:],J[None,:]],dim=0)
+        Dout_xe = torch.sparse_coo_tensor(IJ, xeOut.squeeze(), [nNodes,nNodes]).to_dense()
         Dout = utils.getDistMat(xnOut)
         Dtrue = utils.getDistMat(Coords)
 
         #loss = F.mse_loss(M * Dout, M * Dtrue)
         DtrueM = maskMat(Dtrue, M)
         DoutM = maskMat(Dout, M)
+        DoutM_xe = maskMat(Dout_xe, M)
+
         If, Jf = torch.nonzero(DtrueM < 7*3.8, as_tuple=True)
         DtrueM = DtrueM[If, Jf]
         DoutM = DoutM[If, Jf]
+        DoutM_xe = DoutM_xe[If, Jf]
 
-        loss = F.mse_loss(DoutM, DtrueM) / F.mse_loss(DtrueM * 0, DtrueM)
+        loss_abs_xn = F.mse_loss(DoutM, DtrueM)
+        loss_abs_xe = F.mse_loss(DoutM_xe, DtrueM)
+        loss_abs = (loss_abs_xn + loss_abs_xe)/2
+        loss = loss_abs / F.mse_loss(DtrueM * 0, DtrueM)
 
-        loss.backward()
+
+        loss_abs.backward()
 
         torch.nn.utils.clip_grad_norm_(model.K1Nopen, 1.0, norm_type=2.0)
         torch.nn.utils.clip_grad_norm_(model.K2Nopen, 1.0, norm_type=2.0)
@@ -170,7 +181,9 @@ for j in range(epochs):
         torch.nn.utils.clip_grad_norm_(model.KNclose, 1.0, norm_type=2.0)
 
         aloss += loss.detach()
-        alossAQ += (torch.norm(DoutM - DtrueM)) / np.sqrt(torch.numel(DtrueM))
+        alossAQ += loss_abs.detach() #(torch.norm(DoutM - DtrueM)) / np.sqrt(torch.numel(DtrueM))
+        aloss_xn += loss_abs_xn.detach() #(torch.norm(DoutM - DtrueM)) / np.sqrt(torch.numel(DtrueM))
+        aloss_xe += loss_abs_xe.detach() #(torch.norm(DoutM - DtrueM)) / np.sqrt(torch.numel(DtrueM))
         gN = model.KNclose.grad.norm().item()
         gE1 = model.KE1.grad.norm().item()
         gE2 = model.KE2.grad.norm().item()
@@ -190,16 +203,20 @@ for j in range(epochs):
         if (i + 1) % nprnt == 0:
             aloss = aloss / nprnt
             alossAQ = alossAQ / nprnt
+            aloss_xe /= nprnt
+            aloss_xn /= nprnt
             c       = GN.constraint(xnOut)
             c       = c.abs().mean().item()
-            if c>0.4:
-                print('warning constraint non fulfilled ')
+            # if c>0.4:
+            #     print('warning constraint non fulfilled ')
 
-            print("%2d.%1d   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E" %
-                  (j, i, aloss, alossAQ, gO, gN, gE1, gE2, gC, c), flush=True)
+            print("%2d.%1d   %10.7E   %10.7E   %10.7E   %10.7E   %10.3E   %10.3E   %10.3E   %10.3E" %
+                  (j, i, aloss, alossAQ, aloss_xn, aloss_xe, gE1, gE2, gC, c), flush=True)
 
             aloss = 0.0
             alossAQ = 0.0
+            aloss_xe = 0.0
+            aloss_xn = 0.0
         # Validation
         nextval = 300
         if (i + 1) % nextval == 0:
