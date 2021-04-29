@@ -141,9 +141,9 @@ def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
     J = IJ_unique[:,1]
     M1 = torch.sum(IJ_unique < 0,dim=1).to(dtype=torch.bool)
     M2 = torch.sum(IJ_unique > nd-1,dim=1).to(dtype=torch.bool)
-    M = ~ (M1 + M2)
-    I = I[M]
-    J = J[M]
+    MM = ~ (M1 + M2)
+    I = I[MM]
+    J = J[MM]
 
     # print("IJ shape:", IJ.shape)
     # Organize the edge data

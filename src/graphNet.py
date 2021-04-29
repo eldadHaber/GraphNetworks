@@ -206,8 +206,8 @@ class graphNetwork(nn.Module):
             w = self.filters[4*i+5](xe.transpose(1,2)).transpose(1,2)
             aveE = Graph.edgeAve(dxe[:,self.nopen:,:],w)
 
-            dxe_conv = F.conv1d(dxe,self.Kxe_prop.unsqueeze(-1))
-            xe = xe - self.h * dxe_conv
+            # dxe_conv = F.conv1d(dxe,self.Kxe_prop.unsqueeze(-1))
+            # xe = xe - self.h * dxe_conv
             xn = xn - self.h * (divE + aveE)
 
             #tmp = xn

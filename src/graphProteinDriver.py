@@ -14,7 +14,7 @@ from src import utils
 from src import graphNet as GN
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
-
+# device = 'cpu'
 # Data loading
 caspver = "casp11"  # Change this to choose casp version
 
@@ -166,7 +166,7 @@ for j in range(epochs):
 
         loss_abs_xn = F.mse_loss(DoutM, DtrueM)
         loss_abs_xe = F.mse_loss(DoutM_xe, DtrueM)
-        loss_abs = (loss_abs_xn + loss_abs_xe)/2
+        loss_abs = (loss_abs_xn)
         loss = loss_abs / F.mse_loss(DtrueM * 0, DtrueM)
 
 
