@@ -48,16 +48,16 @@ elif dataset == 'PubMed':
     nNin = 500
 nEin = 1
 nopen = 64
-nhid = 64
+nhid = 128
 nNclose = 64
 nlayer = 8
 h = 1.5  # 16 / nlayer
 
 import os
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 print(torch.cuda.get_device_name(0))
 print(torch.cuda.get_device_properties('cuda:0'))
-
 
 dropout = 0.6
 # h = 20 / nlayer
@@ -83,6 +83,8 @@ model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense
                                   realVarlet=realVarlet, mixDyamics=False)
 model.reset_parameters()
 model.to(device)
+
+orig_w = model.KN1[2].clone().detach().cpu().numpy()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0.0001)
 if not realVarlet:
     optimizer = torch.optim.Adam([
@@ -90,7 +92,7 @@ if not realVarlet:
         dict(params=model.KN2, lr=0.0001, weight_decay=0),
         dict(params=model.K1Nopen, weight_decay=5e-4),
         dict(params=model.KNclose, weight_decay=5e-4),
-        #dict(params=model.alpha, lr=0.01, weight_decay=0)
+        # dict(params=model.alpha, lr=0.01, weight_decay=0)
     ], lr=0.01)
 else:
     optimizer = torch.optim.Adam([
@@ -113,6 +115,8 @@ else:
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=500, gamma=0.5)
 
 betas = []
+
+
 def train():
     model.train()
     optimizer.zero_grad()
@@ -135,7 +139,7 @@ def train():
     xe = torch.ones(1, 1, I.shape[0]).to(device)
 
     # out = model(xn, xe, G)
-    #[out, G, beta] = model(xn, G)
+    # [out, G, beta] = model(xn, G)
     [out, G] = model(xn, G)
     beta = 0
     betas.append(beta)
@@ -147,12 +151,13 @@ def train():
     # out = out.squeeze()
     loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask])  # + 0.1*tvreg
     loss.backward()
+
     optimizer.step()
     scheduler.step()
 
-    #gKN2 = model.KN2.grad.norm().item()
+    # gKN2 = model.KN2.grad.norm().item()
     gKN2 = 0
-    #gKN1 = model.KN1.grad.norm().item()
+    # gKN1 = model.KN1.grad.norm().item()
     gKN1 = 0
     gKo = model.K1Nopen.grad.norm().item()
     gKc = model.KNclose.grad.norm().item()
@@ -160,6 +165,7 @@ def train():
     print("%10.3E   %10.3E   %10.3E   %10.3E" %
           (gKo, gKN1, gKN2, gKc), flush=True)
     return float(loss)
+
 
 @torch.no_grad()
 def test():
@@ -180,7 +186,7 @@ def test():
     xn = data.x.t().unsqueeze(0)
     xe = torch.ones(1, 1, I.shape[0]).to(device)
     # out = model(xn, xe, G)
-    #[out, G, _] = model(xn, G)
+    # [out, G, _] = model(xn, G)
     [out, G] = model(xn, G)
     pred, accs = out.argmax(dim=-1), []
     # pred, accs = model(data.x, data.adj_t).argmax(dim=-1), []
@@ -202,8 +208,33 @@ for epoch in range(1, 1001):
           f'Val: {val_acc:.4f}, Test: {tmp_test_acc:.4f}, '
           f'Final Test: {test_acc:.4f}', flush=True)
 
+    if epoch == 20:
+        epoch20_w = model.KN1[2].clone().detach().cpu().numpy()
 
-if 1==0:
+final_w = model.KN1[2].clone().detach().cpu().numpy()
+import matplotlib.pyplot as plt
+
+plt.imshow(orig_w)
+plt.colorbar()
+plt.show()
+
+plt.imshow(epoch20_w)
+plt.colorbar()
+plt.show()
+
+plt.imshow(final_w)
+plt.colorbar()
+plt.show()
+
+plt.imshow(epoch20_w - final_w)
+plt.colorbar()
+plt.show()
+
+plt.imshow(orig_w - final_w)
+plt.colorbar()
+plt.show()
+
+if 1 == 0:
     import matplotlib.pyplot as plt
 
     fig, ax1 = plt.subplots()
@@ -232,6 +263,5 @@ if 1==0:
     with open('acc_hist_cora_heat.txt', 'w') as filehandle:
         for listitem in acc_hist:
             filehandle.write('%s\n' % listitem)
-
 
 print("bye")
