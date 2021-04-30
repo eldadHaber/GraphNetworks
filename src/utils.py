@@ -259,6 +259,7 @@ def saveMesh(xn, faces, pos, i=0, vmax=None, vmin=None):
                                                      color_map='jet')
 
     colors = np.concatenate((add, colors), axis=0)
+    colors = xn.squeeze(0).norm(dim=1).clone().detach().cpu().numpy()
     vect_col_map = trimesh.visual.color.interpolate(colors,
                                                     color_map='jet')
     vect_col_map = vect_col_map[2:, :]
