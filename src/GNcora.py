@@ -48,7 +48,7 @@ elif dataset == 'PubMed':
     nNin = 500
 nEin = 1
 nopen = 64
-nhid = 128
+nhid = 64
 nNclose = 64
 nlayer = 8
 h = 1.5  # 16 / nlayer
