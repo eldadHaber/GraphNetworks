@@ -48,7 +48,7 @@ elif dataset == 'PubMed':
     nNin = 500
 nEin = 1
 nopen = 64
-nhid = 128
+nhid = 64
 nNclose = 64
 nlayer = 8
 h = 1.5  # 16 / nlayer
@@ -80,7 +80,7 @@ data = data.to(device)
 realVarlet = False
 model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
                                   diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, gated=False,
-                                  realVarlet=realVarlet, mixDyamics=False)
+                                  realVarlet=realVarlet, mixDyamics=False, doubleConv=False, tripleConv=False)
 model.reset_parameters()
 model.to(device)
 
@@ -90,9 +90,14 @@ if not realVarlet:
     optimizer = torch.optim.Adam([
         dict(params=model.KN1, lr=0.0001, weight_decay=0),
         dict(params=model.KN2, lr=0.0001, weight_decay=0),
+        #dict(params=model.KN3, lr=0.00001, weight_decay=0),
+
         dict(params=model.K1Nopen, weight_decay=5e-4),
+        dict(params=model.K2Nopen, weight_decay=5e-4),
         dict(params=model.KNclose, weight_decay=5e-4),
-        # dict(params=model.alpha, lr=0.01, weight_decay=0)
+        #dict(params=model.KNclose2, weight_decay=5e-4),
+
+        #dict(params=model.alpha, lr=0.01, weight_decay=0)
     ], lr=0.01)
 else:
     optimizer = torch.optim.Adam([
@@ -101,7 +106,7 @@ else:
         dict(params=model.KE1, weight_decay=0.01),
         dict(params=model.K1Nopen, weight_decay=5e-3),
         dict(params=model.K2Nopen, weight_decay=5e-3),
-        dict(params=model.KNclose, weight_decay=5e-3)
+        dict(params=model.KNclose, weight_decay=5e-3),
 
     ], lr=0.01)
 # optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0)
