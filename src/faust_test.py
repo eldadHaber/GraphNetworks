@@ -236,7 +236,7 @@ nEin = 3  # 3
 nopen = 3  # 64
 nhid = 3  # 64
 nNclose = 3  # 64
-nlayer = 50  # 8#16
+nlayer = 100  # 8#16
 
 batchSize = 32
 h = 0.01
