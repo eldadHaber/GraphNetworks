@@ -557,11 +557,11 @@ class graphNetwork_nodesOnly(nn.Module):
                 xe = conv1(xe, K, groups=groups)
         return xe
 
-    def singleLayer(self, x, K, relu=True, norm=False, groups=1):
-        if K.shape[0] != K.shape[1]:
+    def singleLayer(self, x, K, relu=True, norm=False, groups=1, openclose=False):
+        if openclose: #if K.shape[0] != K.shape[1]:
             x = self.edgeConv(x, K, groups=groups)
 
-        if K.shape[0] == K.shape[1]:
+        if not openclose: #if K.shape[0] == K.shape[1]:
             #x = F.tanh(x)
             x = self.edgeConv(x, K, groups=groups)
 
@@ -738,13 +738,13 @@ class graphNetwork_nodesOnly(nn.Module):
             plt.savefig('plots/img_xn_norm_layer_verlet' + str(0) + 'order_nodeDeriv' + str(0) + '.jpg')
             plt.close()
 
-        xn = self.singleLayer(xn, self.K1Nopen, relu=True)
-        xnnorm = torch.norm(xn, dim=1)
-        vmin= xnnorm.min().detach().numpy()
-        vmax= xnnorm.max().detach().numpy()
+        xn = self.singleLayer(xn, self.K1Nopen, relu=True, openclose=True)
         x0 = xn.clone()
-        debug = True
+        debug = False
         if debug:
+            xnnorm = torch.norm(xn, dim=1)
+            vmin = xnnorm.min().detach().numpy()
+            vmax = xnnorm.max().detach().numpy()
             image = False
             if image:
                 plt.figure()
@@ -830,7 +830,7 @@ class graphNetwork_nodesOnly(nn.Module):
                     efficient = True
                     if efficient:
                         if not self.doubleConv:
-                            dxn = (self.singleLayer(gradX, self.KN2[i], norm=False, relu=False, groups=1))
+                            dxn = (self.singleLayer(gradX, self.KN1[i], norm=False, relu=False, groups=1)) #KN2
                         else:
                             dxn = self.finalDoubleLayer(gradX, self.KN1[i], self.KN2[i])
                         dxn = Graph.edgeDiv(dxn)  # + Graph.edgeAve(dxe2, method='ave')
