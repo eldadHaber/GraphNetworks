@@ -38,9 +38,15 @@ otp = tp(x,x)
 oftp = ftp(x,x)
 
 
+filter = iter([o3.Irrep("0e"),o3.Irrep("1e"),o3.Irrep("2e")])
+tp = ElementwiseTensorProduct("1e + 1e", "1e + 1e", filter)
+tp2 = ElementwiseTensorProduct("1e + 1e", "1e + 1e", "0e+1e+2e")
 
-filter = iter([o3.Irrep("0e"),o3.Irrep("0e"),o3.Irrep("1o"),o3.Irrep("1o")])
+
+o3.Irrep("1x0o+1x0e")
+filter = iter([o3.Irrep("0e"),o3.Irrep("1e"),o3.Irrep("1o"),o3.Irrep("1o")])
 tp3 = FullTensorProduct("1x1o","1x1o",filter)
+tp2 = FullTensorProduct("1x1o","1x1o")
 
 x = torch.tensor([[2,0.0,0.0]])
 y = torch.tensor([[0.0,2,0.0]])

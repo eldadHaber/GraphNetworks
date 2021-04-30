@@ -58,9 +58,9 @@ if __name__ == '__main__':
     print('Number of data: {:}, Number of atoms {:}'.format(ndata, natoms))
 
     # Following Equivariant paper, we select 1000 configurations from these as our training set, 1000 as our validation set, and the rest are used as test data.
-    n_train = 1
+    n_train = 1000
     n_val = 1000
-    batch_size = 1
+    batch_size = 10
 
     ndata_rand = 0 + np.arange(ndata)
     np.random.shuffle(ndata_rand)

@@ -60,7 +60,7 @@ if __name__ == '__main__':
     # Following Equivariant paper, we select 1000 configurations from these as our training set, 1000 as our validation set, and the rest are used as test data.
     n_train = 1000
     n_val = 1000
-    batch_size = 25
+    batch_size = 2
 
     ndata_rand = 0 + np.arange(ndata)
     np.random.shuffle(ndata_rand)
@@ -89,7 +89,7 @@ if __name__ == '__main__':
     # Setup the network and its parameters
 
 
-    irreps_in = o3.Irreps("1x0e")
+    irreps_in = None #o3.Irreps("0x0e")
     irreps_hidden = o3.Irreps("100x0e+100x0o+50x1e+50x1o")
     irreps_out = o3.Irreps("1x0e")
     irreps_node_attr = o3.Irreps("1x0e")
@@ -97,12 +97,11 @@ if __name__ == '__main__':
     layers = 6
     max_radius = 5
     number_of_basis = 8
-    radial_layers = 1
-    radial_neurons = 8
+    radial_neurons = [8,16]
     num_neighbors = 15
     num_nodes = natoms
     model = NequIP(irreps_in=irreps_in, irreps_hidden=irreps_hidden, irreps_out=irreps_out, irreps_node_attr=irreps_node_attr, irreps_edge_attr=irreps_edge_attr, layers=layers, max_radius=max_radius,
-                    number_of_basis=number_of_basis, radial_layers=radial_layers, radial_neurons=radial_neurons, num_neighbors=num_neighbors, num_nodes=num_nodes)
+                    number_of_basis=number_of_basis, radial_neurons=radial_neurons, num_neighbors=num_neighbors, num_nodes=num_nodes)
     model.to(device)
     total_params = sum(p.numel() for p in model.parameters())
     print('Number of parameters ', total_params)
