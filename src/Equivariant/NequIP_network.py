@@ -18,7 +18,7 @@ from e3nn.util.jit import compile_mode
 from torch.autograd import grad
 import torch.nn.functional as F
 
-from src.Equivariant.EQ_operations import Convolution
+from src.Equivariant.EQ_operations import Convolution, TvNorm
 
 
 def smooth_cutoff(x):
@@ -137,6 +137,7 @@ class NequIP(torch.nn.Module):
 
         self.convolutions = torch.nn.ModuleList()
         self.gates = torch.nn.ModuleList()
+        self.norms = torch.nn.ModuleList()
         for _ in range(layers):
             irreps_scalars = o3.Irreps([(mul, ir) for mul, ir in self.irreps_hidden if ir.l == 0 and tp_path_exists(irreps, self.irreps_edge_attr, ir)])
             irreps_gated = o3.Irreps([(mul, ir) for mul, ir in self.irreps_hidden if ir.l > 0 and tp_path_exists(irreps, self.irreps_edge_attr, ir)])
@@ -156,6 +157,7 @@ class NequIP(torch.nn.Module):
                 radial_neurons,
                 num_neighbors
             )
+            self.norms.append(TvNorm(gate.irreps_in))
             irreps = gate.irreps_out
             self.convolutions.append(conv)
             self.gates.append(gate)
@@ -231,8 +233,9 @@ class NequIP(torch.nn.Module):
         x = self.node_embedder(x.to(dtype=torch.int64)).squeeze()
         x = self.atomwise_interaction(x,0)
 
-        for i,(conv,gate) in enumerate(zip(self.convolutions,self.gates)):
+        for i,(conv,norm,gate) in enumerate(zip(self.convolutions,self.norms,self.gates)):
             y = conv(x, z, edge_src, edge_dst, edge_attr, edge_features)
+            y = norm(y)
             y = gate(y)
             if y.shape == x.shape:
                 y = self.atomwise_interaction(y, i)

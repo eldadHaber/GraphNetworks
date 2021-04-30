@@ -60,7 +60,7 @@ if __name__ == '__main__':
     # Following Equivariant paper, we select 1000 configurations from these as our training set, 1000 as our validation set, and the rest are used as test data.
     n_train = 1000
     n_val = 1000
-    batch_size = 2
+    batch_size = 1
 
     ndata_rand = 0 + np.arange(ndata)
     np.random.shuffle(ndata_rand)
