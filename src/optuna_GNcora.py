@@ -75,7 +75,7 @@ for nlayers in num_layers:
         nEin = 1
         n_channels = 64  # trial.suggest_categorical('n_channels', [64, 128, 256])
         nopen = n_channels
-        nhid = n_channels*2
+        nhid = n_channels
         nNclose = n_channels
         n_layers = nlayers
         print("DATA SET IS:", dataset)

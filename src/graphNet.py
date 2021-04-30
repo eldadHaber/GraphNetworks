@@ -623,7 +623,7 @@ class graphNetwork_nodesOnly(nn.Module):
         operators = []
         for i in torch.arange(0, order):
             x = Graph.nodeGrad(x)
-            if edgeSpace:
+            if edgeSpace:   
                 operators.append(x)
 
             if i == order - 1:
