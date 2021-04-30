@@ -262,7 +262,7 @@ def saveMesh(xn, faces, pos, i=0, vmax=None, vmin=None):
     colors = xn.squeeze(0).norm(dim=1).clone().detach().cpu().numpy()
     vect_col_map = trimesh.visual.color.interpolate(colors,
                                                     color_map='jet')
-    vect_col_map = vect_col_map[2:, :]
+    #vect_col_map = vect_col_map[2:, :]
     if xn.shape[0] == mesh.vertices.shape[0]:
         mesh.visual.vertex_colors = vect_col_map
     elif xn.shape[0] == mesh.faces.shape[0]:
