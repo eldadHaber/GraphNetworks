@@ -716,8 +716,9 @@ class graphNetwork_nodesOnly(nn.Module):
         # xn = [B, C, N]
         # xe = [B, C, N, N] or [B, C, E]
         # Opening layer
-        if not self.faust:
-            [Graph, edge_index] = self.updateGraph(Graph)
+
+        #if not self.faust:
+        #    [Graph, edge_index] = self.updateGraph(Graph)
         if self.faust:
             xn = torch.cat([xn, Graph.edgeDiv(xe)], dim=1)
 
