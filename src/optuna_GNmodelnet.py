@@ -43,9 +43,9 @@ pre_transform, transform = T.NormalizeScale(), T.SamplePoints(1024)
 train_dataset = ModelNet(path, '10', True, transform, pre_transform)
 test_dataset = ModelNet(path, '10', False, transform, pre_transform)
 train_loader = DataLoader(
-    train_dataset, batch_size=32, shuffle=True, num_workers=6)
+    train_dataset, batch_size=128, shuffle=True, num_workers=6)
 test_loader = DataLoader(
-    test_dataset, batch_size=32, shuffle=False, num_workers=6)
+    test_dataset, batch_size=128, shuffle=False, num_workers=6)
 
 
 def MLP(channels, batch_norm=True):
@@ -58,7 +58,7 @@ def MLP(channels, batch_norm=True):
 printFiles = False
 if "s" in sys.argv or "j" in sys.argv:
     printFiles = True
-num_layers = [2, 4, 8]
+num_layers = [4, 8]
 if printFiles:
     print("**********************************************************************************")
     file2Open = "src/optuna_GNmodelnet.py"
@@ -90,7 +90,7 @@ for nlayers in num_layers:
         nlayer = nlayers
         h = 1  # / nlayer
         dropout = 0.0
-        lr = trial.suggest_float("lr", 1e-3, 1e-1, log=True)
+        lr = trial.suggest_float("lr", 1e-4, 1e-2, log=True)
         lrGCN = trial.suggest_float("lrGCN", 1e-5, 1e-2, log=True)
         wd = trial.suggest_float("wd", 5e-12, 1e-3, log=True)
         h = trial.suggest_discrete_uniform('h', 1 / (nlayer), 3, q=1 / (nlayer))
@@ -177,14 +177,24 @@ for nlayers in num_layers:
         save_path = '/home/cluster/users/erant_group/moshe/pdegcnCheckpoints/' + filename
 
         best_test_acc = 0
+        patience = 40
+        counter = 0
         for epoch in range(1, 201):
             loss = train()
             test_acc = test(test_loader)
-            if test_acc > best_test_acc:
+            if test_acc >= best_test_acc:
                 best_test_acc = test_acc
-                # torch.save(model.state_dict(), save_path)
+                counter = 0
                 print('Epoch {:03d}, Loss: {:.4f}, Test: {:.4f}'.format(
                     epoch, loss, test_acc))
+                # torch.save(model.state_dict(), save_path)
+
+            else:
+                counter = counter + 1
+
+            if counter >= patience:
+                return best_test_acc
+
             scheduler.step()
         print("best acc:", best_test_acc, flush=True)
         return best_test_acc
