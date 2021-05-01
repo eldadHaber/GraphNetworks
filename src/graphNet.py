@@ -432,7 +432,7 @@ class graphNetwork_try(nn.Module):
 
 def MLP(channels, batch_norm=True):
     return Seq(*[
-        Seq(Lin(channels[i - 1], channels[i]), ReLU())
+        Seq(Lin(channels[i - 1], channels[i]), BN(channels[i]), ReLU())
         for i in range(1, len(channels))
     ])
 
@@ -718,7 +718,7 @@ class graphNetwork_nodesOnly(nn.Module):
         # Opening layer
 
         if not self.faust:
-           [Graph, edge_index] = self.updateGraph(Graph)
+            [Graph, edge_index] = self.updateGraph(Graph)
         if self.faust:
             xn = torch.cat([xn, Graph.edgeDiv(xe)], dim=1)
 
@@ -747,7 +747,7 @@ class graphNetwork_nodesOnly(nn.Module):
 
         xn = self.singleLayer(xn, self.K1Nopen, relu=True, openclose=True, norm=False)
 
-        #xn = self.singleLayer(xn, self.K2Nopen, relu=True, openclose=True)
+        # xn = self.singleLayer(xn, self.K2Nopen, relu=True, openclose=True)
 
         x0 = xn.clone()
         debug = False

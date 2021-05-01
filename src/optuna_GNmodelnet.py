@@ -90,9 +90,9 @@ for nlayers in num_layers:
         nlayer = nlayers
         h = 1  # / nlayer
         dropout = 0.0
-        lr = trial.suggest_float("lr", 1e-2, 1e-1)
-        lrGCN = trial.suggest_float("lrGCN", 1e-4, 1e-2, log=True)
-        wd = trial.suggest_float("wd", 5e-12, 1e-3, log=True)
+        lr = trial.suggest_float("lr", 1e-3, 1e-2, log=True)
+        lrGCN = trial.suggest_float("lrGCN", 1e-5, 1e-2, log=True)
+        wd = trial.suggest_float("wd", 5e-12, 1e-5, log=True)
         h = trial.suggest_discrete_uniform('h', 1 / (nlayer), 3, q=1 / (nlayer))
         wave = False
         import datetime
@@ -119,7 +119,7 @@ for nlayers in num_layers:
             # dict(params=model.alpha, lr=0.1, weight_decay=0),
         ], lr=lr)
 
-        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=40, gamma=0.5)
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.5)
 
         def train():
             model.train()
@@ -136,7 +136,7 @@ for nlayers in num_layers:
                 J = edge_index[1, :]
                 N = data.pos.shape[0]
                 W = torch.ones(N).to(device)
-                G = GO.graph(I, J, N, W=W ,pos=None, faces=None)
+                G = GO.graph(I, J, N, W=W, pos=None, faces=None)
                 G = G.to(device)
                 data = data.to(device)
                 optimizer.zero_grad()
@@ -164,7 +164,7 @@ for nlayers in num_layers:
                 J = edge_index[1, :]
                 N = data.pos.shape[0]
                 W = torch.ones(N).to(device)
-                G = GO.graph(I, J, N, W=W,pos=None, faces=None)
+                G = GO.graph(I, J, N, W=W, pos=None, faces=None)
                 G = G.to(device)
                 data = data.to(device)
                 optimizer.zero_grad()
@@ -177,12 +177,12 @@ for nlayers in num_layers:
         save_path = '/home/cluster/users/erant_group/moshe/pdegcnCheckpoints/' + filename
 
         best_test_acc = 0
-        patience = 40
+        patience = 25
         counter = 0
         for epoch in range(1, 201):
             loss = train()
             test_acc = test(test_loader)
-            if test_acc >= best_test_acc:
+            if test_acc > best_test_acc:
                 best_test_acc = test_acc
                 counter = 0
                 print('Epoch {:03d}, Loss: {:.4f}, Test: {:.4f}'.format(

@@ -97,20 +97,21 @@ if printFiles:
     print("**********************************************************************************")
 
 nEin = 1
-nopen = 128
+nopen = 64
 nNin = 3
-nhid = 128
-nNclose = 128
+nhid = 64
+nNclose = 64
 nlayer = 4
 h = 1  # / nlayer
-dropout = 0.0
+dropout = 0.2
 wave = False
 import datetime
+
 now = datetime.datetime.now()
 filename = 'nopen_' + str(nopen) + 'nhid_' + str(nhid) + 'nlayer_' + str(nlayer) + 'h_' + str(h) + 'dropout_' + str(
     dropout) + 'wave_' + str(wave) + "_" + str(now.month) + "_" + str(now.day) + "_" + str(now.hour) + "_" + str(
     now.minute) + "_" + str(
-    now.second)+'.pth'
+    now.second) + '.pth'
 model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=wave,
                                   diffOrder=1, num_output=nopen, dropOut=dropout, modelnet=True)
 
