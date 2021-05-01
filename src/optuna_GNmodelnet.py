@@ -135,7 +135,8 @@ for nlayers in num_layers:
                 I = edge_index[0, :]
                 J = edge_index[1, :]
                 N = data.pos.shape[0]
-                G = GO.graph(I, J, N, pos=None, faces=None)
+                W = torch.ones(N).to(device)
+                G = GO.graph(I, J, N, W=W ,pos=None, faces=None)
                 G = G.to(device)
                 data = data.to(device)
                 optimizer.zero_grad()
@@ -163,7 +164,8 @@ for nlayers in num_layers:
                 I = edge_index[0, :]
                 J = edge_index[1, :]
                 N = data.pos.shape[0]
-                G = GO.graph(I, J, N, pos=None, faces=None)
+                W = torch.ones(N).to(device)
+                G = GO.graph(I, J, N, W=W,pos=None, faces=None)
                 G = G.to(device)
                 data = data.to(device)
                 optimizer.zero_grad()
