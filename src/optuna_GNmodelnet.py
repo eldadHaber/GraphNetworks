@@ -141,7 +141,6 @@ for nlayers in num_layers:
                 data = data.to(device)
                 optimizer.zero_grad()
                 xn = data.pos.t().unsqueeze(0).cuda()
-                print("data.batch:", data.batch)
                 out = model(xn, G, data=data)
                 loss = F.nll_loss(out, data.y)
                 loss.backward()
