@@ -749,7 +749,7 @@ class graphNetwork_nodesOnly(nn.Module):
         xn = self.singleLayer(xn, self.K2Nopen, relu=True, openclose=True)
 
         x0 = xn.clone()
-        debug = True
+        debug = False
         if debug:
             xnnorm = torch.norm(xn, dim=1)
             vmin = xnnorm.min().detach().numpy()

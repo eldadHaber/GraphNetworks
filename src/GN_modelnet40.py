@@ -75,21 +75,22 @@ class Net(torch.nn.Module):
         x = self.mlp(out)
         return x.log_softmax(dim=-1)
 
+printFiles = False
+if printFiles:
+    print("**********************************************************************************")
+    file2Open = "src/optuna_GNcora.py"
+    print("DRIVER CODE:")
+    f = open(file2Open, "r")
+    for line in f:
+        print(line, end='', flush=True)
 
-print("**********************************************************************************")
-file2Open = "src/optuna_GNcora.py"
-print("DRIVER CODE:")
-f = open(file2Open, "r")
-for line in f:
-    print(line, end='', flush=True)
+    print("NETWORKS CODE:")
+    file2Open = "src/graphNet.py"
+    f = open(file2Open, "r")
+    for line in f:
+        print(line, end='', flush=True)
 
-print("NETWORKS CODE:")
-file2Open = "src/graphNet.py"
-f = open(file2Open, "r")
-for line in f:
-    print(line, end='', flush=True)
-
-print("**********************************************************************************")
+    print("**********************************************************************************")
 
 
 nEin = 1
