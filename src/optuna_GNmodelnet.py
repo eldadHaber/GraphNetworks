@@ -14,20 +14,28 @@ from torch.nn import Sequential as Seq, Linear as Lin, ReLU, BatchNorm1d as BN, 
 from torch_cluster import knn
 from torch_geometric.typing import PairTensor
 import optuna
-
-from src import graphOps as GO
-from src import processContacts as prc
-from src import utils
-from src import graphNet as GN
-from src import pnetArch as PNA
 import sys
 
 path = '/home/cluster/users/erant_group/ModelNet10'
 
 if "s" in sys.argv:
     path = '/home/eliasof/GraphNetworks/data/'
+    import processContacts as prc
+    import utils
+    import graphNet as GN
+    import pnetArch as PNA
 if "j" in sys.argv:
     path = '/home/ephrathj/GraphNetworks/data/'
+    import processContacts as prc
+    import utils
+    import graphNet as GN
+    import pnetArch as PNA
+else:
+    from src import graphOps as GO
+    from src import processContacts as prc
+    from src import utils
+    from src import graphNet as GN
+    from src import pnetArch as PNA
 
 pre_transform, transform = T.NormalizeScale(), T.SamplePoints(1024)
 train_dataset = ModelNet(path, '10', True, transform, pre_transform)
