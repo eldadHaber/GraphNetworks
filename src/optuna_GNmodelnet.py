@@ -90,8 +90,8 @@ for nlayers in num_layers:
         nlayer = nlayers
         h = 1  # / nlayer
         dropout = 0.0
-        lr = trial.suggest_float("lr", 1e-4, 1e-2, log=True)
-        lrGCN = trial.suggest_float("lrGCN", 1e-5, 1e-2, log=True)
+        lr = trial.suggest_float("lr", 1e-2, 1e-1)
+        lrGCN = trial.suggest_float("lrGCN", 1e-4, 1e-2, log=True)
         wd = trial.suggest_float("wd", 5e-12, 1e-3, log=True)
         h = trial.suggest_discrete_uniform('h', 1 / (nlayer), 3, q=1 / (nlayer))
         wave = False
