@@ -26,6 +26,8 @@ path = '/home/cluster/users/erant_group/ModelNet10'
 
 if "s" in sys.argv:
     path = '/home/eliasof/GraphNetworks/data/'
+if "j" in sys.argv:
+    path = '/home/ephrathj/GraphNetworks/data/'
 
 pre_transform, transform = T.NormalizeScale(), T.SamplePoints(1024)
 train_dataset = ModelNet(path, '10', True, transform, pre_transform)
@@ -44,7 +46,7 @@ def MLP(channels, batch_norm=True):
 
 
 printFiles = False
-if "s" in sys.argv:
+if "s" in sys.argv or "j" in sys.argv:
     printFiles = True
 num_layers = [2, 4, 8]
 if printFiles:
