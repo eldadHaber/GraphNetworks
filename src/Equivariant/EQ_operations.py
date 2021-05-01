@@ -225,18 +225,56 @@ class Filter(torch.nn.Module):
         y = x.repeat_interleave(self.degen,dim=1)
         return y
 
-
 class SelfInteraction(torch.nn.Module):
-    def __init__(self,irreps_in,irreps_out):
+    def __init__(self, irreps_in,irreps_out):
         super().__init__()
         self.irreps_in = irreps_in
         self.irreps_out = irreps_out
-        self.tp = o3.FullyConnectedTensorProduct(irreps_in, irreps_in, irreps_out)
+        self.tp = o3.FullyConnectedTensorProduct(irreps_in,irreps_in,irreps_out)
+
+        nd = irreps_out.dim
+        nr = irreps_out.num_irreps
+        degen = torch.empty(nr, dtype=torch.int64)
+        m_degen = torch.empty(nr, dtype=torch.bool)
+        idx = 0
+        for mul, ir in irreps_out:
+            li = 2 * ir.l + 1
+            for i in range(mul):
+                degen[idx + i] = li
+                m_degen[idx + i] = ir.l == 0
+            idx += i + 1
+        M = m_degen.repeat_interleave(degen)
+        self.register_buffer("m_scalar", M)
         return
 
-    def forward(self, x):
-        x = self.tp(x,x)
-        return x
+    def forward(self, x, normalize_variance=True, eps=1e-9, debug=True):
+        y = self.tp(x,x)
+        if normalize_variance:
+            nb, _ = y.shape
+            ms = self.m_scalar
+            std = torch.std(y[:, ms], dim=1)
+            y[:, ms] /= std[:,None] + eps
+
+            mv = ~ms
+            if torch.sum(mv) > 0:
+                tmp = y[:,mv].clone()
+                yy = tmp.view(nb,-1,3).clone()
+                norm1 = torch.sqrt(torch.sum(yy**2,dim=2)+eps)
+                std = norm1.std(dim=1)
+                yy2 = yy / (std[:,None,None]+eps)
+                y[:,mv] = yy2.view(nb,-1)
+        if debug:
+            if normalize_variance and torch.sum(mv) > 0:
+                with torch.no_grad():
+                    scalars_in = torch.cat([x[:, ms].view(-1),norm1.view(-1)])
+                    tmp1 = y[:, mv]
+                    tmp2 = tmp1.view(nb, -1, 3)
+                    norm2 = tmp2.norm(dim=2)
+                    scalars_out = torch.cat([y[:, ms].view(-1),norm2.view(-1)])
+                print(f"input var: {scalars_in.var():2.2f}, output var: {scalars_out.var():2.2f}")
+            else:
+                print(f"Normalize variance={normalize_variance}, input var: {x.var():2.2f}, output var: {y.var():2.2f}")
+        return y
 
 
 

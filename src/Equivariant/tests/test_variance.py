@@ -9,23 +9,77 @@ from e3nn.o3 import TensorProduct, FullyConnectedTensorProduct, ElementwiseTenso
 from e3nn.math import soft_one_hot_linspace
 import matplotlib.pyplot as plt
 # irreps = o3.Irreps("1x0e+1x1o")
-plt.figure()
-# plt.show()
+from src.Equivariant.EQ_operations import SelfInteraction
 import math
 
 
-#What exactly does elementwisetensorproduct do?
-n = 2
-nd = 10
-x = 100*torch.randn((n,nd))+1000
-# y = 3*torch.randn((n,nd))
+def stat(x,name):
+    print(f"{name}: var={x.var():2.5f}, std={x.std():2.5f}, mean={x.mean():2.5f}, component={(x.norm(dim=1)/math.sqrt(x.shape[1])).mean():2.5f}, norm={x.norm(dim=1).mean():2.5f}")
 
-tp = ElementwiseTensorProduct("{:}x0e".format(nd),"{:}x0e".format(nd))
+
+plt.figure()
+# plt.show()
+n = 100
+nd = 100
+x = 10*torch.randn((n,nd))
+
+# x = torch.tensor([[2.0, -0.0, -0.0, 0.0]])
+stat(x,'x')
+
+
+y = 1e7*torch.randn((n,nd))
+
+in1_var = [100.0]
+tp = ElementwiseTensorProduct("{:}x0e".format(nd),"{:}x0e".format(nd),in1_var=[x.var()],in2_var=[x.var()],out_var=[1.0])
+tp0 = ElementwiseTensorProduct("{:}x0e".format(nd),"{:}x0e".format(nd))
 
 xx = tp(x,x)
+xx0 = tp0(x,x)
+stat(xx,'xx')
+stat(xx0,'xx0')
 
 
 
+
+irreps = o3.Irreps("{:}x0e".format(nd))
+si = SelfInteraction(irreps_in=irreps,irreps_out=irreps)
+
+xsi = si(x, normalize_variance=False)
+ysi = si(y)
+
+stat(y,'y')
+stat(ysi,'ysi')
+stat(x,'x')
+stat(xsi,'xsi')
+
+
+
+
+
+
+
+
+
+
+
+
+
+tp = ElementwiseTensorProduct("1x0e","1x0e")
+
+xy = tp(x,y)
+xx = tp(x,x)
+yy = tp(y,y)
+stat(x,'x')
+stat(y,'y')
+stat(xx,'xx')
+stat(xy,'xy')
+stat(yy,'yy')
+xx_xx = tp(xx,xx)
+stat(xx_xx,'xx_xx')
+
+
+xx_normal = xx/xx.std()
+stat(xx_normal,'xx_normal')
 
 
 

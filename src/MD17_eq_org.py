@@ -18,6 +18,7 @@ from src import graphNet as GN
 from torch.autograd import grad
 from torch.utils.data import DataLoader
 
+from src.Equivariant.EQ_network_org import Network_org
 from src.Equivariant.NequIP_network import NequIP
 from src.Equivariant.eq_utils import use_model_eq
 # from src.Equivariant.networks import Network, GraphNet_EQ
@@ -89,7 +90,7 @@ if __name__ == '__main__':
     # Setup the network and its parameters
 
 
-    irreps_in = o3.Irreps("0x0e")
+    irreps_in = None #o3.Irreps("0x0e")
     irreps_hidden = o3.Irreps("100x0e+100x0o+50x1e+50x1o")
     irreps_out = o3.Irreps("1x0e")
     irreps_node_attr = o3.Irreps("1x0e")
@@ -97,11 +98,12 @@ if __name__ == '__main__':
     layers = 6
     max_radius = 5
     number_of_basis = 8
-    radial_neurons = [8,16]
+    radial_neurons = 8
+    radial_layers = 2
     num_neighbors = 15
     num_nodes = natoms
-    model = NequIP(irreps_in=irreps_in, irreps_hidden=irreps_hidden, irreps_out=irreps_out, irreps_node_attr=irreps_node_attr, irreps_edge_attr=irreps_edge_attr, layers=layers, max_radius=max_radius,
-                    number_of_basis=number_of_basis, radial_neurons=radial_neurons, num_neighbors=num_neighbors, num_nodes=num_nodes)
+    model = Network_org(irreps_in=irreps_in, irreps_hidden=irreps_hidden, irreps_out=irreps_out, irreps_node_attr=irreps_node_attr, irreps_edge_attr=irreps_edge_attr, layers=layers, max_radius=max_radius,
+                    number_of_basis=number_of_basis, radial_layers=radial_layers, radial_neurons=radial_neurons, num_neighbors=num_neighbors, num_nodes=num_nodes)
     model.to(device)
     total_params = sum(p.numel() for p in model.parameters())
     print('Number of parameters ', total_params)

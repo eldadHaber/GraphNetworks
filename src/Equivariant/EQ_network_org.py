@@ -1,10 +1,10 @@
 """model with self-interactions and gates
 Exact equivariance to :math:`E(3)`
-version of february 2021
+version of january 2021
 """
 import math
 from typing import Dict, Union
-import numpy as np
+
 import torch
 from torch_geometric.data import Data
 from torch_cluster import radius_graph
@@ -12,13 +12,102 @@ from torch_scatter import scatter
 
 from e3nn import o3
 from e3nn.math import soft_one_hot_linspace
-from e3nn.nn import FullyConnectedNet, Gate, ExtractIr, Activation
+from e3nn.nn import FullyConnectedNet, Gate
 from e3nn.o3 import TensorProduct, FullyConnectedTensorProduct
 from e3nn.util.jit import compile_mode
-from torch.autograd import grad
-import torch.nn.functional as F
 
-from src.Equivariant.EQ_operations import Convolution, TvNorm, SelfInteraction
+
+@compile_mode('script')
+class Convolution(torch.nn.Module):
+    r"""equivariant convolution
+    Parameters
+    ----------
+    irreps_in : `Irreps`
+        representation of the input node features
+    irreps_node_attr : `Irreps`
+        representation of the node attributes
+    irreps_edge_attr : `Irreps`
+        representation of the edge attributes
+    irreps_out : `Irreps` or None
+        representation of the output node features
+    number_of_basis : int
+        number of basis on which the edge length are projected
+    radial_layers : int
+        number of hidden layers in the radial fully connected network
+    radial_neurons : int
+        number of neurons in the hidden layers of the radial fully connected network
+    num_neighbors : float
+        typical number of nodes convolved over
+    """
+    def __init__(
+        self,
+        irreps_in,
+        irreps_node_attr,
+        irreps_edge_attr,
+        irreps_out,
+        number_of_basis,
+        radial_layers,
+        radial_neurons,
+        num_neighbors
+    ) -> None:
+        super().__init__()
+        self.irreps_in = o3.Irreps(irreps_in)
+        self.irreps_node_attr = o3.Irreps(irreps_node_attr)
+        self.irreps_edge_attr = o3.Irreps(irreps_edge_attr)
+        self.irreps_out = o3.Irreps(irreps_out)
+        self.num_neighbors = num_neighbors
+
+        self.sc = FullyConnectedTensorProduct(self.irreps_in, self.irreps_node_attr, self.irreps_out)
+
+        self.lin1 = FullyConnectedTensorProduct(self.irreps_in, self.irreps_node_attr, self.irreps_in)
+
+        irreps_mid = []
+        instructions = []
+        for i, (mul, ir_in) in enumerate(self.irreps_in):
+            for j, (_, ir_edge) in enumerate(self.irreps_edge_attr):
+                for ir_out in ir_in * ir_edge:
+                    if ir_out in self.irreps_out:
+                        k = len(irreps_mid)
+                        irreps_mid.append((mul, ir_out))
+                        instructions.append((i, j, k, 'uvu', True))
+        irreps_mid = o3.Irreps(irreps_mid)
+        irreps_mid, p, _ = irreps_mid.sort()
+
+        instructions = [
+            (i_1, i_2, p[i_out], mode, train)
+            for i_1, i_2, i_out, mode, train in instructions
+        ]
+
+        tp = TensorProduct(
+            self.irreps_in,
+            self.irreps_edge_attr,
+            irreps_mid,
+            instructions,
+            internal_weights=False,
+            shared_weights=False,
+        )
+        self.fc = FullyConnectedNet([number_of_basis] + radial_layers * [radial_neurons] + [tp.weight_numel], torch.nn.functional.silu)
+        self.tp = tp
+
+        self.lin2 = FullyConnectedTensorProduct(irreps_mid, self.irreps_node_attr, self.irreps_out)
+
+    def forward(self, node_input, node_attr, edge_src, edge_dst, edge_attr, edge_length_embedded) -> torch.Tensor:
+        weight = self.fc(edge_length_embedded)
+
+        x = node_input
+
+        s = self.sc(x, node_attr)
+        x = self.lin1(x, node_attr)
+
+        edge_features = self.tp(x[edge_src], edge_attr, weight)
+        x = scatter(edge_features, edge_dst, dim=0, dim_size=x.shape[0]).div(self.num_neighbors**0.5)
+
+        x = self.lin2(x, node_attr)
+
+        c_s, c_x = math.sin(math.pi / 8), math.cos(math.pi / 8)
+        m = self.sc.output_mask
+        c_x = (1 - m) + c_x * m
+        return c_s * s + c_x * x
 
 
 def smooth_cutoff(x):
@@ -40,7 +129,21 @@ def tp_path_exists(irreps_in1, irreps_in2, ir_out):
                 return True
     return False
 
-class NequIP(torch.nn.Module):
+
+class Compose(torch.nn.Module):
+    def __init__(self, first, second):
+        super().__init__()
+        self.first = first
+        self.second = second
+        self.irreps_in = self.first.irreps_in
+        self.irreps_out = self.second.irreps_out
+
+    def forward(self, *input):
+        x = self.first(*input)
+        return self.second(x)
+
+
+class Network_org(torch.nn.Module):
     r"""equivariant neural network
     Parameters
     ----------
@@ -84,6 +187,7 @@ class NequIP(torch.nn.Module):
         layers,
         max_radius,
         number_of_basis,
+        radial_layers,
         radial_neurons,
         num_neighbors,
         num_nodes,
@@ -105,7 +209,8 @@ class NequIP(torch.nn.Module):
         self.input_has_node_in = (irreps_in is not None)
         self.input_has_node_attr = (irreps_node_attr is not None)
 
-        self.ext_z = ExtractIr(self.irreps_node_attr, '0e')
+        irreps = self.irreps_in if self.irreps_in is not None else o3.Irreps("0e")
+
         act = {
             1: torch.nn.functional.silu,
             -1: torch.tanh,
@@ -114,28 +219,9 @@ class NequIP(torch.nn.Module):
             1: torch.sigmoid,
             -1: torch.tanh,
         }
-        nmax_atoms = 20
-        embed_dim = 8
-        self.node_embedder = torch.nn.Embedding(nmax_atoms,embed_dim)
-        irreps = o3.Irreps("{:}x0e".format(embed_dim))
 
-        self.self_interaction = torch.nn.ModuleList()
-        self.self_interaction.append(SelfInteraction(irreps,irreps))
-        for _ in range(1,layers):
-            self.self_interaction.append(SelfInteraction(self.irreps_hidden,self.irreps_hidden))
-        # n_0e = o3.Irreps(self.irreps_hidden).count('0e')
-        second_to_last_irrep = o3.Irreps("16x0e")
-        last_irrep = o3.Irreps("1x0e")
-        self.self_interaction.append(SelfInteraction(self.irreps_hidden,second_to_last_irrep))
-        self.self_interaction.append(SelfInteraction(second_to_last_irrep,last_irrep))
-        self.activation = Activation("16x0e", [torch.nn.functional.silu])
-        # n_1e = o3.Irreps(self.irreps_hidden).count('0e')
-        # n_1o = o3.Irreps(self.irreps_hidden).count('1o')
+        self.layers = torch.nn.ModuleList()
 
-
-        self.convolutions = torch.nn.ModuleList()
-        self.gates = torch.nn.ModuleList()
-        self.norms = torch.nn.ModuleList()
         for _ in range(layers):
             irreps_scalars = o3.Irreps([(mul, ir) for mul, ir in self.irreps_hidden if ir.l == 0 and tp_path_exists(irreps, self.irreps_edge_attr, ir)])
             irreps_gated = o3.Irreps([(mul, ir) for mul, ir in self.irreps_hidden if ir.l > 0 and tp_path_exists(irreps, self.irreps_edge_attr, ir)])
@@ -152,14 +238,26 @@ class NequIP(torch.nn.Module):
                 self.irreps_node_attr,
                 self.irreps_edge_attr,
                 gate.irreps_in,
+                number_of_basis,
+                radial_layers,
                 radial_neurons,
                 num_neighbors
             )
-            self.norms.append(TvNorm(gate.irreps_in))
             irreps = gate.irreps_out
-            self.convolutions.append(conv)
-            self.gates.append(gate)
-        return
+            self.layers.append(Compose(conv, gate))
+
+        self.layers.append(
+            Convolution(
+                irreps,
+                self.irreps_node_attr,
+                self.irreps_edge_attr,
+                self.irreps_out,
+                number_of_basis,
+                radial_layers,
+                radial_neurons,
+                num_neighbors
+            )
+        )
 
     def forward(self, data: Union[Data, Dict[str, torch.Tensor]]) -> torch.Tensor:
         """evaluate the network
@@ -177,7 +275,6 @@ class NequIP(torch.nn.Module):
         else:
             batch = data['pos'].new_zeros(data['pos'].shape[0], dtype=torch.long)
 
-        h = 0.1
         edge_index = radius_graph(data['pos'], self.max_radius, batch)
         edge_src = edge_index[0]
         edge_dst = edge_index[1]
@@ -189,7 +286,7 @@ class NequIP(torch.nn.Module):
             start=0.0,
             end=self.max_radius,
             number=self.number_of_basis,
-            basis='bessel',
+            basis='gaussian',
             cutoff=False
         ).mul(self.number_of_basis**0.5)
         edge_attr = smooth_cutoff(edge_length / self.max_radius)[:, None] * edge_sh
@@ -207,134 +304,10 @@ class NequIP(torch.nn.Module):
             assert self.irreps_node_attr == o3.Irreps("0e")
             z = data['pos'].new_ones((data['pos'].shape[0], 1))
 
-        # scalar_z = self.ext_z(z)
-        edge_features = edge_length_embedded
-
-        x = self.node_embedder(x.to(dtype=torch.int64)).squeeze()
-        x = self.self_interaction[0](x)
-        print(f'mean={x.pow(2).mean():2.2f}')
-
-        for i,(conv,norm,gate) in enumerate(zip(self.convolutions,self.norms,self.gates)):
-            y = conv(x, z, edge_src, edge_dst, edge_attr, edge_features)
-            # y = norm(y)
-            print(f'mean={x.pow(2).mean():2.2f}')
-            y = gate(y)
-            print(f'mean={x.pow(2).mean():2.2f}')
-            if y.shape == x.shape:
-                y = self.self_interaction[i](y)
-                x = x + h*y
-            else:
-                x = y
-            # print(f'mean(abs(x))={torch.abs(x).mean():2.2f},norm={x.norm():2.2f}')
-        x = self.self_interaction[-2](x,normalize_variance=False)
-        x = self.activation(x)
-        x = self.self_interaction[-1](x,normalize_variance=False)
+        for lay in self.layers:
+            x = lay(x, z, edge_src, edge_dst, edge_attr, edge_length_embedded)
 
         if self.reduce_output:
             return scatter(x, batch, dim=0).div(self.num_nodes**0.5)
         else:
             return x
-
-
-def test_equivariance(model,data=None):
-    if data is None:
-        na = 7 #Number of atoms
-        nb = 1 #Number of batches
-        nf = 1 #Number of features
-        # irreps_out = "{:}x1e".format(na)
-        R = torch.randn((nb, na, 3), dtype=torch.float32)
-        F = torch.randn((1,4,3),dtype=torch.float32)
-        node_attr = torch.randint(0,10,(nb,na,nf))
-
-        total_params = sum(p.numel() for p in model.parameters())
-        print('Number of parameters ', total_params)
-
-
-        data = {'pos': R.squeeze(),
-                'x': node_attr.squeeze(0)
-                }
-
-    #Test equivariance
-    rot = o3.rand_matrix(1)
-    D_in = irreps_in.D_from_matrix(rot)
-    D_out = irreps_out.D_from_matrix(rot)
-
-    # rotate before
-    data2 = {'pos': (R @ rot.transpose(1,2)).squeeze(0),
-            'x': node_attr.squeeze(0)
-            }
-    f_before = model(data2)
-    # f_before = model(node_features @ D_in.T, R @ rot.transpose(1,2))
-
-    # rotate after
-    f_after = model(data) @ D_out.transpose(1,2)
-
-    is_equivariant = torch.allclose(f_before, f_after, rtol=1e-4, atol=1e-4)
-    assert is_equivariant,"Network is not equivariant"
-    print("network is equivariant")
-    return
-
-
-
-if __name__ == '__main__':
-    # na = 7 #Number of atoms
-    # nb = 1 #Number of batches
-    # nf = 1 #Number of features
-    # # irreps_out = "{:}x1e".format(na)
-    # R = torch.randn((nb, na, 3), dtype=torch.float32)
-    # F = torch.randn((1,4,3),dtype=torch.float32)
-    # node_attr = torch.randint(0,10,(nb,na,nf))
-
-    data = np.load('../../../../data/MD/MD17/aspirin_dft.npz')
-    E = torch.from_numpy(data['E']).to(dtype=torch.float32)
-    Force = torch.from_numpy(data['F']).to(dtype=torch.float32)
-    R = torch.from_numpy(data['R']).to(dtype=torch.float32)
-    z = torch.from_numpy(data['z']).to(dtype=torch.float32)
-
-    nd,na,_ = R.shape
-
-    irreps_in = o3.Irreps("1x0e")
-    irreps_hidden = o3.Irreps("64x0e+64x0o+64x1e+64x1o")
-    irreps_out = o3.Irreps("1x0e")
-    irreps_node_attr = o3.Irreps("1x0e")
-    irreps_edge_attr = o3.Irreps("1x0e+1x1o")
-    layers = 6
-    max_radius = 5
-    number_of_basis = 8
-    radial_layers = 1
-    radial_neurons = 8
-    num_neighbors = 15
-    num_nodes = na
-    model = NequIP(irreps_in=irreps_in, irreps_hidden=irreps_hidden, irreps_out=irreps_out, irreps_node_attr=irreps_node_attr, irreps_edge_attr=irreps_edge_attr, layers=layers, max_radius=max_radius,
-                    number_of_basis=number_of_basis, radial_layers=radial_layers, radial_neurons=radial_neurons, num_neighbors=num_neighbors, num_nodes=num_nodes)
-
-    total_params = sum(p.numel() for p in model.parameters())
-    print('Number of parameters ', total_params)
-
-    optim = torch.optim.Adam(model.parameters(), lr=1e-3)
-
-
-    Ri = R[0,:,:]
-    Ri.requires_grad_(True)
-    Fi = Force[0,:,:]
-
-
-    data = {'pos': Ri,
-            'x': z[:,None]
-            }
-
-    test_equivariance(model)
-
-
-    niter = 100000
-    for i in range(niter):
-        optim.zero_grad()
-        E_pred = model(data)
-        F_pred = -grad(E_pred, Ri, create_graph=True)[0].requires_grad_(True)
-        print(f'mean(abs(F_pred))={torch.abs(F_pred).mean():2.2f}')
-        loss = F.mse_loss(F_pred, Fi)
-        MAE = torch.mean(torch.abs(F_pred - Fi)).detach()
-        loss.backward()
-        optim.step()
-        print(f'{i:}, loss:{loss.detach():2.2e}, MAE:{MAE:2.2f}')
-    print('done')
