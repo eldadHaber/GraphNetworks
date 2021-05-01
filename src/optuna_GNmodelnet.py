@@ -182,7 +182,7 @@ for nlayers in num_layers:
                 print('Epoch {:03d}, Loss: {:.4f}, Test: {:.4f}'.format(
                     epoch, loss, test_acc))
             scheduler.step()
-        print("best acc:", best_test_acc)
+        print("best acc:", best_test_acc, flush=True)
         return best_test_acc
 
 
