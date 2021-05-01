@@ -22,6 +22,7 @@ if "s" in sys.argv:
     path = '/home/eliasof/GraphNetworks/data/'
     import processContacts as prc
     import utils
+    import graphOps as GO
     import graphNet as GN
     import pnetArch as PNA
 if "j" in sys.argv:
@@ -30,6 +31,7 @@ if "j" in sys.argv:
     import utils
     import graphNet as GN
     import pnetArch as PNA
+    import graphOps as GO
 else:
     from src import graphOps as GO
     from src import processContacts as prc
