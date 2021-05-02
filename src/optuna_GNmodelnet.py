@@ -83,7 +83,7 @@ for nlayers in num_layers:
 
     def objective(trial):
         nEin = 1
-        nopen = trial.suggest_categorical('n_channels', [64, 128])
+        nopen = trial.suggest_categorical('n_channels', [64])
         nNin = 3
         nhid = nopen
         nNclose = nopen
