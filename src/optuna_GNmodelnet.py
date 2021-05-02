@@ -58,7 +58,7 @@ def MLP(channels, batch_norm=True):
 printFiles = False
 if "s" in sys.argv or "j" in sys.argv:
     printFiles = True
-num_layers = [4, 8]
+num_layers = [8]
 if printFiles:
     print("**********************************************************************************")
     file2Open = "src/optuna_GNmodelnet.py"
