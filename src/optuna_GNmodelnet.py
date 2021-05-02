@@ -58,7 +58,7 @@ def MLP(channels, batch_norm=True):
 printFiles = False
 if "s" in sys.argv or "j" in sys.argv:
     printFiles = True
-num_layers = [8]
+num_layers = [16]
 if printFiles:
     print("**********************************************************************************")
     file2Open = "src/optuna_GNmodelnet.py"
@@ -83,7 +83,7 @@ for nlayers in num_layers:
 
     def objective(trial):
         nEin = 1
-        nopen = trial.suggest_categorical('n_channels', [64, 128, 256])
+        nopen = trial.suggest_categorical('n_channels', [64, 128])
         nNin = 3
         nhid = nopen
         nNclose = nopen
@@ -91,9 +91,9 @@ for nlayers in num_layers:
         h = 1  # / nlayer
         dropout = 0.0
         lr = trial.suggest_float("lr", 1e-3, 1e-2, log=True)
-        lrGCN = trial.suggest_float("lrGCN", 1e-5, 1e-2, log=True)
-        wd = trial.suggest_float("wd", 5e-12, 1e-5, log=True)
-        h = trial.suggest_discrete_uniform('h', 1 / (nlayer), 3, q=1 / (nlayer))
+        lrGCN = trial.suggest_float("lrGCN", 1e-4, 1e-2, log=True)
+        wd = 0 #trial.suggest_float("wd", 5e-12, 1e-5, log=True)
+        h = trial.suggest_discrete_uniform('h', 0.1, 1, q=0.1)
         wave = False
         import datetime
         now = datetime.datetime.now()

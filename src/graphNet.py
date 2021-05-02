@@ -478,6 +478,7 @@ class graphNetwork_nodesOnly(nn.Module):
             stdvp = 1e-2
         self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
         self.K2Nopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
+        self.convs1x1 = nn.Parameter(torch.randn(nlayer, nopen, nopen) * stdv)
 
         if not self.faust:
             self.KNclose = nn.Parameter(torch.randn(num_output, nopen) * stdv)  # num_output on left size
@@ -926,6 +927,7 @@ class graphNetwork_nodesOnly(nn.Module):
                     xn = (xn - self.h * dxn)  # +
                     # xn = (xn_old - self.h * dxn)
                     xn_old = tmp
+            #xn = F.conv1d(xn, self.convs1x1[i].unsqueeze(-1))
 
             if debug:
                 if image:
@@ -1277,7 +1279,6 @@ class graphNetwork_seq(nn.Module):
         stdvp = 1e-2
         self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
         self.KNclose = nn.Parameter(torch.randn(num_output, nopen) * stdv)
-
         self.modelnet = modelnet
         self.faust = faust
         self.PPI = PPI

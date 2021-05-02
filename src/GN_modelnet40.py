@@ -25,9 +25,9 @@ pre_transform, transform = T.NormalizeScale(), T.SamplePoints(1024)
 train_dataset = ModelNet(path, '10', True, transform, pre_transform)
 test_dataset = ModelNet(path, '10', False, transform, pre_transform)
 train_loader = DataLoader(
-    train_dataset, batch_size=32, shuffle=True, num_workers=6)
+    train_dataset, batch_size=64, shuffle=True, num_workers=6)
 test_loader = DataLoader(
-    test_dataset, batch_size=32, shuffle=False, num_workers=6)
+    test_dataset, batch_size=64, shuffle=False, num_workers=6)
 
 
 def MLP(channels, batch_norm=True):
@@ -101,10 +101,10 @@ nopen = 64
 nNin = 3
 nhid = 64
 nNclose = 64
-nlayer = 8
+nlayer = 4
 h = 0.25  # / nlayer
 dropout = 0.0
-wave = False
+wave = True
 import datetime
 
 now = datetime.datetime.now()
@@ -122,13 +122,14 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=0)
 optimizer = torch.optim.Adam([
     dict(params=model.KN1, lr=0.005, weight_decay=0),
     dict(params=model.KN2, lr=0.005, weight_decay=0),
+    dict(params=model.convs1x1, weight_decay=0),
     dict(params=model.K1Nopen, weight_decay=0),
     dict(params=model.KNclose, weight_decay=0),
     dict(params=model.mlp.parameters(), weight_decay=0)
     # dict(params=model.alpha, lr=0.1, weight_decay=0),
 ], lr=0.005)
 
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=40, gamma=0.5)
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
 
 
 def train():
