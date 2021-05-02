@@ -102,7 +102,7 @@ nNin = 3
 nhid = 64
 nNclose = 64
 nlayer = 8
-h = 0.5  # / nlayer
+h = 1.25  # / nlayer
 dropout = 0.0
 wave = False
 import datetime

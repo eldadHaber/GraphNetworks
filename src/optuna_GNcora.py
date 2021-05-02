@@ -113,15 +113,25 @@ for nlayers in num_layers:
         model.reset_parameters()
         model.to(device)
         # optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=wd)
-        optimizer = torch.optim.Adam([
-            dict(params=model.KN1, lr=lrGCN, weight_decay=0),
-            dict(params=model.KN2, lr=lrGCN, weight_decay=0),
-            #dict(params=model.KN3, lr=lrGCN, weight_decay=0),
-            dict(params=model.K1Nopen, weight_decay=wd),
-            dict(params=model.KNclose, weight_decay=wd),
-            #dict(params=model.alpha, lr=lr_alpha, weight_decay=0),
+        nonseq = False
+        if nonseq:
+            optimizer = torch.optim.Adam([
+                dict(params=model.KN1, lr=lrGCN, weight_decay=0),
+                dict(params=model.KN2, lr=lrGCN, weight_decay=0),
+                #dict(params=model.KN3, lr=lrGCN, weight_decay=0),
+                dict(params=model.K1Nopen, weight_decay=wd),
+                dict(params=model.KNclose, weight_decay=wd),
+                #dict(params=model.alpha, lr=lr_alpha, weight_decay=0),
 
-        ], lr=lr)
+            ], lr=lr)
+        else:
+            optimizer = torch.optim.Adam([
+                dict(params=model.graph_convs.parameters(), lr=0, weight_decay=0),
+                dict(params=model.K1Nopen, weight_decay=wd),
+                dict(params=model.KNclose, weight_decay=wd),
+                # dict(params=model.alpha, lr=lr_alpha, weight_decay=0),
+
+            ], lr=lr)
 
         # optimizer = torch.optim.Adam([
         #     dict(params=model.convs.parameters(), weight_decay=0.01),
