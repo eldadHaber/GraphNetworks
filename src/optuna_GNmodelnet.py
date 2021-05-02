@@ -177,7 +177,7 @@ for nlayers in num_layers:
         save_path = '/home/cluster/users/erant_group/moshe/pdegcnCheckpoints/' + filename
 
         best_test_acc = 0
-        patience = 25
+        patience = 50
         counter = 0
         for epoch in range(1, 201):
             loss = train()

@@ -37,7 +37,7 @@ else:
     from src import graphNet as GN
     from src import pnetArch as PNA
 
-num_layers = [2, 4, 8, 16, 32, 64]
+num_layers = [32, 64]
 print(torch.cuda.get_device_name(0))
 print(torch.cuda.get_device_properties('cuda:0'))
 
@@ -105,6 +105,11 @@ for nlayers in num_layers:
                                           wave=False,
                                           diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, gated=False,
                                           realVarlet=False, mixDyamics=False, doubleConv=True, tripleConv=False)
+
+        model = GN.graphNetwork_seq(nNin, nopen, nhid, nNclose, n_layers, h=h, dense=False, varlet=True, wave=False,
+                                    diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, PPI=False,
+                                    gated=False,
+                                    realVarlet=False, mixDyamics=False, doubleConv=True)
         model.reset_parameters()
         model.to(device)
         # optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=wd)
