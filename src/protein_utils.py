@@ -67,7 +67,10 @@ class Dataset_protein(data.Dataset):
         I = I[MM]
         J = J[MM]
 
-        V = torch.ones((I.shape[0],3),dtype=torch.float32)
+        V = torch.zeros((I.shape[0],3),dtype=torch.float32)
+        V[::3,0] = math.sqrt(3)
+        V[1::3,1] = math.sqrt(3)
+        V[2::3,2] = math.sqrt(3)
 
         return seq.to(device=self.device), pssm.to(device=self.device,dtype=torch.float32), coords.to(device=self.device,dtype=torch.float32), mask.to(device=self.device), D.to(device=self.device), I.to(device=self.device), J.to(device=self.device), V.to(device=self.device)
 

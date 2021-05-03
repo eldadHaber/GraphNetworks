@@ -125,14 +125,7 @@ class Protein_network(torch.nn.Module):
         self.self_interaction.append(SelfInteraction(self.irreps_node_attr,self.irreps_node_attr))
         for _ in range(1,layers):
             self.self_interaction.append(SelfInteraction(self.irreps_hidden,self.irreps_hidden))
-        # n_0e = o3.Irreps(self.irreps_hidden).count('0e')
-        second_to_last_irrep = o3.Irreps("16x1o")
-        last_irrep = o3.Irreps("3x0e")
-        # self.self_interaction.append(SelfInteraction(self.irreps_hidden,second_to_last_irrep))
-        self.self_interaction.append(SelfInteraction(self.irreps_hidden,last_irrep))
-        # self.activation = Activation("16x0e", [torch.nn.functional.silu])
-        # n_1e = o3.Irreps(self.irreps_hidden).count('0e')
-        # n_1o = o3.Irreps(self.irreps_hidden).count('1o')
+        self.self_interaction.append(SelfInteraction(self.irreps_hidden,self.irreps_out))
 
 
         self.convolutions = torch.nn.ModuleList()

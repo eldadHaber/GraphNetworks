@@ -83,7 +83,7 @@ if __name__ == '__main__':
 
     irreps_in = None #o3.Irreps("0x0e")
     irreps_hidden = o3.Irreps("20x0e+20x0o+20x1e+20x1o")
-    irreps_out = o3.Irreps("3x0e")
+    irreps_out = o3.Irreps("1x1o")
     irreps_node_attr = o3.Irreps("40x0e")
     irreps_edge_attr = o3.Irreps("1x0e+1x1o")
     layers = 6
