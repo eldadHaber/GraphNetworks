@@ -274,8 +274,7 @@ model = GN.graphNetwork_faust(nNin, nEin, nopen, nhid, nNclose, nlayer, h=h, den
 model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
                                   diffOrder=1, num_output=d.num_nodes, dropOut=0.0, faust=True,
                                   gated=False,
-                                   realVarlet=False, mixDyamics=False)
-
+                                  realVarlet=False, mixDyamics=False)
 
 model.to(device)
 
@@ -423,8 +422,11 @@ if debug:
         pos, batch = data.pos, data.batch
         xn = pos.t().unsqueeze(0)  # torch.zeros(pos.shape[0], 3).float()
         xe = data.edge_attr.t().unsqueeze(0)  # torch.ones(1, 1, data.edge_index.shape[1])
-
-        xnOut, xeOut = model(xn,G, xe=xe)
+        xn = torch.randn(1, 1, N).float()
+        xn = torch.zeros(1, 1, N).float()
+        xn[:, :, 1:100] = 1.0
+        xn[:, :, 1000:1700] = 1.0
+        xnOut, xeOut = model(xn, G, xe=xe)
         exit()
 
 for epoch in range(1, 101):
