@@ -74,7 +74,7 @@ if __name__ == '__main__':
     dataset_val = Dataset_protein(Aind,Yobs,MSK,S,device=device)
     # dataset_test = Dataset_MD17(R_test, F_test, E_test, z)
 
-    dataloader_train = DataLoader(dataset_train, batch_size=batch_size, shuffle=True, drop_last=False)
+    dataloader_train = DataLoader(dataset_train, batch_size=batch_size, shuffle=False, drop_last=False)
     dataloader_val = DataLoader(dataset_val, batch_size=batch_size, shuffle=True, drop_last=False)
 
 
