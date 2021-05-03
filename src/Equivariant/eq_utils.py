@@ -105,7 +105,7 @@ def use_proteinmodel_eq(model,dataloader,train,max_samples,optimizer,batch_size=
     t3 = time.time()
     for i, (seq, pssm, coords, mask, D, I, J, V) in enumerate(dataloader):
         nb,n,_ = coords.shape
-        print("protein_length = {:}".format(n))
+        # print("protein_length = {:}".format(n))
         batch = torch.zeros(n,dtype=torch.int64)
 
         t0 = time.time()
