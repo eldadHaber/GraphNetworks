@@ -729,7 +729,7 @@ class graphNetwork_nodesOnly(nn.Module):
             vmin = xnnorm.min().detach().numpy()
             vmax = xnnorm.max().detach().numpy()
 
-            saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, 0, vmax=vmax, vmin=vmin)
+            saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, -1, vmax=vmax, vmin=vmin)
 
         if self.realVarlet:
             xe = Graph.nodeGrad(xn)
@@ -775,10 +775,10 @@ class graphNetwork_nodesOnly(nn.Module):
                 plt.imshow(img, vmax=maxv, vmin=minv)
                 plt.colorbar()
                 plt.show()
-                plt.savefig('plots/img_xn_norm_layer_verlet' + str(-1) + 'order_nodeDeriv' + str(0) + '.jpg')
+                plt.savefig('plots/img_xn_norm_layer_verlet' + str(1) + 'order_nodeDeriv' + str(0) + '.jpg')
                 plt.close()
             else:
-                saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, -1, vmax=vmax, vmin=vmin)
+                saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, 1, vmax=vmax, vmin=vmin)
 
         if 1 == 0:
             deg = self.getDegreeMat(Graph)
