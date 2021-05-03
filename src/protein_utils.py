@@ -20,12 +20,13 @@ import torch.utils.data as data
 from torch_cluster import radius_graph
 
 class Dataset_protein(data.Dataset):
-    def __init__(self, seq, coords, mask, pssm):
+    def __init__(self, seq, coords, mask, pssm, device):
         self.scale = 1e-2
         self.seq = seq
         self.coords = coords
         self.mask = mask
         self.pssm = pssm
+        self.device = device
         return
 
     def __getitem__(self, index):
@@ -40,11 +41,11 @@ class Dataset_protein(data.Dataset):
         D = torch.relu(torch.sum(coords.t() ** 2, dim=0, keepdim=True) + \
                        torch.sum(coords.t() ** 2, dim=0, keepdim=True).t() - \
                        2 * coords @ coords.t())
-        D = D / D.std()
-        D = torch.exp(-2 * D)
+        D2 = D / D.std()
+        D2 = torch.exp(-2 * D2)
 
         nsparse = 16
-        vals, indices = torch.topk(D, k=min(nsparse, D.shape[0]), dim=1)
+        vals, indices = torch.topk(D2, k=min(nsparse, D.shape[0]), dim=1)
         indices_ext = torch.empty((n, nsparse + 4), dtype=torch.int64)
         indices_ext[:, :16] = indices
         indices_ext[:, 16] = torch.arange(n) - 1
@@ -68,7 +69,7 @@ class Dataset_protein(data.Dataset):
 
         V = torch.ones((I.shape[0],3),dtype=torch.float32)
 
-        return seq, pssm.to(dtype=torch.float32), coords.to(dtype=torch.float32), mask, D, I, J, V
+        return seq.to(device=self.device), pssm.to(device=self.device,dtype=torch.float32), coords.to(device=self.device,dtype=torch.float32), mask.to(device=self.device), D.to(device=self.device), I.to(device=self.device), J.to(device=self.device), V.to(device=self.device)
 
     def __len__(self):
         return len(self.seq)

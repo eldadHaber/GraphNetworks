@@ -70,8 +70,8 @@ if __name__ == '__main__':
     print('Number of data: {:}'.format(ndata))
 
     # Following Equivariant paper, we select 1000 configurations from these as our training set, 1000 as our validation set, and the rest are used as test data.
-    dataset_train = Dataset_protein(Aind,Yobs,MSK,S)
-    dataset_val = Dataset_protein(Aind,Yobs,MSK,S)
+    dataset_train = Dataset_protein(Aind,Yobs,MSK,S,device=device)
+    dataset_val = Dataset_protein(Aind,Yobs,MSK,S,device=device)
     # dataset_test = Dataset_MD17(R_test, F_test, E_test, z)
 
     dataloader_train = DataLoader(dataset_train, batch_size=batch_size, shuffle=True, drop_last=False)
@@ -82,15 +82,15 @@ if __name__ == '__main__':
 
 
     irreps_in = None #o3.Irreps("0x0e")
-    irreps_hidden = o3.Irreps("10x0e+10x0o+5x1e+5x1o")
-    irreps_out = o3.Irreps("1x1o")
+    irreps_hidden = o3.Irreps("20x0e+20x0o+20x1e+20x1o")
+    irreps_out = o3.Irreps("3x0e")
     irreps_node_attr = o3.Irreps("40x0e")
     irreps_edge_attr = o3.Irreps("1x0e+1x1o")
     layers = 6
     max_radius = 5
     number_of_basis = 8
     # radial_layers = 1
-    radial_neurons = [8,16]
+    radial_neurons = [8]
     num_neighbors = 17
     num_nodes = 0
     model = Protein_network(irreps_in=irreps_in, irreps_hidden=irreps_hidden, irreps_out=irreps_out, irreps_node_attr=irreps_node_attr, irreps_edge_attr=irreps_edge_attr, layers=layers, max_radius=max_radius,

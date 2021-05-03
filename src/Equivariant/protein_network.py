@@ -127,7 +127,7 @@ class Protein_network(torch.nn.Module):
             self.self_interaction.append(SelfInteraction(self.irreps_hidden,self.irreps_hidden))
         # n_0e = o3.Irreps(self.irreps_hidden).count('0e')
         second_to_last_irrep = o3.Irreps("16x1o")
-        last_irrep = o3.Irreps("1x1o")
+        last_irrep = o3.Irreps("3x0e")
         # self.self_interaction.append(SelfInteraction(self.irreps_hidden,second_to_last_irrep))
         self.self_interaction.append(SelfInteraction(self.irreps_hidden,last_irrep))
         # self.activation = Activation("16x0e", [torch.nn.functional.silu])
