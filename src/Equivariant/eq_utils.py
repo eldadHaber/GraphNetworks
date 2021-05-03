@@ -89,10 +89,15 @@ def use_model_eq(model,dataloader,train,max_samples,optimizer,batch_size=1):
 
     return aloss,MAE,Fps,Fts, t_dataload, t_prepare, t_model, t_backprop
 
+def maskMat(T,M):
+    M = M.squeeze()
+    MT = (M*(M*T).t()).t()
+    return MT
+
 
 def use_proteinmodel_eq(model,dataloader,train,max_samples,optimizer,batch_size=1):
     aloss = 0.0
-    max_radius = 5
+    aloss_rel = 0.0
     if train:
         model.train()
     else:
@@ -119,14 +124,31 @@ def use_proteinmodel_eq(model,dataloader,train,max_samples,optimizer,batch_size=
         node_vec = model(data)
 
         M = torch.ger(mask.squeeze(), mask.squeeze())
-        Dout = utils.getDistMat(node_vec.transpose(0,1))
-        Dtrue = utils.getDistMat(coords.squeeze().transpose(0,1))
-        loss = F.mse_loss(M * Dout, M * Dtrue)
+        Dout = utils.getDistMat(node_vec.transpose(0, 1))
+        Dtrue = utils.getDistMat(coords.squeeze().transpose(0, 1))
+
+        DtrueM = maskMat(Dtrue, M)
+        DoutM = maskMat(Dout, M)
+
+        If, Jf = torch.nonzero(DtrueM < 7*3.8, as_tuple=True)
+        DtrueM = DtrueM[If, Jf]
+        DoutM = DoutM[If, Jf]
+
+        loss = F.mse_loss(DoutM, DtrueM)
+        loss_rel = loss / F.mse_loss(DtrueM * 0, DtrueM)
+
         if train:
             loss.backward()
             optimizer.step()
         aloss += loss.detach()
-        if (i+1)*batch_size >= max_samples:
+        aloss_rel += loss_rel.detach()
+        if (i + 1) * batch_size >= max_samples:
             break
-    aloss /= (i+1)
-    return aloss
+    aloss /= (i + 1)
+    aloss_rel /= (i + 1)
+
+    return aloss, aloss_rel
+
+
+
+

@@ -118,7 +118,7 @@ if __name__ == '__main__':
     fig = plt.figure(num=1,figsize=[10,10])
     for epoch in range(epochs):
         t1 = time.time()
-        aloss_t= use_proteinmodel_eq(model, dataloader_train, train=True, max_samples=1e6, optimizer=optimizer, batch_size=batch_size)
+        aloss_t,a_loss_rel= use_proteinmodel_eq(model, dataloader_train, train=True, max_samples=1e6, optimizer=optimizer, batch_size=batch_size)
         t2 = time.time()
         # aloss_v= use_proteinmodel_eq(model, dataloader_val, train=False, max_samples=10, optimizer=optimizer, batch_size=batch_size)
         t3 = time.time()
@@ -135,6 +135,6 @@ if __name__ == '__main__':
         #         epochs_since_best = 0
 
         # print(f' t_dataloader(train): {t_dataload_t:.3f}s  t_dataloader(val): {t_dataload_v:.3f}s  t_prepare(train): {t_prepare_t:.3f}s  t_prepare(val): {t_prepare_v:.3f}s  t_model(train): {t_model_t:.3f}s  t_model(val): {t_model_v:.3f}s  t_backprop(train): {t_backprop_t:.3f}s  t_backprop(val): {t_backprop_v:.3f}s')
-        print(f'{epoch:2d}  Loss(train): {aloss_t:.2e}  Loss(val): {aloss_t:.2f}  Time(train): {t2-t1:.1f}s  Time(val): {t3-t2:.1f}s  Lr: {lr:2.2e} ')
+        print(f'{epoch:2d}  Loss(train): {aloss_t:.2e}  Loss(rel): {a_loss_rel:.2f}  Time(train): {t2-t1:.1f}s  Time(val): {t3-t2:.1f}s  Lr: {lr:2.2e} ')
 
 
