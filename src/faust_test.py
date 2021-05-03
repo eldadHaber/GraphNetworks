@@ -231,7 +231,7 @@ else:
     from src import pnetArch as PNA
 
 # Setup the network and its parameters
-nNin = 6  # 6  # 6
+nNin = 3  # 6  # 6
 nEin = 3  # 3
 nopen = 3  # 64
 nhid = 3  # 64

@@ -720,8 +720,8 @@ class graphNetwork_nodesOnly(nn.Module):
 
         if not self.faust:
             [Graph, edge_index] = self.updateGraph(Graph)
-        if self.faust:
-            xn = torch.cat([xn, Graph.edgeDiv(xe)], dim=1)
+        #if self.faust:
+        #    xn = torch.cat([xn, Graph.edgeDiv(xe)], dim=1)
 
         debug = True
         if debug:
