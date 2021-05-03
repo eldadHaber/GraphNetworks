@@ -474,8 +474,8 @@ class graphNetwork_nodesOnly(nn.Module):
         if self.faust or self.PPI:
             stdv = 1e-1
             stdvp = 1e-1
-            stdv = 1e-3
-            stdvp = 1e-3
+            stdv = 1e-2
+            stdvp = 1e-2
         self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
         self.K2Nopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
         self.convs1x1 = nn.Parameter(torch.randn(nlayer, nopen, nopen) * stdv)
@@ -755,7 +755,7 @@ class graphNetwork_nodesOnly(nn.Module):
             plt.close()
 
         xn = self.singleLayer(xn, self.K1Nopen, relu=True, openclose=True, norm=False)
-        xn = F.sigmoid(xn)
+        xn = F.normalize(xn)
         # xn = self.singleLayer(xn, self.K2Nopen, relu=True, openclose=True)
 
         x0 = xn.clone()
