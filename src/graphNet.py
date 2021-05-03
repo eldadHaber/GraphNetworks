@@ -569,17 +569,17 @@ class graphNetwork_nodesOnly(nn.Module):
             if norm:
                 x = F.instance_norm(x)
         if not openclose:  # if K.shape[0] == K.shape[1]:
-            # x = F.tanh(x)
+            #x = F.tanh(x)
             x = self.edgeConv(x, K, groups=groups)
 
             x = F.tanh(x)
-            # x = F.relu(x)
+            #x = F.relu(x)
             if norm:
                 # x = F.layer_norm(x, x.shape)
                 beta = torch.norm(x)
                 x = beta * tv_norm(x)
             x = self.edgeConv(x, K.t(), groups=groups)
-            # F.tanh(x)
+            #F.tanh(x)
         if not relu:
             return x
         x = F.relu(x)

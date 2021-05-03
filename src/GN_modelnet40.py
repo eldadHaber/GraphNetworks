@@ -99,10 +99,10 @@ if printFiles:
 nEin = 1
 nopen = 64
 nNin = 3
-nhid = 64
+nhid = 128
 nNclose = 64
 nlayer = 4
-h = 0.25  # / nlayer
+h = 0.5  # / nlayer
 dropout = 0.0
 wave = True
 import datetime
@@ -120,14 +120,14 @@ model = model.to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=0)
 
 optimizer = torch.optim.Adam([
-    dict(params=model.KN1, lr=0.005, weight_decay=0),
-    dict(params=model.KN2, lr=0.005, weight_decay=0),
+    dict(params=model.KN1, lr=0.01, weight_decay=0),
+    dict(params=model.KN2, lr=0.01, weight_decay=0),
     dict(params=model.convs1x1, weight_decay=0),
     dict(params=model.K1Nopen, weight_decay=0),
     dict(params=model.KNclose, weight_decay=0),
     dict(params=model.mlp.parameters(), weight_decay=0)
     # dict(params=model.alpha, lr=0.1, weight_decay=0),
-], lr=0.005)
+], lr=0.01)
 
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
 

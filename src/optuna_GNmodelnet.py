@@ -16,6 +16,10 @@ from torch_geometric.typing import PairTensor
 import optuna
 import sys
 
+print(torch.cuda.get_device_name(0))
+print(torch.cuda.get_device_properties('cuda:0'))
+
+
 path = '/home/cluster/users/erant_group/ModelNet10'
 
 if "s" in sys.argv:
