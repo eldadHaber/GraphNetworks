@@ -469,13 +469,13 @@ class graphNetwork_nodesOnly(nn.Module):
         else:
             self.dropout = False
         self.nlayers = nlayer
-        stdv = 1e-1
-        stdvp = 1e-1
+        stdv = 1e-2
+        stdvp = 1e-2
         if self.faust or self.PPI:
             stdv = 1e-1
             stdvp = 1e-1
-            stdv = 1e-2
-            stdvp = 1e-2
+            stdv = 1e-1
+            stdvp = 1e-1
         self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
         self.K2Nopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
         self.convs1x1 = nn.Parameter(torch.randn(nlayer, nopen, nopen) * stdv)
