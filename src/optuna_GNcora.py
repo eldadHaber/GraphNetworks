@@ -100,6 +100,10 @@ for nlayers in num_layers:
 
         if "s" in sys.argv:
             path = '/home/eliasof/GraphNetworks/data/' + dataset
+        elif:
+            "j" in sys.argv:
+            path = '/home/ephrathj/GraphNetworks/data/' + dataset
+
         else:
             path = '/home/cluster/users/erant_group/moshe/' + dataset
         transform = T.Compose([T.NormalizeFeatures()])
