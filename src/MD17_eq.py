@@ -89,7 +89,7 @@ if __name__ == '__main__':
     # Setup the network and its parameters
 
 
-    irreps_in = o3.Irreps("0x0e")
+    irreps_in = None    #o3.Irreps("0x0e")
     irreps_hidden = o3.Irreps("100x0e+100x0o+50x1e+50x1o")
     irreps_out = o3.Irreps("1x0e")
     irreps_node_attr = o3.Irreps("1x0e")

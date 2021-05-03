@@ -247,7 +247,7 @@ class SelfInteraction(torch.nn.Module):
         self.register_buffer("m_scalar", M)
         return
 
-    def forward(self, x, normalize_variance=True, eps=1e-9, debug=True):
+    def forward(self, x, normalize_variance=True, eps=1e-9, debug=False):
         y = self.tp(x,x)
         if normalize_variance:
             nb, _ = y.shape

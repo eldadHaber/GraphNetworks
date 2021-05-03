@@ -47,7 +47,7 @@ def use_model_eq(model,dataloader,train,max_samples,optimizer,batch_size=1):
         data = {
                 'batch': batch,
                 'pos': Ri_vec,
-                'x': zi_vec
+                'z': zi_vec
                 }
 
         optimizer.zero_grad()
@@ -98,52 +98,34 @@ def use_proteinmodel_eq(model,dataloader,train,max_samples,optimizer,batch_size=
     else:
         model.eval()
     t3 = time.time()
-    for i, (node_features, coords, mask, D) in enumerate(dataloader):
+    for i, (seq, pssm, coords, mask, D, I, J, V) in enumerate(dataloader):
         nb,n,_ = coords.shape
         batch = torch.zeros(n,dtype=torch.int64)
 
         t0 = time.time()
         data = {
                 'batch': batch,
-                'pos': coords.squeeze(),
-                'x': node_features.squeeze()
+                'pos': coords.squeeze().to(dtype=torch.float32),
+                'edge_src': J.squeeze(),
+                'edge_dst': I.squeeze(),
+                'edge_vec': V.squeeze(),
+                'seq': seq.squeeze(),
+                'pssm': pssm.squeeze().to(dtype=torch.float32)
                 }
 
         optimizer.zero_grad()
         t1 = time.time()
-        E_pred = model(data)
-        E_pred_tot = torch.sum(E_pred)
-        t2 = time.time()
+        node_vec = model(data)
 
-        if train:
-            F_pred = -grad(E_pred_tot, Ri, create_graph=True)[0].requires_grad_(True)
-        else:
-            F_pred = -grad(E_pred_tot, Ri, create_graph=False)[0]
-        loss = F.mse_loss(F_pred, Fi)
-        Fps += torch.mean(torch.sqrt(torch.sum(F_pred.detach() ** 2, dim=1)))
-        Fts += torch.mean(torch.sqrt(torch.sum(Fi ** 2, dim=1)))
-        MAEi = torch.mean(torch.abs(F_pred - Fi)).detach()
-        MAE += MAEi
+        M = torch.ger(mask.squeeze(), mask.squeeze())
+        Dout = utils.getDistMat(node_vec.transpose(0,1))
+        Dtrue = utils.getDistMat(coords.squeeze().transpose(0,1))
+        loss = F.mse_loss(M * Dout, M * Dtrue)
         if train:
             loss.backward()
             optimizer.step()
         aloss += loss.detach()
-        t_dataload += t0 - t3
-        t3 = time.time()
-        t_prepare += t1 - t0
-        t_model += t2 - t1
-        t_backprop += t3 - t2
         if (i+1)*batch_size >= max_samples:
             break
     aloss /= (i+1)
-    aloss_E /= (i+1)
-    aloss_F /= (i+1)
-    MAE /= (i+1)
-    Fps /= (i+1)
-    Fts /= (i+1)
-    t_dataload /= (i+1)
-    t_prepare /= (i+1)
-    t_model /= (i+1)
-    t_backprop /= (i+1)
-
-    return aloss,MAE,Fps,Fts, t_dataload, t_prepare, t_model, t_backprop
+    return aloss
