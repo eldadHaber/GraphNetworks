@@ -469,8 +469,8 @@ class graphNetwork_nodesOnly(nn.Module):
         else:
             self.dropout = False
         self.nlayers = nlayer
-        stdv = 1e-2
-        stdvp = 1e-2
+        stdv = 1e-1
+        stdvp = 1e-1
         if self.faust or self.PPI:
             stdv = 1e-1
             stdvp = 1e-1
