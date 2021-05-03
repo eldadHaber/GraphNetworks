@@ -724,10 +724,12 @@ class graphNetwork_nodesOnly(nn.Module):
         #    xn = torch.cat([xn, Graph.edgeDiv(xe)], dim=1)
 
         debug = True
+        vmin = 0
+        vmax = 1
         if debug:
             xnnorm = torch.norm(xn, dim=1)
-            vmin = xnnorm.min().detach().numpy()
-            vmax = xnnorm.max().detach().numpy()
+            #vmin = xnnorm.min().detach().numpy()
+            #vmax = xnnorm.max().detach().numpy()
 
             saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, -1, vmax=vmax, vmin=vmin)
 
@@ -754,8 +756,8 @@ class graphNetwork_nodesOnly(nn.Module):
             plt.savefig('plots/img_xn_norm_layer_verlet' + str(0) + 'order_nodeDeriv' + str(0) + '.jpg')
             plt.close()
 
-        xn = self.singleLayer(xn, self.K1Nopen, relu=True, openclose=True, norm=False)
-        xn = F.normalize(xn)
+        #xn = self.singleLayer(xn, self.K1Nopen, relu=True, openclose=True, norm=False)
+        #xn = F.normalize(xn)
         # xn = self.singleLayer(xn, self.K2Nopen, relu=True, openclose=True)
 
         x0 = xn.clone()
