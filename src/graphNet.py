@@ -723,6 +723,14 @@ class graphNetwork_nodesOnly(nn.Module):
         if self.faust:
             xn = torch.cat([xn, Graph.edgeDiv(xe)], dim=1)
 
+        debug = True
+        if debug:
+            xnnorm = torch.norm(xn, dim=1)
+            vmin = xnnorm.min().detach().numpy()
+            vmax = xnnorm.max().detach().numpy()
+
+            saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, 0, vmax=vmax, vmin=vmin)
+
         if self.realVarlet:
             xe = Graph.nodeGrad(xn)
             if self.dropout:
@@ -754,8 +762,8 @@ class graphNetwork_nodesOnly(nn.Module):
         debug = True
         if debug:
             xnnorm = torch.norm(xn, dim=1)
-            vmin = xnnorm.min().detach().numpy()
-            vmax = xnnorm.max().detach().numpy()
+            #vmin = xnnorm.min().detach().numpy()
+            #vmax = xnnorm.max().detach().numpy()
             image = False
             if image:
                 plt.figure()
