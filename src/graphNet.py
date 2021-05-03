@@ -724,8 +724,10 @@ class graphNetwork_nodesOnly(nn.Module):
         #    xn = torch.cat([xn, Graph.edgeDiv(xe)], dim=1)
 
         debug = True
-        vmin = 0
-        vmax = 0.1
+
+        xnnorm = torch.norm(xn, dim=1)
+        vmin = xnnorm.min().detach().numpy()
+        vmax = xnnorm.max().detach().numpy()
         if debug:
             xnnorm = torch.norm(xn, dim=1)
             #vmin = xnnorm.min().detach().numpy()
@@ -780,7 +782,7 @@ class graphNetwork_nodesOnly(nn.Module):
                 plt.savefig('plots/img_xn_norm_layer_verlet' + str(1) + 'order_nodeDeriv' + str(0) + '.jpg')
                 plt.close()
             else:
-                saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, 1, vmax=vmax, vmin=vmin)
+                saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, 0, vmax=vmax, vmin=vmin)
 
         if 1 == 0:
             deg = self.getDegreeMat(Graph)
