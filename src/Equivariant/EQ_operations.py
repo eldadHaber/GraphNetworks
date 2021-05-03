@@ -247,7 +247,7 @@ class SelfInteraction(torch.nn.Module):
         self.register_buffer("m_scalar", M)
         return
 
-    def forward(self, x, normalize_variance=True, eps=1e-9, debug=True):
+    def forward(self, x, normalize_variance=True, eps=1e-9, debug=False):
         y = self.tp(x,x)
         if normalize_variance:
             nb, _ = y.shape
@@ -310,7 +310,10 @@ class TvNorm(torch.nn.Module):
                 #We need to decide how to handle the vectors, eps is the tricky part
                 tmp = x[:,mv].clone()
                 xx = tmp.view(nb,-1,3).clone()
-                norm1 = torch.sqrt(torch.sum(xx**2,dim=1))
+                tmp2 = torch.sum(xx**2,dim=1)
+                # if (tmp2 == 0).any():
+                    # print("??")
+                norm1 = torch.sqrt(tmp2+eps)
                 # if (norm1 < 1e-6).any():
                 #     print("Stop here")
                 norm_mean = torch.mean(norm1,dim=1)

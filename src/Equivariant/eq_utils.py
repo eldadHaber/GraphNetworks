@@ -47,7 +47,7 @@ def use_model_eq(model,dataloader,train,max_samples,optimizer,batch_size=1):
         data = {
                 'batch': batch,
                 'pos': Ri_vec,
-                'x': zi_vec
+                'z': zi_vec
                 }
 
         optimizer.zero_grad()

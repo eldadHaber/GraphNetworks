@@ -117,7 +117,8 @@ class NequIP(torch.nn.Module):
         nmax_atoms = 20
         embed_dim = 8
         self.node_embedder = torch.nn.Embedding(nmax_atoms,embed_dim)
-        irreps = o3.Irreps("{:}x0e".format(embed_dim))
+        self.irreps_node_attr = o3.Irreps("{:}x0e".format(embed_dim))
+        irreps = self.irreps_in if self.input_has_node_in else o3.Irreps("1x0e")
 
         self.self_interaction = torch.nn.ModuleList()
         self.self_interaction.append(SelfInteraction(irreps,irreps))
@@ -210,16 +211,16 @@ class NequIP(torch.nn.Module):
         # scalar_z = self.ext_z(z)
         edge_features = edge_length_embedded
 
-        x = self.node_embedder(x.to(dtype=torch.int64)).squeeze()
-        x = self.self_interaction[0](x)
-        print(f'mean={x.pow(2).mean():2.2f}')
+        z = self.node_embedder(z.to(dtype=torch.int64)).squeeze()
+        # x = self.self_interaction[0](x)
+        # print(f'mean={x.pow(2).mean():2.2f}')
 
         for i,(conv,norm,gate) in enumerate(zip(self.convolutions,self.norms,self.gates)):
             y = conv(x, z, edge_src, edge_dst, edge_attr, edge_features)
             # y = norm(y)
-            print(f'mean={x.pow(2).mean():2.2f}')
+            # print(f'mean={x.pow(2).mean():2.2f}')
             y = gate(y)
-            print(f'mean={x.pow(2).mean():2.2f}')
+            # print(f'mean={x.pow(2).mean():2.2f}')
             if y.shape == x.shape:
                 y = self.self_interaction[i](y)
                 x = x + h*y

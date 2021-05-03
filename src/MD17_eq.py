@@ -58,9 +58,9 @@ if __name__ == '__main__':
     print('Number of data: {:}, Number of atoms {:}'.format(ndata, natoms))
 
     # Following Equivariant paper, we select 1000 configurations from these as our training set, 1000 as our validation set, and the rest are used as test data.
-    n_train = 1
+    n_train = 1000
     n_val = 1000
-    batch_size = 1
+    batch_size = 10
 
     ndata_rand = 0 + np.arange(ndata)
     np.random.shuffle(ndata_rand)
@@ -89,7 +89,7 @@ if __name__ == '__main__':
     # Setup the network and its parameters
 
 
-    irreps_in = o3.Irreps("0x0e")
+    irreps_in = None #o3.Irreps("1x0e")
     irreps_hidden = o3.Irreps("100x0e+100x0o+50x1e+50x1o")
     irreps_out = o3.Irreps("1x0e")
     irreps_node_attr = o3.Irreps("1x0e")
