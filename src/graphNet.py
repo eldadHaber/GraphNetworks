@@ -725,7 +725,7 @@ class graphNetwork_nodesOnly(nn.Module):
 
         debug = True
         vmin = 0
-        vmax = 1
+        vmax = 0.1
         if debug:
             xnnorm = torch.norm(xn, dim=1)
             #vmin = xnnorm.min().detach().numpy()
