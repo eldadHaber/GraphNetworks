@@ -424,8 +424,10 @@ if debug:
         xe = data.edge_attr.t().unsqueeze(0)  # torch.ones(1, 1, data.edge_index.shape[1])
         xn = torch.randn(1, 1, N).float()
         xn = torch.zeros(1, 3, N).float()
-        xn[:, :, 1:100] = 1.0
-        xn[:, :, 1000:1700] = 1.0
+        xn[:, :, 1:100] = 0.1
+        xn[:, :, 1000:1700] = 0.1
+
+        xn[:, :, 3000:3900] = 0.1
         xnOut, xeOut = model(xn, G, xe=xe)
         exit()
 
