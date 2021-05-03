@@ -33,15 +33,42 @@ class Dataset_protein(data.Dataset):
         seq = self.seq[index]
         coords = (self.coords[index]*self.scale)
         mask = self.mask[index]
-        seq_1hot = F.one_hot(seq, num_classes=20)
-        node_features = torch.cat((pssm,seq_1hot),dim=1)
+        n = seq.shape[0]
+        # seq_1hot = F.one_hot(seq, num_classes=20)
+        # node_features = torch.cat((pssm,seq_1hot),dim=1)
 
         D = torch.relu(torch.sum(coords.t() ** 2, dim=0, keepdim=True) + \
                        torch.sum(coords.t() ** 2, dim=0, keepdim=True).t() - \
                        2 * coords @ coords.t())
         D = D / D.std()
         D = torch.exp(-2 * D)
-        return node_features, coords, mask, D
+
+        nsparse = 16
+        vals, indices = torch.topk(D, k=min(nsparse, D.shape[0]), dim=1)
+        indices_ext = torch.empty((n, nsparse + 4), dtype=torch.int64)
+        indices_ext[:, :16] = indices
+        indices_ext[:, 16] = torch.arange(n) - 1
+        indices_ext[:, 17] = torch.arange(n) - 2
+        indices_ext[:, 18] = torch.arange(n) + 1
+        indices_ext[:, 19] = torch.arange(n) + 2
+        nd = D.shape[0]
+        I = torch.ger(torch.arange(nd), torch.ones(nsparse + 4, dtype=torch.long))
+        I = I.view(-1)
+        J = indices_ext.view(-1).type(torch.LongTensor)
+
+        IJ = torch.stack([I, J], dim=1)
+        IJ_unique = torch.unique(IJ, dim=0)
+        I = IJ_unique[:, 0]
+        J = IJ_unique[:, 1]
+        M1 = torch.sum(IJ_unique < 0, dim=1).to(dtype=torch.bool)
+        M2 = torch.sum(IJ_unique > nd - 1, dim=1).to(dtype=torch.bool)
+        MM = ~ (M1 + M2)
+        I = I[MM]
+        J = J[MM]
+
+        V = torch.ones((I.shape[0],3),dtype=torch.float32)
+
+        return seq, pssm.to(dtype=torch.float32), coords.to(dtype=torch.float32), mask, D, I, J, V
 
     def __len__(self):
         return len(self.seq)
