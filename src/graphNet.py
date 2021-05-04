@@ -469,8 +469,8 @@ class graphNetwork_nodesOnly(nn.Module):
         else:
             self.dropout = False
         self.nlayers = nlayer
-        stdv = 1e-2
-        stdvp = 1e-2
+        stdv = 1e-3
+        stdvp = 1e-3
         if self.faust or self.PPI:
             stdv = 1e-1
             stdvp = 1e-1
@@ -723,12 +723,13 @@ class graphNetwork_nodesOnly(nn.Module):
         #if self.faust:
         #    xn = torch.cat([xn, Graph.edgeDiv(xe)], dim=1)
 
-        debug = True
+        debug = False
 
-        xnnorm = torch.norm(xn, dim=1)
-        vmin = xnnorm.min().detach().numpy()
-        vmax = xnnorm.max().detach().numpy()
+
         if debug:
+            xnnorm = torch.norm(xn, dim=1)
+            vmin = xnnorm.min().detach().numpy()
+            vmax = xnnorm.max().detach().numpy()
             xnnorm = torch.norm(xn, dim=1)
             #vmin = xnnorm.min().detach().numpy()
             #vmax = xnnorm.max().detach().numpy()
@@ -758,12 +759,12 @@ class graphNetwork_nodesOnly(nn.Module):
             plt.savefig('plots/img_xn_norm_layer_verlet' + str(0) + 'order_nodeDeriv' + str(0) + '.jpg')
             plt.close()
 
-        #xn = self.singleLayer(xn, self.K1Nopen, relu=True, openclose=True, norm=False)
+        xn = self.singleLayer(xn, self.K1Nopen, relu=True, openclose=True, norm=False)
         #xn = F.normalize(xn)
         # xn = self.singleLayer(xn, self.K2Nopen, relu=True, openclose=True)
 
         x0 = xn.clone()
-        debug = True
+        debug = False
         if debug:
             xnnorm = torch.norm(xn, dim=1)
             #vmin = xnnorm.min().detach().numpy()

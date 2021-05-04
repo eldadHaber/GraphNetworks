@@ -99,12 +99,12 @@ if printFiles:
 nEin = 1
 nopen = 64
 nNin = 3
-nhid = 128
+nhid = 64
 nNclose = 64
 nlayer = 4
 h = 0.1  # / nlayer
 dropout = 0.0
-wave = True
+wave = False
 import datetime
 
 now = datetime.datetime.now()

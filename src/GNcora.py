@@ -50,8 +50,8 @@ nEin = 1
 nopen = 64
 nhid = 64
 nNclose = 64
-nlayer = 8
-h = 1.5  # 16 / nlayer
+nlayer = 4
+h = 0.1 # 16 / nlayer
 
 import os
 
@@ -120,6 +120,18 @@ else:
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=500, gamma=0.5)
 
 betas = []
+
+
+save_path = '/home/cluster/users/erant_group/moshe/pdegcnCheckpoints/'
+filename = 'nopen_64nhid_64nlayer_4h_0.25dropout_0.0wave_True_5_3_1_2_22.pth'
+state_dict = torch.load(save_path+filename)
+state_dict.pop('K1Nopen')
+state_dict.pop('K2Nopen')
+state_dict.pop('KNclose')
+
+
+#model.load_state_dict(state_dict, strict=False)
+
 
 
 def train():
@@ -203,6 +215,9 @@ def test():
 best_val_acc = test_acc = 0
 acc_hist = []
 for epoch in range(1, 1001):
+    if epoch==1:
+        train_acc, val_acc, tmp_test_acc = test()
+        print("TEST BEFORE FINE TUNING:", tmp_test_acc)
     loss = train()
     train_acc, val_acc, tmp_test_acc = test()
     acc_hist.append(tmp_test_acc)
