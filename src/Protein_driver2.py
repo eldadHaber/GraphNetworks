@@ -33,6 +33,10 @@ from src.MD17_utils import getIterData_MD17, print_distogram, print_3d_structure
     calculate_mean_coordinates
 from src.protein_utils import Dataset_protein
 
+def move_list_to_device(a, device):
+    a = [x.to(device=device) for x in a]
+    return a
+
 if __name__ == '__main__':
     print(os.getcwd())
     device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
@@ -62,8 +66,13 @@ if __name__ == '__main__':
     MSK = MSKTest
     S = STest
 
+    Aind = move_list_to_device(Aind, device)
+    Yobs = move_list_to_device(Yobs, device)
+    MSK = move_list_to_device(MSK, device)
+    S = move_list_to_device(S, device)
+
     ndata = len(Aind)
-    n_train = 1
+    n_train = 81
     epochs_for_lr_adjustment = 50
     batch_size = 1
 
@@ -83,19 +92,19 @@ if __name__ == '__main__':
 
 
     irreps_in = None #o3.Irreps("0x0e")
-    irreps_hidden = o3.Irreps("20x0e+20x0o+20x1e+20x1o")
+    irreps_hidden = o3.Irreps("128x0e+128x0o+64x1e+64x1o")
     irreps_out = o3.Irreps("1x1o")
     irreps_node_attr = o3.Irreps("40x0e")
     irreps_edge_attr = o3.Irreps("1x0e+1x1o")
     layers = 6
     max_radius = 5
-    number_of_basis = 8
+    number_of_basis = 12
     # radial_layers = 1
-    radial_neurons = [8]
+    radial_neurons = [12]
     num_neighbors = 17
-    num_nodes = 0
+    # num_nodes = 0
     model = Protein_network(irreps_in=irreps_in, irreps_hidden=irreps_hidden, irreps_out=irreps_out, irreps_node_attr=irreps_node_attr, irreps_edge_attr=irreps_edge_attr, layers=layers, max_radius=max_radius,
-                    number_of_basis=number_of_basis, radial_neurons=radial_neurons, num_neighbors=num_neighbors, num_nodes=num_nodes, reduce_output=False)
+                    number_of_basis=number_of_basis, radial_neurons=radial_neurons, num_neighbors=num_neighbors, reduce_output=False)
     model.to(device)
     total_params = sum(p.numel() for p in model.parameters())
     print('Number of parameters ', total_params)
@@ -124,18 +133,11 @@ if __name__ == '__main__':
         # aloss_v= use_proteinmodel_eq(model, dataloader_val, train=False, max_samples=10, optimizer=optimizer, batch_size=batch_size)
         t3 = time.time()
 
-        # if MAE_v < MAE_best:
-        #     MAE_best = MAE_v
-        #     epochs_since_best = 0
-        # else:
-        #     epochs_since_best += 1
-        #     if epochs_since_best >= epochs_for_lr_adjustment:
-        #         for g in optimizer.param_groups:
-        #             g['lr'] *= 0.8
-        #             lr = g['lr']
-        #         epochs_since_best = 0
-
+        if (epoch +1) % 50 == 0:
+            for g in optimizer.param_groups:
+                g['lr'] *= 0.8
+                lr = g['lr']
         # print(f' t_dataloader(train): {t_dataload_t:.3f}s  t_dataloader(val): {t_dataload_v:.3f}s  t_prepare(train): {t_prepare_t:.3f}s  t_prepare(val): {t_prepare_v:.3f}s  t_model(train): {t_model_t:.3f}s  t_model(val): {t_model_v:.3f}s  t_backprop(train): {t_backprop_t:.3f}s  t_backprop(val): {t_backprop_v:.3f}s')
-        print(f'{epoch:2d}  Loss(train): {aloss_t:.2e}  Loss(rel): {a_loss_rel:.2f}  Time(train): {t2-t1:.1f}s  Time(val): {t3-t2:.1f}s  Lr: {lr:2.2e} ')
+        print(f'{epoch:2d}  Loss(train)_relative: {a_loss_rel:.2e}  Loss(train): {aloss_t:.2e}  Time(train): {t2-t1:.1f}s  Time(val): {t3-t2:.1f}s  Lr: {lr:2.2e} ')
 
 
