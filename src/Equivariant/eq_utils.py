@@ -159,19 +159,18 @@ def use_proteinmodel_eq(model,dataloader,train,max_samples,optimizer,batch_size=
         Dtrue = Dtrue[If]
         Dout = Dout[If]
 
-        xpred=torch.tensor([[0.1,1,2,3,4,5.1],[0,0,0,0,0,0],[0,0,0,0,0,0]]).t()
-        xpred2=torch.tensor([[0.0,1,2,3,4,5.1],[0,0,0,0,0,0],[0,0,0,0,0,0]]).t()
-        xtrue = torch.tensor([[0,0,0,0,0,0],[0.0,1,2,3,4,5],[0,0,0,0,0,0]]).t()
+        # xpred=torch.tensor([[0.0,1,2,3,4,5],[0.1,0,0,0,0,-0.1],[0,0,0,0,0,0]]).t()
+        # xtrue = torch.tensor([[0,0,0,0,0,0],[0.0,1,2,3,4,5],[0,0,0,0,0,0]]).t()
+        # xpred_c = xpred - torch.mean(xpred, dim=0, keepdim=True)
 
-        loss_test = coordinate_loss(xpred, xtrue)
-
-        loss_coordinates = coordinate_loss(node_vec[mask], coords[mask])
-        loss_coordinates_pr_protein = 0
+        # loss_test,xpred_rotated,xtrue_centered = coordinate_loss(xpred, xtrue)
+        # loss_coordinates = coordinate_loss(node_vec[mask], coords[mask])
+        loss_coordinates = 0
         for i in range(nb):
             idx = batch == i
             maski = mask[idx]
             loss_i = coordinate_loss(node_vec[idx][maski], coords[idx][maski])
-            loss_coordinates_pr_protein += loss_i
+            loss_coordinates += loss_i
 
         loss_distogram = F.mse_loss(Dout, Dtrue)
 
