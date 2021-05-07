@@ -20,6 +20,35 @@ import torch.utils.data as data
 from torch_geometric.data import Data, DataLoader
 
 
+
+def coordinate_loss(rp,rt):
+    '''
+    Given two sets of 3D points of equal size. It computes the distance between these two sets of points, when allowing translation and rotation of the point clouds.
+    r_pred -> Tensors of shape (n,3d)
+    r_true -> Tensors of shape (n,3d)
+    '''
+
+
+    #First we translate the two sets, by setting both their centroids to origin
+    rpc = rp - torch.mean(rp,dim=0, keepdim=True)
+    rtc = rt - torch.mean(rt,dim=0, keepdim=True)
+
+    H = rpc.t() @ rtc
+    U, S, V = torch.svd(H)
+
+    d = torch.sign(torch.det(V @ U.t()))
+
+    ones = torch.ones_like(d)
+    a = torch.stack((ones, ones, d), dim=-1)
+    tmp = torch.diag_embed(a)
+
+    R = V @ (tmp @ U.t())
+
+    rpcr = (R @ rpc.t()).t()
+
+    loss = F.mse_loss(rpcr, rtc)
+    return loss
+
 def use_model_eq(model,dataloader,train,max_samples,optimizer,batch_size=1):
     aloss = 0.0
     aloss_E = 0.0
@@ -96,7 +125,8 @@ def maskMat(T,M):
 
 def use_proteinmodel_eq(model,dataloader,train,max_samples,optimizer,batch_size=1):
     aloss = 0.0
-    aloss_rel = 0.0
+    aloss_distogram_rel = 0.0
+    aloss_coords = 0.0
     if train:
         model.train()
     else:
@@ -125,20 +155,26 @@ def use_proteinmodel_eq(model,dataloader,train,max_samples,optimizer,batch_size=
         Dtrue = Dtrue[If]
         Dout = Dout[If]
 
-        loss = F.mse_loss(Dout, Dtrue)
-        loss_rel = loss / F.mse_loss(Dtrue * 0, Dtrue)
+        loss_coordinates = coordinate_loss(node_vec, coords)
+        loss_distogram = F.mse_loss(Dout, Dtrue)
+
+        loss = loss_coordinates + loss_distogram
+
+        loss_distogram_rel = loss_distogram / F.mse_loss(Dtrue * 0, Dtrue)
 
         if train:
             loss.backward()
             optimizer.step()
         aloss += loss.detach()
-        aloss_rel += loss_rel.detach()
+        aloss_distogram_rel += loss_distogram_rel.detach()
+        aloss_coords += loss_coordinates.detach()
         if (i + 1) * batch_size >= max_samples:
             break
     aloss /= (i + 1)
-    aloss_rel /= (i + 1)
+    aloss_distogram_rel /= (i + 1)
+    aloss_coords /= (i + 1)
 
-    return aloss, aloss_rel
+    return aloss, aloss_distogram_rel, aloss_coords
 
 
 
