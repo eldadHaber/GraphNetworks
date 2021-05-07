@@ -12,7 +12,6 @@ import torch.autograd.profiler as profiler
 
 
 from src import graphOps as GO
-from src import processContacts as prc
 from src import utils
 from src import graphNet as GN
 from torch.autograd import grad
@@ -31,7 +30,8 @@ from e3nn.util.jit import compile_mode
 from src.Equivariant.protein_network import Protein_network
 from src.MD17_utils import getIterData_MD17, print_distogram, print_3d_structure, Dataset_MD17, use_model, \
     calculate_mean_coordinates
-from src.protein_utils import Dataset_protein
+from src.protein_utils import Dataset_protein, GraphCollate
+
 
 def move_list_to_device(a, device):
     a = [x.to(device=device) for x in a]
@@ -74,7 +74,7 @@ if __name__ == '__main__':
     ndata = len(Aind)
     n_train = 81
     epochs_for_lr_adjustment = 50
-    batch_size = 1
+    batch_size = 15
 
     print('Number of data: {:}'.format(ndata))
 
@@ -84,23 +84,24 @@ if __name__ == '__main__':
     dataset_val = Dataset_protein(Aind,Yobs,MSK,S,device=device)
     # dataset_test = Dataset_MD17(R_test, F_test, E_test, z)
 
-    dataloader_train = DataLoader(dataset_train, batch_size=batch_size, shuffle=True, drop_last=False)
-    dataloader_val = DataLoader(dataset_val, batch_size=batch_size, shuffle=True, drop_last=False)
+    collator = GraphCollate()
+    dataloader_train = DataLoader(dataset_train, batch_size=batch_size, shuffle=True, drop_last=False, collate_fn=collator)
+    dataloader_val = DataLoader(dataset_val, batch_size=batch_size, shuffle=True, drop_last=False, collate_fn=collator)
 
 
     # Setup the network and its parameters
 
 
     irreps_in = None #o3.Irreps("0x0e")
-    irreps_hidden = o3.Irreps("128x0e+128x0o+64x1e+64x1o")
+    irreps_hidden = o3.Irreps("64x0e+32x1o")
     irreps_out = o3.Irreps("1x1o")
     irreps_node_attr = o3.Irreps("40x0e")
     irreps_edge_attr = o3.Irreps("1x0e+1x1o")
     layers = 6
     max_radius = 5
-    number_of_basis = 12
+    number_of_basis = 5
     # radial_layers = 1
-    radial_neurons = [12]
+    radial_neurons = [5]
     num_neighbors = 17
     # num_nodes = 0
     model = Protein_network(irreps_in=irreps_in, irreps_hidden=irreps_hidden, irreps_out=irreps_out, irreps_node_attr=irreps_node_attr, irreps_edge_attr=irreps_edge_attr, layers=layers, max_radius=max_radius,
@@ -111,7 +112,7 @@ if __name__ == '__main__':
 
 
     #### Start Training ####
-    lr = 1e-3
+    lr = 1e-2
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
     alossBest = 1e6

@@ -18,8 +18,8 @@ from torch.utils.data import DataLoader
 import torch.utils.data as data
 from torch_cluster import radius_graph
 
-def compute_all_connections(n,mask=None, include_self_connections=False):
-    tmp = torch.arange(n)
+def compute_all_connections(n,mask=None, include_self_connections=False, device='cpu'):
+    tmp = torch.arange(n, device=device)
     if mask is not None:
         tmp = tmp[mask]
     I = tmp.repeat_interleave(len(tmp))
@@ -61,8 +61,6 @@ class GraphCollate:
         nv = len(data[0]) # Number of variables in each batch
 
         seqs, pssms, coords,masks,Ds,Is,Js,Vs = zip(*data)
-        n_nodes = torch.tensor([len(datai[0]) for datai in data])
-        n_edges = torch.tensor([len(datai[5]) for datai in data])
         batchs = [i+0*datai[0] for i,datai in enumerate(data)]
 
         batch = torch.cat(batchs)
@@ -71,8 +69,12 @@ class GraphCollate:
         coord = torch.cat(coords, dim=0)
         mask = torch.cat(masks,dim=0)
 
+        n_nodes = torch.tensor([len(datai[0]) for datai in data], device=seq.device)
+        n_edges = torch.tensor([len(datai[5]) for datai in data], device=seq.device)
+
+
         pp = torch.cumsum(n_nodes,dim=0)
-        index_shift = torch.zeros((nb),dtype=torch.int64)
+        index_shift = torch.zeros((nb),dtype=torch.int64, device=seq.device)
         index_shift[1:] = pp[:-1]
 
         I = torch.cat(Is,dim=0)
@@ -87,7 +89,7 @@ class GraphCollate:
         I_all = []
         J_all = []
         for maski, n_node,i_shift in zip(masks,n_nodes,index_shift):
-            ii, jj = compute_all_connections(n_node, mask=maski.to(dtype=torch.bool))
+            ii, jj = compute_all_connections(n_node, mask=maski.to(dtype=torch.bool), device=seq.device)
             I_all.append(ii+i_shift)
             J_all.append(jj+i_shift)
 
