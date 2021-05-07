@@ -82,6 +82,7 @@ def getDistMat(X, msk=torch.tensor([1.0])):
         torch.sum(torch.pow(X, 2), dim=0, keepdim=True).t() - \
         2 * X.t() @ X
 
+    D.fill_diagonal_(0)
     dev = X.device
     msk = msk.to(dev)
 

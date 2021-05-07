@@ -86,14 +86,13 @@ class Protein_network(torch.nn.Module):
         number_of_basis,
         radial_neurons,
         num_neighbors,
-        num_nodes,
         reduce_output=True,
     ) -> None:
         super().__init__()
         self.max_radius = max_radius
         self.number_of_basis = number_of_basis
         self.num_neighbors = num_neighbors
-        self.num_nodes = num_nodes
+        # self.num_nodes = num_nodes
         self.reduce_output = reduce_output
 
         self.irreps_in = o3.Irreps(irreps_in) if irreps_in is not None else None
