@@ -12,7 +12,6 @@ import torch.autograd.profiler as profiler
 from torch_cluster import radius_graph
 
 from src import graphOps as GO
-from src import processContacts as prc
 from src import utils
 from src import graphNet as GN
 from torch.autograd import grad
@@ -103,39 +102,31 @@ def use_proteinmodel_eq(model,dataloader,train,max_samples,optimizer,batch_size=
     else:
         model.eval()
     t3 = time.time()
-    for i, (seq, pssm, coords, mask, D, I, J, V) in enumerate(dataloader):
-        nb,n,_ = coords.shape
-        print("protein_length = {:}".format(n))
-        batch = torch.zeros(n,dtype=torch.int64)
-
+    for i, (batch, seq, pssm, coords, mask, D, I, J, V, I_all, J_all) in enumerate(dataloader):
         t0 = time.time()
         data = {
                 'batch': batch,
-                'pos': coords.squeeze().to(dtype=torch.float32),
-                'edge_src': J.squeeze(),
-                'edge_dst': I.squeeze(),
-                'edge_vec': V.squeeze(),
-                'seq': seq.squeeze(),
-                'pssm': pssm.squeeze().to(dtype=torch.float32)
+                'pos': coords,
+                'edge_src': J,
+                'edge_dst': I,
+                'edge_vec': V,
+                'seq': seq,
+                'pssm': pssm
                 }
 
         optimizer.zero_grad()
         t1 = time.time()
         node_vec = model(data)
 
-        M = torch.ger(mask.squeeze(), mask.squeeze())
-        Dout = utils.getDistMat(node_vec.transpose(0, 1))
-        Dtrue = utils.getDistMat(coords.squeeze().transpose(0, 1))
+        Dout = torch.norm(node_vec[I_all] - node_vec[J_all],p=2,dim=-1).view(-1,1)
+        Dtrue = torch.norm(coords[I_all]-coords[J_all],p=2,dim=-1).view(-1,1)
 
-        DtrueM = maskMat(Dtrue, M)
-        DoutM = maskMat(Dout, M)
+        If, _ = torch.nonzero(Dtrue < 7*3.8, as_tuple=True)
+        Dtrue = Dtrue[If]
+        Dout = Dout[If]
 
-        If, Jf = torch.nonzero(DtrueM < 7*3.8, as_tuple=True)
-        DtrueM = DtrueM[If, Jf]
-        DoutM = DoutM[If, Jf]
-
-        loss = F.mse_loss(DoutM, DtrueM)
-        loss_rel = loss / F.mse_loss(DtrueM * 0, DtrueM)
+        loss = F.mse_loss(Dout, Dtrue)
+        loss_rel = loss / F.mse_loss(Dtrue * 0, Dtrue)
 
         if train:
             loss.backward()

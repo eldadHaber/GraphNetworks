@@ -11,13 +11,90 @@ import math
 import torch.autograd.profiler as profiler
 
 from src import graphOps as GO
-from src import processContacts as prc
 from src import utils
 from src import graphNet as GN
 from torch.autograd import grad
 from torch.utils.data import DataLoader
 import torch.utils.data as data
 from torch_cluster import radius_graph
+
+def compute_all_connections(n,mask=None, include_self_connections=False):
+    tmp = torch.arange(n)
+    if mask is not None:
+        tmp = tmp[mask]
+    I = tmp.repeat_interleave(len(tmp))
+    J = tmp.repeat(len(tmp))
+    if not include_self_connections:
+        m = I != J
+        I = I[m]
+        J = J[m]
+    return I,J
+
+
+
+class GraphCollate:
+    """
+    """
+    def __init__(self):
+        return
+
+    def __call__(self, batch):
+        return self.pad_collate(batch)
+
+    def pad_collate(self, data):
+        """
+        This functions collates our data and transforms it into torch format. numpy arrays are padded according to the longest sequence in the batch in all dimensions.
+        The padding mask is created according to mask_var and mask_dim, and is appended as the last variable in the output.
+        args:
+            data - Tuple of length nb, where nb is the batch size.
+            data[0] contains the first batch and will also be a tuple with length nv, equal to the number of variables in a batch.
+            data[0][0] contains the first variable of the first batch, this should also be a tuple with length nsm equal to the number of samples in the variable, like R1,R2,R3 inside coords.
+            data[0][0][0] contains the actual data, and should be a numpy array.
+            If any numpy array of ndim=0 is encountered it is assumed to be a string object, in which case it is turned into a string rather than a torch object.
+            The datatype of the output is inferred from the input.
+        return:
+            A tuple of variables containing the input variables in order followed by the mask.
+            Each variable is itself a tuple of samples
+        """
+        # find longest sequence
+        nb = len(data)    # Number of batches
+        nv = len(data[0]) # Number of variables in each batch
+
+        seqs, pssms, coords,masks,Ds,Is,Js,Vs = zip(*data)
+        n_nodes = torch.tensor([len(datai[0]) for datai in data])
+        n_edges = torch.tensor([len(datai[5]) for datai in data])
+        batchs = [i+0*datai[0] for i,datai in enumerate(data)]
+
+        batch = torch.cat(batchs)
+        seq = torch.cat(seqs)
+        pssm = torch.cat(pssms,dim=0)
+        coord = torch.cat(coords, dim=0)
+        mask = torch.cat(masks,dim=0)
+
+        pp = torch.cumsum(n_nodes,dim=0)
+        index_shift = torch.zeros((nb),dtype=torch.int64)
+        index_shift[1:] = pp[:-1]
+
+        I = torch.cat(Is,dim=0)
+        index_shift_vec = index_shift.repeat_interleave(n_edges)
+        Ishift = I + index_shift_vec
+
+        J = torch.cat(Js,dim=0)
+        Jshift = J + index_shift_vec
+
+        V = torch.cat(Vs,dim=0)
+
+        I_all = []
+        J_all = []
+        for maski, n_node,i_shift in zip(masks,n_nodes,index_shift):
+            ii, jj = compute_all_connections(n_node, mask=maski.to(dtype=torch.bool))
+            I_all.append(ii+i_shift)
+            J_all.append(jj+i_shift)
+
+        I_all = torch.cat(I_all)
+        J_all = torch.cat(J_all)
+
+        return batch, seq, pssm, coord,mask,Ds,Ishift,Jshift,V, I_all, J_all
 
 class Dataset_protein(data.Dataset):
     def __init__(self, seq, coords, mask, pssm, device):

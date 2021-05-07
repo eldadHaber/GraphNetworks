@@ -12,7 +12,6 @@ import torch.autograd.profiler as profiler
 
 
 from src import graphOps as GO
-from src import processContacts as prc
 from src import utils
 from src import graphNet as GN
 from torch.autograd import grad
@@ -31,7 +30,7 @@ from e3nn.util.jit import compile_mode
 from src.Equivariant.protein_network import Protein_network
 from src.MD17_utils import getIterData_MD17, print_distogram, print_3d_structure, Dataset_MD17, use_model, \
     calculate_mean_coordinates
-from src.protein_utils import Dataset_protein
+from src.protein_utils import Dataset_protein, GraphCollate
 
 if __name__ == '__main__':
     print(os.getcwd())
@@ -63,9 +62,9 @@ if __name__ == '__main__':
     S = STest
 
     ndata = len(Aind)
-    n_train = 1
+    n_train = 2
     epochs_for_lr_adjustment = 50
-    batch_size = 1
+    batch_size = 3
 
     print('Number of data: {:}'.format(ndata))
 
@@ -74,8 +73,9 @@ if __name__ == '__main__':
     dataset_val = Dataset_protein(Aind,Yobs,MSK,S,device=device)
     # dataset_test = Dataset_MD17(R_test, F_test, E_test, z)
 
-    dataloader_train = DataLoader(dataset_train, batch_size=batch_size, shuffle=False, drop_last=False)
-    dataloader_val = DataLoader(dataset_val, batch_size=batch_size, shuffle=True, drop_last=False)
+    collator = GraphCollate()
+    dataloader_train = DataLoader(dataset_train, batch_size=batch_size, shuffle=False, drop_last=False, collate_fn=collator)
+    dataloader_val = DataLoader(dataset_val, batch_size=batch_size, shuffle=True, drop_last=False, collate_fn=collator)
 
 
     # Setup the network and its parameters

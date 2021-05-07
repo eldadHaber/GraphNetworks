@@ -11,7 +11,6 @@ import math
 import torch.autograd.profiler as profiler
 
 from src import graphOps as GO
-from src import processContacts as prc
 from src import utils
 from src import graphNet as GN
 from torch.autograd import grad

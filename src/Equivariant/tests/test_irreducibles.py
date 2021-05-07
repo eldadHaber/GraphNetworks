@@ -1,4 +1,18 @@
 from e3nn.o3 import Irreps
+import torch
+from e3nn import o3
+
+#We want to convert a vector to a spherical harmonics basis
+
+v = torch.tensor([1,2,3.0])
+# v = torch.tensor([1.0,0,0.0])
+
+irreps = o3.Irreps("1x0e+1x1o+1x2e+1x3o+1x4e")
+v_sh = o3.spherical_harmonics(irreps, v, False, normalization='component')
+
+
+
+
 
 irreps = Irreps("1o")
 print(irreps)
