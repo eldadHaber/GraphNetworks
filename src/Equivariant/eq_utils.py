@@ -143,3 +143,4 @@ def use_proteinmodel_eq(model,dataloader,train,max_samples,optimizer,batch_size=
 
 
 
+
