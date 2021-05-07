@@ -60,7 +60,7 @@ class GraphCollate:
         nb = len(data)    # Number of batches
         nv = len(data[0]) # Number of variables in each batch
 
-        seqs, pssms, coords,masks,Ds,Is,Js,Vs = zip(*data)
+        seqs, pssms, coords,masks,Is,Js,Vs = zip(*data)
         batchs = [i+0*datai[0] for i,datai in enumerate(data)]
 
         batch = torch.cat(batchs)
@@ -96,7 +96,7 @@ class GraphCollate:
         I_all = torch.cat(I_all)
         J_all = torch.cat(J_all)
 
-        return batch, seq, pssm, coord,mask,Ds,Ishift,Jshift,V, I_all, J_all
+        return batch, seq, pssm, coord,mask,Ishift,Jshift,V, I_all, J_all
 
 class Dataset_protein(data.Dataset):
     def __init__(self, seq, coords, mask, pssm, device):
@@ -111,7 +111,7 @@ class Dataset_protein(data.Dataset):
     def __getitem__(self, index):
         pssm = self.pssm[index]
         seq = self.seq[index]
-        coords = (self.coords[index]*self.scale)
+        coords = (self.coords[index]*self.scale) #This gives coordinates in Angstrom, with a typical amino acid binding distance of 3.8 A
         mask = self.mask[index]
         n = seq.shape[0]
         # seq_1hot = F.one_hot(seq, num_classes=20)
@@ -151,7 +151,7 @@ class Dataset_protein(data.Dataset):
         V[1::3,1] = math.sqrt(3)
         V[2::3,2] = math.sqrt(3)
 
-        return seq.to(device=self.device), pssm.to(device=self.device,dtype=torch.float32), coords.to(device=self.device,dtype=torch.float32), mask.to(device=self.device), D.to(device=self.device), I.to(device=self.device), J.to(device=self.device), V.to(device=self.device)
+        return seq.to(device=self.device), pssm.to(device=self.device,dtype=torch.float32), coords.to(device=self.device,dtype=torch.float32), mask.to(device=self.device), I.to(device=self.device), J.to(device=self.device), V.to(device=self.device)
 
     def __len__(self):
         return len(self.seq)

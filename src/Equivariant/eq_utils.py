@@ -46,8 +46,10 @@ def coordinate_loss(rp,rt):
 
     rpcr = (R @ rpc.t()).t()
 
-    loss = F.mse_loss(rpcr, rtc)
-    return loss
+    distance_error = torch.norm(rpcr - rtc,p=2,dim=1)
+    loss = torch.sum(distance_error)
+    # loss = F.mse_loss(rpcr, rtc)
+    return loss, rpcr,rtc
 
 def use_model_eq(model,dataloader,train,max_samples,optimizer,batch_size=1):
     aloss = 0.0
@@ -132,7 +134,9 @@ def use_proteinmodel_eq(model,dataloader,train,max_samples,optimizer,batch_size=
     else:
         model.eval()
     t3 = time.time()
-    for i, (batch, seq, pssm, coords, mask, D, I, J, V, I_all, J_all) in enumerate(dataloader):
+    for i, (batch, seq, pssm, coords, mask, I, J, V, I_all, J_all) in enumerate(dataloader):
+        mask = mask.to(dtype=torch.bool)
+        nb = len(torch.unique(batch))
         t0 = time.time()
         data = {
                 'batch': batch,
@@ -155,7 +159,20 @@ def use_proteinmodel_eq(model,dataloader,train,max_samples,optimizer,batch_size=
         Dtrue = Dtrue[If]
         Dout = Dout[If]
 
-        loss_coordinates = coordinate_loss(node_vec, coords)
+        xpred=torch.tensor([[0.1,1,2,3,4,5.1],[0,0,0,0,0,0],[0,0,0,0,0,0]]).t()
+        xpred2=torch.tensor([[0.0,1,2,3,4,5.1],[0,0,0,0,0,0],[0,0,0,0,0,0]]).t()
+        xtrue = torch.tensor([[0,0,0,0,0,0],[0.0,1,2,3,4,5],[0,0,0,0,0,0]]).t()
+
+        loss_test = coordinate_loss(xpred, xtrue)
+
+        loss_coordinates = coordinate_loss(node_vec[mask], coords[mask])
+        loss_coordinates_pr_protein = 0
+        for i in range(nb):
+            idx = batch == i
+            maski = mask[idx]
+            loss_i = coordinate_loss(node_vec[idx][maski], coords[idx][maski])
+            loss_coordinates_pr_protein += loss_i
+
         loss_distogram = F.mse_loss(Dout, Dtrue)
 
         loss = loss_coordinates + loss_distogram
@@ -175,8 +192,5 @@ def use_proteinmodel_eq(model,dataloader,train,max_samples,optimizer,batch_size=
     aloss_coords /= (i + 1)
 
     return aloss, aloss_distogram_rel, aloss_coords
-
-
-
 
 

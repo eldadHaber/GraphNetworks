@@ -74,7 +74,7 @@ if __name__ == '__main__':
     ndata = len(Aind)
     n_train = 81
     epochs_for_lr_adjustment = 50
-    batch_size = 2
+    batch_size = 5
 
     print('Number of data: {:}'.format(ndata))
 
