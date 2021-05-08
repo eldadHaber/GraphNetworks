@@ -20,6 +20,46 @@ from src import utils
 from src import graphNet as GN
 from src import pnetArch as PNA
 
+
+def transferWeights(smallmodel, largemodel, interp=True):
+    # Assuming the interpolation is always doubling the number of layers
+    if interp:
+        K1 = smallmodel.KN1.unsqueeze(0).unsqueeze(0).clone()
+        K2 = smallmodel.KN2.unsqueeze(0).unsqueeze(0).clone()
+        Kopen = smallmodel.K1Nopen.clone()
+        Kclose = smallmodel.KNclose.clone()
+        mlp = smallmodel.mlp.clone().detach()
+
+
+        largemodel.mlp = torch.nn.Parameter(mlp)
+
+        largemodel.KNclose = torch.nn.Parameter(Kclose)
+        largemodel.K1Nopen = torch.nn.Parameter(Kopen)
+
+        K1 = torch.nn.functional.interpolate(K1, size=[2*K1.shape[2], K1.shape[3], K1.shape[4]], mode='trilinear').squeeze()
+        K2 = torch.nn.functional.interpolate(K2, size=[2*K2.shape[2], K2.shape[3], K2.shape[4]], mode='trilinear').squeeze()
+
+        largemodel.KN1 = torch.nn.Parameter(K1)
+        largemodel.KN2 = torch.nn.Parameter(K2)
+    else:
+        K1 = smallmodel.KN1.clone().detach()
+        K2 = smallmodel.KN2.clone().detach()
+        Kopen = smallmodel.K1Nopen.clone().detach()
+        Kclose = smallmodel.KNclose.clone().detach()
+        mlp = smallmodel.mlp.clone().detach()
+
+        largemodel.mlp = torch.nn.Parameter(mlp)
+        largemodel.KNclose = torch.nn.Parameter(Kclose)
+        largemodel.K1Nopen = torch.nn.Parameter(Kopen)
+
+        new_KN1 = largemodel.KN1.clone().detach()
+        new_KN2 = largemodel.KN2.clone().detach()
+        new_KN1[0:K1.shape[0]] = K1
+        new_KN2[0:K2.shape[0]] = K2
+
+        largemodel.KN1 = torch.nn.Parameter(new_KN1)
+        largemodel.KN2 = torch.nn.Parameter(new_KN1)
+
 path = '/home/cluster/users/erant_group/ModelNet10'
 pre_transform, transform = T.NormalizeScale(), T.SamplePoints(1024)
 train_dataset = ModelNet(path, '10', True, transform, pre_transform)
@@ -101,7 +141,7 @@ nopen = 64
 nNin = 3
 nhid = 64
 nNclose = 64
-nlayer = 4
+nlayer = 2
 h = 0.1  # / nlayer
 dropout = 0.0
 wave = False
@@ -191,6 +231,15 @@ best_test_acc = 0
 for epoch in range(1, 201):
     loss = train()
     test_acc = test(test_loader)
+    if epoch % 20 == 19:
+        nlayer = nlayer * 2
+        model_new = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=wave,
+                                          diffOrder=1, num_output=nopen, dropOut=dropout, modelnet=True)
+        model_new.to(device)
+        transferWeights(model, model_new, interp=False)
+        model = model_new
+        optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0)
+
     print('Epoch {:03d}, Loss: {:.4f}, Test: {:.4f}'.format(
         epoch, loss, test_acc))
     if test_acc > best_test_acc:

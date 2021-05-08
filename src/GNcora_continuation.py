@@ -50,7 +50,7 @@ nEin = 1
 nopen = 64
 nhid = 64
 nNclose = 64
-nlayer = 8
+nlayer = 1
 h = 2 # 16 / nlayer
 
 import os
@@ -84,7 +84,7 @@ model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense
 model.reset_parameters()
 model.to(device)
 
-orig_w = model.KN1[2].clone().detach().cpu().numpy()
+orig_w = model.KN1[0].clone().detach().cpu().numpy()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0.0001)
 if not realVarlet:
     optimizer = torch.optim.Adam([
@@ -131,6 +131,47 @@ state_dict.pop('KNclose')
 
 
 #model.load_state_dict(state_dict, strict=False)
+
+
+def transferWeights(smallmodel, largemodel, interp=True):
+    # Assuming the interpolation is always doubling the number of layers
+    if interp:
+        K1 = smallmodel.KN1.unsqueeze(0).unsqueeze(0).clone()
+        K2 = smallmodel.KN2.unsqueeze(0).unsqueeze(0).clone()
+        Kopen = smallmodel.K1Nopen.clone()
+        Kclose = smallmodel.KNclose.clone()
+
+
+
+        largemodel.KNclose = torch.nn.Parameter(Kclose)
+        largemodel.K1Nopen = torch.nn.Parameter(Kopen)
+
+
+        K1 = torch.nn.functional.interpolate(K1, size=[2*K1.shape[2], K1.shape[3], K1.shape[4]], mode='trilinear').squeeze()
+        K2 = torch.nn.functional.interpolate(K2, size=[2*K2.shape[2], K2.shape[3], K2.shape[4]], mode='trilinear').squeeze()
+
+        largemodel.KN1 = torch.nn.Parameter(K1)
+        largemodel.KN2 = torch.nn.Parameter(K2)
+
+    else:
+        K1 = smallmodel.KN1.clone().detach()
+        K2 = smallmodel.KN2.clone().detach()
+        Kopen = smallmodel.K1Nopen.clone().detach()
+        Kclose = smallmodel.KNclose.clone().detach()
+
+        largemodel.KNclose = torch.nn.Parameter(Kclose)
+        largemodel.K1Nopen = torch.nn.Parameter(Kopen)
+
+        new_KN1 = largemodel.KN1.clone().detach()
+        new_KN2 = largemodel.KN2.clone().detach()
+        new_KN1[0:K1.shape[0]] = K1
+        new_KN2[0:K2.shape[0]] = K2
+
+        largemodel.KN1 = torch.nn.Parameter(new_KN1)
+        largemodel.KN2 = torch.nn.Parameter(new_KN1)
+
+
+
 
 
 
@@ -214,11 +255,33 @@ def test():
 
 best_val_acc = test_acc = 0
 acc_hist = []
-for epoch in range(1, 1001):
+for epoch in range(1, 2002):
     if epoch==1:
         train_acc, val_acc, tmp_test_acc = test()
         print("TEST BEFORE FINE TUNING:", tmp_test_acc)
     loss = train()
+    if epoch % 400 == 399:
+        nlayer = 2 * nlayer
+        h = h/2
+        model_new = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=False,
+                                          diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, gated=False,
+                                          realVarlet=realVarlet, mixDyamics=False, doubleConv=False, tripleConv=False)
+        model_new.to(device)
+        transferWeights(model, model_new, interp=True)
+        model = model_new
+        optimizer = torch.optim.Adam([
+            dict(params=model.KN1, lr=0.00001, weight_decay=0),
+            dict(params=model.KN2, lr=0.00001, weight_decay=0),
+            # dict(params=model.KN3, lr=0.00001, weight_decay=0),
+
+            dict(params=model.K1Nopen, weight_decay=5e-4),
+            dict(params=model.K2Nopen, weight_decay=5e-4),
+            dict(params=model.KNclose, weight_decay=5e-4),
+            # dict(params=model.KNclose2, weight_decay=5e-4),
+
+            # dict(params=model.alpha, lr=0.01, weight_decay=0)
+        ], lr=0.01)
+
     train_acc, val_acc, tmp_test_acc = test()
     acc_hist.append(tmp_test_acc)
     if tmp_test_acc > test_acc:
@@ -229,9 +292,9 @@ for epoch in range(1, 1001):
           f'Final Test: {test_acc:.4f}', flush=True)
 
     if epoch == 20:
-        epoch20_w = model.KN1[2].clone().detach().cpu().numpy()
+        epoch20_w = model.KN1[0].clone().detach().cpu().numpy()
 
-final_w = model.KN1[2].clone().detach().cpu().numpy()
+final_w = model.KN1[0].clone().detach().cpu().numpy()
 import matplotlib.pyplot as plt
 
 plt.imshow(orig_w)
