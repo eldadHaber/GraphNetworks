@@ -233,10 +233,11 @@ for epoch in range(1, 201):
     test_acc = test(test_loader)
     if epoch % 20 == 19:
         nlayer = nlayer * 2
+        h = h / 2
         model_new = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=wave,
                                           diffOrder=1, num_output=nopen, dropOut=dropout, modelnet=True)
         model_new.to(device)
-        transferWeights(model, model_new, interp=False)
+        transferWeights(model, model_new, interp=True)
         model = model_new
         optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0)
 
