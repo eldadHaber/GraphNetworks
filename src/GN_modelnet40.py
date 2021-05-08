@@ -28,10 +28,10 @@ def transferWeights(smallmodel, largemodel, interp=True):
         K2 = smallmodel.KN2.unsqueeze(0).unsqueeze(0).clone()
         Kopen = smallmodel.K1Nopen.clone()
         Kclose = smallmodel.KNclose.clone()
-        mlp = smallmodel.mlp.clone().detach()
+        mlp = smallmodel.mlp#.clone().detach()
 
 
-        largemodel.mlp = torch.nn.Parameter(mlp)
+        largemodel.mlp = mlp #torch.nn.Parameter(mlp)
 
         largemodel.KNclose = torch.nn.Parameter(Kclose)
         largemodel.K1Nopen = torch.nn.Parameter(Kopen)
@@ -46,9 +46,9 @@ def transferWeights(smallmodel, largemodel, interp=True):
         K2 = smallmodel.KN2.clone().detach()
         Kopen = smallmodel.K1Nopen.clone().detach()
         Kclose = smallmodel.KNclose.clone().detach()
-        mlp = smallmodel.mlp.clone().detach()
+        mlp = smallmodel.mlp #.clone().detach()
 
-        largemodel.mlp = torch.nn.Parameter(mlp)
+        largemodel.mlp = mlp #torch.nn.Parameter(mlp)
         largemodel.KNclose = torch.nn.Parameter(Kclose)
         largemodel.K1Nopen = torch.nn.Parameter(Kopen)
 
