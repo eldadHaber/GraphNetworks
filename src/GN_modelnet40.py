@@ -36,8 +36,8 @@ def transferWeights(smallmodel, largemodel, interp=True):
         largemodel.KNclose = torch.nn.Parameter(Kclose)
         largemodel.K1Nopen = torch.nn.Parameter(Kopen)
 
-        K1 = torch.nn.functional.interpolate(K1, size=[2*K1.shape[2], K1.shape[3], K1.shape[4]], mode='trilinear').squeeze()
-        K2 = torch.nn.functional.interpolate(K2, size=[2*K2.shape[2], K2.shape[3], K2.shape[4]], mode='trilinear').squeeze()
+        K1 = torch.nn.functional.interpolate(K1, size=[2*K1.shape[2], K1.shape[3], K1.shape[4]], mode='trilinear', align_corners=True).squeeze()
+        K2 = torch.nn.functional.interpolate(K2, size=[2*K2.shape[2], K2.shape[3], K2.shape[4]], mode='trilinear', align_corners=True).squeeze()
 
         largemodel.KN1 = torch.nn.Parameter(K1)
         largemodel.KN2 = torch.nn.Parameter(K2)
@@ -137,12 +137,12 @@ if printFiles:
     print("**********************************************************************************")
 
 nEin = 1
-nopen = 64
+nopen = 32
 nNin = 3
-nhid = 64
-nNclose = 64
+nhid = 32
+nNclose = 32
 nlayer = 2
-h = 0.1  # / nlayer
+h = 0.05 #0.1  # / nlayer
 dropout = 0.0
 wave = False
 import datetime
@@ -231,7 +231,7 @@ best_test_acc = 0
 for epoch in range(1, 201):
     loss = train()
     test_acc = test(test_loader)
-    if epoch % 20 == 19:
+    if epoch % 50 == 40:
         nlayer = nlayer * 2
         h = h / 2
         model_new = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=wave,

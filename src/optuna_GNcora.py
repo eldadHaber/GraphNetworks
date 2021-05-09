@@ -50,7 +50,7 @@ else:
     from src import graphNet as GN
     from src import pnetArch as PNA
 
-num_layers = [32, 64]
+num_layers = [2,4,8,16,32,64]
 print(torch.cuda.get_device_name(0))
 print(torch.cuda.get_device_properties('cuda:0'))
 
@@ -78,7 +78,7 @@ for nlayers in num_layers:
 
 
     def objective(trial):
-        dataset = 'PubMed'
+        dataset = 'Cora'
         if dataset == 'Cora':
             nNin = 1433
         elif dataset == 'CiteSeer':
@@ -86,7 +86,7 @@ for nlayers in num_layers:
         elif dataset == 'PubMed':
             nNin = 500
         nEin = 1
-        n_channels = 256  # trial.suggest_categorical('n_channels', [64, 128, 256])
+        n_channels = 64  # trial.suggest_categorical('n_channels', [64, 128, 256])
         nopen = n_channels
         nhid = n_channels
         nNclose = n_channels
@@ -111,7 +111,7 @@ for nlayers in num_layers:
 
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         data = data.to(device)
-        dropout = trial.suggest_discrete_uniform('dropout', 0.5, 0.8, q=0.1)
+        dropout = trial.suggest_discrete_uniform('dropout', 0.6, 0.8, q=0.1)
         lr = trial.suggest_float("lr", 1e-3, 1e-2, log=True)
         lrGCN = trial.suggest_float("lrGCN", 1e-5, 1e-3, log=True)
         wd = trial.suggest_float("wd", 5e-6, 1e-3, log=True)
