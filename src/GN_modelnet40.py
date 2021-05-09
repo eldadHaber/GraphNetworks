@@ -231,7 +231,7 @@ for epoch in range(1, 201):
     loss = train()
     test_acc = test(test_loader)
     accs.append(test_acc)
-    if (nlayer < 16) and (epoch % 5 == 4):
+    if (nlayer < 16) and (epoch % 10 == 9):
         nlayer = nlayer * 2
         #h = h / 2
         model_new = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=wave,
