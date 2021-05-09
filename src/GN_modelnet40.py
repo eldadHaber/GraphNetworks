@@ -160,14 +160,14 @@ model = model.to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=0)
 
 optimizer = torch.optim.Adam([
-    dict(params=model.KN1, lr=0.01, weight_decay=0),
-    dict(params=model.KN2, lr=0.01, weight_decay=0),
+    dict(params=model.KN1, lr=0.001, weight_decay=0),
+    dict(params=model.KN2, lr=0.001, weight_decay=0),
     dict(params=model.convs1x1, weight_decay=0),
     dict(params=model.K1Nopen, weight_decay=0),
     dict(params=model.KNclose, weight_decay=0),
     dict(params=model.mlp.parameters(), weight_decay=0)
     # dict(params=model.alpha, lr=0.1, weight_decay=0),
-], lr=0.01)
+], lr=0.001)
 
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
 
@@ -233,11 +233,11 @@ for epoch in range(1, 201):
     accs.append(test_acc)
     if (nlayer < 8) and (epoch % 10 == 9):
         nlayer = nlayer * 2
-        #h = h / 2
+        h = h / 2
         model_new = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=wave,
                                           diffOrder=1, num_output=nopen, dropOut=dropout, modelnet=True)
         model_new.to(device)
-        transferWeights(model, model_new, interp=False)
+        transferWeights(model, model_new, interp=True)
         model = model_new
         optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=0)
 
