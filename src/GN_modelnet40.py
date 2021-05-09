@@ -137,12 +137,12 @@ if printFiles:
     print("**********************************************************************************")
 
 nEin = 1
-nopen = 32
+nopen = 128
 nNin = 3
-nhid = 32
-nNclose = 32
-nlayer = 2
-h = 0.05 #0.1  # / nlayer
+nhid = 128
+nNclose = 128
+nlayer = 1
+h = 0.1  # / nlayer
 dropout = 0.0
 wave = False
 import datetime
@@ -224,14 +224,14 @@ def test(loader):
         correct += pred.eq(data.y).sum().item()
     return correct / len(loader.dataset)
 
-
 save_path = '/home/cluster/users/erant_group/moshe/pdegcnCheckpoints/' + filename
-
+accs = []
 best_test_acc = 0
 for epoch in range(1, 201):
     loss = train()
     test_acc = test(test_loader)
-    if epoch % 50 == 40:
+    accs.append(test_acc)
+    if epoch % 5 == 4:
         nlayer = nlayer * 2
         h = h / 2
         model_new = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=wave,
@@ -248,3 +248,26 @@ for epoch in range(1, 201):
         torch.save(model.state_dict(), save_path)
 
     scheduler.step()
+
+
+if 1 == 1:
+    import matplotlib.pyplot as plt
+
+    fig, ax1 = plt.subplots()
+
+    color = 'tab:red'
+    ax1.set_xlabel('Epoch #')
+    ax1.set_ylabel('Accuracy (%)', color=color)
+    ax1.plot(accs, color=color)
+    ax1.tick_params(axis='y', labelcolor=color)
+
+
+    fig.tight_layout()  # otherwise the right y-label is slightly clipped
+    plt.show()
+    plt.savefig("modelnet_heat_continuation.png")
+
+    with open('acc_hist_modelnet_heat_continuation.txt', 'w') as filehandle:
+        for listitem in accs:
+            filehandle.write('%s\n' % listitem)
+
+print("bye")
