@@ -142,7 +142,7 @@ nNin = 3
 nhid = 64
 nNclose = 64
 nlayer = 1
-h = 0.1  # / nlayer
+h = 0.05  # / nlayer
 dropout = 0.0
 wave = False
 import datetime
@@ -233,11 +233,11 @@ for epoch in range(1, 201):
     accs.append(test_acc)
     if (nlayer < 16) and (epoch % 5 == 4):
         nlayer = nlayer * 2
-        h = h / 2
+        #h = h / 2
         model_new = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=wave,
                                           diffOrder=1, num_output=nopen, dropOut=dropout, modelnet=True)
         model_new.to(device)
-        transferWeights(model, model_new, interp=True)
+        transferWeights(model, model_new, interp=False)
         model = model_new
         optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0)
 
