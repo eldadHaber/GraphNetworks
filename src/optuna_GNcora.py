@@ -120,16 +120,16 @@ for nlayers in num_layers:
         model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, n_layers, h=h, dense=False, varlet=True,
                                           wave=False,
                                           diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, gated=False,
-                                          realVarlet=False, mixDyamics=False, doubleConv=True, tripleConv=False)
+                                          realVarlet=False, mixDyamics=False, doubleConv=False, tripleConv=False)
 
-        model = GN.graphNetwork_seq(nNin, nopen, nhid, nNclose, n_layers, h=h, dense=False, varlet=True, wave=False,
-                                    diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, PPI=False,
-                                    gated=False,
-                                    realVarlet=False, mixDyamics=False, doubleConv=True)
+        #model = GN.graphNetwork_seq(nNin, nopen, nhid, nNclose, n_layers, h=h, dense=False, varlet=True, wave=False,
+        #                            diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, PPI=False,
+        #                            gated=False,
+        #                            realVarlet=False, mixDyamics=False, doubleConv=False)
         model.reset_parameters()
         model.to(device)
         # optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=wd)
-        nonseq = False
+        nonseq = True
         if nonseq:
             optimizer = torch.optim.Adam([
                 dict(params=model.KN1, lr=lrGCN, weight_decay=0),
