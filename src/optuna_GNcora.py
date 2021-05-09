@@ -14,8 +14,6 @@ import sys
 print(torch.cuda.get_device_name(0))
 print(torch.cuda.get_device_properties('cuda:0'))
 
-
-
 if "s" in sys.argv:
     base_path = '/home/eliasof/pFold/data/'
     import graphOps as GO
@@ -24,7 +22,7 @@ if "s" in sys.argv:
     import graphNet as GN
     import pnetArch as PNA
 
-if "j" in sys.argv:
+elif "j" in sys.argv:
     base_path = '/home/ephrathj/pFold/data/'
     import graphOps as GO
     import processContacts as prc
@@ -50,7 +48,7 @@ else:
     from src import graphNet as GN
     from src import pnetArch as PNA
 
-num_layers = [2,4,8,16,32,64]
+num_layers = [2, 4, 8, 16, 32, 64]
 print(torch.cuda.get_device_name(0))
 print(torch.cuda.get_device_properties('cuda:0'))
 
@@ -94,7 +92,7 @@ for nlayers in num_layers:
         print("DATA SET IS:", dataset)
         # h = 1 / n_layers
         h = trial.suggest_discrete_uniform('h', 1 / (n_layers), 3, q=1 / (n_layers))
-        #h = trial.suggest_discrete_uniform('h', 0.1, 3, q=0.1)
+        # h = trial.suggest_discrete_uniform('h', 0.1, 3, q=0.1)
 
         batchSize = 32
 
@@ -122,7 +120,7 @@ for nlayers in num_layers:
                                           diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, gated=False,
                                           realVarlet=False, mixDyamics=False, doubleConv=False, tripleConv=False)
 
-        #model = GN.graphNetwork_seq(nNin, nopen, nhid, nNclose, n_layers, h=h, dense=False, varlet=True, wave=False,
+        # model = GN.graphNetwork_seq(nNin, nopen, nhid, nNclose, n_layers, h=h, dense=False, varlet=True, wave=False,
         #                            diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, PPI=False,
         #                            gated=False,
         #                            realVarlet=False, mixDyamics=False, doubleConv=False)
@@ -134,10 +132,10 @@ for nlayers in num_layers:
             optimizer = torch.optim.Adam([
                 dict(params=model.KN1, lr=lrGCN, weight_decay=0),
                 dict(params=model.KN2, lr=lrGCN, weight_decay=0),
-                #dict(params=model.KN3, lr=lrGCN, weight_decay=0),
+                # dict(params=model.KN3, lr=lrGCN, weight_decay=0),
                 dict(params=model.K1Nopen, weight_decay=wd),
                 dict(params=model.KNclose, weight_decay=wd),
-                #dict(params=model.alpha, lr=lr_alpha, weight_decay=0),
+                # dict(params=model.alpha, lr=lr_alpha, weight_decay=0),
 
             ], lr=lr)
         else:
