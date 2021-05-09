@@ -137,10 +137,10 @@ if printFiles:
     print("**********************************************************************************")
 
 nEin = 1
-nopen = 128
+nopen = 64
 nNin = 3
-nhid = 128
-nNclose = 128
+nhid = 64
+nNclose = 64
 nlayer = 1
 h = 0.1  # / nlayer
 dropout = 0.0
@@ -231,7 +231,7 @@ for epoch in range(1, 201):
     loss = train()
     test_acc = test(test_loader)
     accs.append(test_acc)
-    if epoch % 5 == 4:
+    if (nlayer < 16) and (epoch % 5 == 4):
         nlayer = nlayer * 2
         h = h / 2
         model_new = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=wave,
