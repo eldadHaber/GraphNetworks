@@ -49,7 +49,7 @@ def coordinate_loss(rp,rt):
     distance_error = torch.norm(rpcr - rtc,p=2,dim=1)
     loss = torch.sum(distance_error)
     # loss = F.mse_loss(rpcr, rtc)
-    return loss, rpcr,rtc
+    return loss #, rpcr,rtc
 
 def use_model_eq(model,dataloader,train,max_samples,optimizer,batch_size=1):
     aloss = 0.0
@@ -125,19 +125,23 @@ def maskMat(T,M):
     return MT
 
 
-def use_proteinmodel_eq(model,dataloader,train,max_samples,optimizer,batch_size=1):
+def use_proteinmodel_eq(model,dataloader,train,max_samples,optimizer,batch_size=1, w=0):
+    if train:
+        model.train()
+        output = use_proteinmodel_eq_inner(model, dataloader, train, max_samples, optimizer, batch_size, w)
+    else:
+        model.eval()
+        with torch.no_grad():
+            output = use_proteinmodel_eq_inner(model, dataloader, train, max_samples, optimizer, batch_size, w)
+    return output
+
+def use_proteinmodel_eq_inner(model,dataloader,train,max_samples,optimizer,batch_size, w):
     aloss = 0.0
     aloss_distogram_rel = 0.0
     aloss_coords = 0.0
-    if train:
-        model.train()
-    else:
-        model.eval()
-    t3 = time.time()
     for i, (batch, seq, pssm, coords, mask, I, J, V, I_all, J_all) in enumerate(dataloader):
         mask = mask.to(dtype=torch.bool)
         nb = len(torch.unique(batch))
-        t0 = time.time()
         data = {
                 'batch': batch,
                 'pos': coords,
@@ -166,15 +170,15 @@ def use_proteinmodel_eq(model,dataloader,train,max_samples,optimizer,batch_size=
         # loss_test,xpred_rotated,xtrue_centered = coordinate_loss(xpred, xtrue)
         # loss_coordinates = coordinate_loss(node_vec[mask], coords[mask])
         loss_coordinates = 0
-        for i in range(nb):
-            idx = batch == i
+        for ii in range(nb):
+            idx = batch == ii
             maski = mask[idx]
             loss_i = coordinate_loss(node_vec[idx][maski], coords[idx][maski])
             loss_coordinates += loss_i
 
         loss_distogram = F.mse_loss(Dout, Dtrue)
 
-        loss = loss_coordinates + loss_distogram
+        loss = (1-w)*loss_distogram + w * loss_coordinates
 
         loss_distogram_rel = loss_distogram / F.mse_loss(Dtrue * 0, Dtrue)
 
@@ -191,5 +195,6 @@ def use_proteinmodel_eq(model,dataloader,train,max_samples,optimizer,batch_size=
     aloss_coords /= (i + 1)
 
     return aloss, aloss_distogram_rel, aloss_coords
+
 
 
