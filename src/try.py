@@ -99,16 +99,70 @@ for i in range(81):
     torch.save(Coords, txt)
 
 
-###
 
-for i in [70]: #range(80):
-    a = 'CoordsPred' + str(i)
-    b = 'CoordsTrue' + str(i)
+
+### For saving model
+
+for i in range(5):
+    # Get the data
+    nodeProperties, Coords, M, I, J, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
+                                                                          MSK, i, device=device)
+    if nodeProperties.shape[2] > 700:
+        continue
+    nNodes = Ds.shape[0]
+    # G = GO.dense_graph(nNodes, Ds)
+    w = torch.ones(I.shape, device=I.device)
+    G = GO.graph(I, J, nNodes, w)
+    # Organize the node data
+    xn = nodeProperties
+    # xe = Ds.unsqueeze(0).unsqueeze(0)  # edgeProperties
+    xe = edgeProperties  # w.unsqueeze(0).unsqueeze(0)
+
+    xnOut, xeOut = model(xn, xe, G)
+
+    Dout = utils.getDistMat(xnOut)
+    Dtrue = utils.getDistMat(Coords)
+    M = torch.ger(M.squeeze(), M.squeeze())
+
+    # loss = F.mse_loss(M * Dout, M * Dtrue)
+    DtrueM = maskMat(Dtrue, M)
+    DoutM = maskMat(Dout, M)
+    If, Jf = torch.nonzero(DtrueM < 7 * 3.8, as_tuple=True)
+    DtrueM = DtrueM[If, Jf]
+    DoutM = DoutM[If, Jf]
+
+    loss = F.mse_loss(DoutM, DtrueM) / F.mse_loss(DtrueM * 0, DtrueM)
+    print(i, loss)
+
+    a = 'Xc' + str(i) + '.pt'
+    b = 'Xt' + str(i) + '.pt'
+    m = 'Msk' + str(i) + '.pt'
+    torch.save(xnOut,a)
+    torch.save(Coords, b)
+    torch.save(M, m)
+
+    plt.figure(i+1)
+    plt.subplot(1,2,1)
+    plt.imshow(M*Dout.detach())
+    plt.subplot(1, 2, 2)
+    plt.imshow(M * Dtrue.detach())
+
+
+
+
+### For reading the model
+for i in range(5):
+    a = 'Xc' + str(i) + '.pt'
+    b = 'Xt' + str(i) + '.pt'
+    m = 'Msk' + str(i) + '.pt'
     x1 = torch.load(a)
     x2 = torch.load(b)
+    M  = torch.load(m)
 
     x1 = x1.squeeze()
     x2 = x2.squeeze()
+    #mm = M.clone()
+    #M  = torch.ger(M.squeeze(),M.squeeze())
 
     D1 = torch.sqrt(torch.relu(
          torch.sum(x1 ** 2, dim=0, keepdim=True) +
@@ -118,4 +172,16 @@ for i in [70]: #range(80):
          torch.sum(x2 ** 2, dim=0, keepdim=True) +
          torch.sum(x2 ** 2, dim=0, keepdim=True).t() - 2 * x2.t() @ x2))
 
-    print(i, torch.norm(D1-D2)/torch.norm(D1))
+    plt.figure(i+1)
+    plt.subplot(1,2,1)
+    plt.imshow(M*D1.detach())
+    plt.subplot(1, 2, 2)
+    plt.imshow(M * D2.detach())
+
+    #loss_tr, r1cr, r2cr = utils.coord_loss(x1.unsqueeze(0), x2.unsqueeze(0), mm)
+
+    print(i, torch.norm(M*(D1-D2))/torch.norm(M*D1))
+
+
+
+############# min 0.5 |A(x)R - BR|^2

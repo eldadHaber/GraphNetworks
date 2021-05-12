@@ -82,13 +82,13 @@ n_data_total = len(S)
 # Setup the network and its parameters
 nNin = 40
 nEin = 1
-nopen = 128
-nhid  = 128
+nopen = 16
+nhid  = 16
 nNclose = 3
 nEclose = 1
-nlayer = 5
+nlayer = 18
 
-model = GN.graphNetwork(nNin, nEin, nopen, nhid, nNclose, nlayer, h=.01, const=True)
+model = GN.graphNetworkEqvrnt(nNin, nEin, nopen, nhid, nNclose, nlayer, h=.01, const=False)
 model.to(device)
 
 total_params = sum(p.numel() for p in model.parameters())
@@ -108,18 +108,19 @@ optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO},
                         {'params': model.K2Eopen, 'lr': lrO},
                         {'params': model.KE1, 'lr': lrE1},
                         {'params': model.KE2, 'lr': lrE2},
-                        {'params': model.KNclose, 'lr': lrC},
-                        {'params': model.Kw, 'lr': lrw}])
+                        {'params': model.Kw1, 'lr': lrw},
+                        {'params': model.Kw2, 'lr': lrw}])
 
 
 alossBest = 1e6
-epochs = 750
+epochs = 700
 
-ndata = n_data_total
+ndata = 1 #n_data_total
 bestModel = model
 hist = torch.zeros(epochs)
 
-dst = torch.linspace(100*3.8, 3*3.8, epochs)
+#dst = torch.linspace(100*3.8, 3*3.8, epochs)
+dst = torch.ones(epochs)*1e6
 for j in range(epochs):
     # Prepare the data
     aloss = 0.0
@@ -144,16 +145,12 @@ for j in range(epochs):
 
         optimizer.zero_grad()
 
-        xnOut, xeOut = model(xn, xe, G)
+        CoordsOut, xnOut, xeOut = model(xn, xe, G)
         #xnOut = utils.distConstraint(xnOut)
 
-        Dout = utils.getDistMat(xnOut)
+        Dout = utils.getDistMat(CoordsOut)
         Dtrue = utils.getDistMat(Coords)
 
-        #loss = F.mse_loss(M * Dout, M * Dtrue)
-        #dm    = Dtrue.max()
-        #Dtrue = torch.exp(-sigma[j] * Dtrue/Dtrue.max())
-        #Dout  = torch.exp(-sigma[j] * Dout/Dtrue.max())
         DtrueM = maskMat(Dtrue, M)
         DoutM = maskMat(Dout, M)
 
@@ -171,11 +168,10 @@ for j in range(epochs):
         torch.nn.utils.clip_grad_norm_(model.K2Eopen, 1.0e-2, norm_type=2.0)
         torch.nn.utils.clip_grad_norm_(model.KE1, 1.0e-2, norm_type=2.0)
         torch.nn.utils.clip_grad_norm_(model.KE2, 1.0e-2, norm_type=2.0)
-        torch.nn.utils.clip_grad_norm_(model.KNclose, 1.0e-2, norm_type=2.0)
 
         aloss += loss.detach()
         alossAQ += (torch.norm(DoutM - DtrueM)) / np.sqrt(torch.numel(DtrueM))
-        gN = model.KNclose.grad.norm().item()
+        gN = model.Kw1.grad.norm().item()
         gE1 = model.KE1.grad.norm().item()
         gE2 = model.KE2.grad.norm().item()
         gO = model.K1Nopen.grad.norm().item()
@@ -194,7 +190,7 @@ for j in range(epochs):
         if (i + 1) % nprnt == 0:
             aloss = aloss / nprnt
             alossAQ = alossAQ / nprnt
-            c       = GN.constraint(xnOut)
+            c       = GN.constraint(CoordsOut)
             c       = c.abs().mean().item()
             if c>0.4:
                 print('warning constraint non fulfilled ')

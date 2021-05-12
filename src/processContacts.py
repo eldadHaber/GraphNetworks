@@ -1,81 +1,3 @@
-# import os, sys
-# import torch
-# import torch.nn as nn
-# import torch.nn.functional as F
-# import numpy as np
-# import math
-# try:
-#     from src import utils
-# except:
-#     import utils
-#
-#
-# def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
-#     scale = 1e-2
-#     PSSM = S[i].t()
-#     n = PSSM.shape[1]
-#     M = MSK[i][:n]
-#     a = Aind[i]
-#
-#     # X = Yobs[i][0, 0, :n, :n]
-#     X = Yobs[i].t()
-#     X = utils.linearInterp1D(X, M)
-#     X = torch.tensor(X)
-#
-#     X = X - torch.mean(X, dim=1, keepdim=True)
-#     U, Lam, V = torch.svd(X)
-#
-#     Coords = scale * torch.diag(Lam) @ V.t()
-#     Coords = Coords.type('torch.FloatTensor')
-#
-#     PSSM = PSSM.type(torch.float32)
-#
-#     A = torch.zeros(20, n)
-#     A[a, torch.arange(0, n)] = 1.0
-#     Seq = torch.cat((PSSM, A))
-#     Seq = Seq.to(device=device, non_blocking=True)
-#
-#     Coords = Coords.to(device=device, non_blocking=True)
-#     M = M.type('torch.FloatTensor')
-#     M = M.to(device=device, non_blocking=True)
-#
-#     D = torch.relu(torch.sum(Coords ** 2, dim=0, keepdim=True) + \
-#                    torch.sum(Coords ** 2, dim=0, keepdim=True).t() - \
-#                    2 * Coords.t() @ Coords)
-#
-#     D = D / D.std()
-#     D = torch.exp(-D)
-#     Ds = F.softshrink(D, 0.92)
-#     #print("Ds shape:", Ds.shape)
-#     nsparse = 20
-#     nsparse = min(nsparse, Ds.shape[0])
-#     vals, indices = torch.topk(Ds, k=nsparse, dim=1)
-#     nd = D.shape[0]
-#     I = torch.ger(torch.arange(nd), torch.ones(nsparse, dtype=torch.long))
-#     I = I.view(-1)
-#     J = indices.view(-1).type(torch.LongTensor)
-#     IJ = torch.stack([I, J], dim=1)
-#
-#     #print("IJ shape:", IJ.shape)
-#     # Organize the edge data
-#     nEdges = IJ.shape[0]
-#     xe = torch.zeros(1, 1, nEdges, device=device)
-#     for i in range(nEdges):
-#         if IJ[i, 0] + 1 == IJ[i, 1]:
-#             xe[:, :, i] = 1
-#         if IJ[i, 0] - 1 == IJ[i, 1]:
-#             xe[:, :, i] = 1
-#
-#     Seq = Seq.to(device=device, non_blocking=True)
-#     Coords = Coords.to(device=device, non_blocking=True)
-#     M = M.to(device=device, non_blocking=True)
-#     IJ = IJ.to(device=device, non_blocking=True)
-#     xe = xe.to(device=device, non_blocking=True)
-#     Ds = Ds.to(device=device, non_blocking=True)
-#
-#     return Seq.unsqueeze(0), Coords.unsqueeze(0), M.unsqueeze(0).unsqueeze(0), IJ, xe, D
-
-
 import os, sys
 import torch
 import torch.nn as nn
@@ -96,7 +18,7 @@ def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
     # X = Yobs[i][0, 0, :n, :n]
     X = Yobs[i].t()
     #X = utils.linearInterp1D(X, M)
-    X = torch.tensor(X)
+    #X = torch.tensor(X)
 
     X = X - torch.mean(X, dim=1, keepdim=True)
     # U, Lam, V = torch.svd(X)
@@ -121,8 +43,23 @@ def getIterData(S, Aind, Yobs, MSK, i, device='cpu'):
 
     D = D / D.std()
     D = torch.exp(-2 * D)
+    # Make sure we take the closest off diagonals
+    D1 = torch.diag(torch.diag(D, 1), 1)
+    D2 = torch.diag(torch.diag(D, 2), 2)
+    D3 = torch.diag(torch.diag(D, 3), 3)
 
-    nsparse = 16
+    D  = D - D1 - D1.t() - D2 - D2.t() - D3 - D3.t()
+    e1 = torch.ones(D.shape[0]-1)
+    e2 = torch.ones(D.shape[0]-2)
+    e3 = torch.ones(D.shape[0]-3)
+
+    E1 = torch.diag(e1 ,1)
+    E2 = torch.diag(e2, 2)
+    E3 = torch.diag(e3, 3)
+
+    D = D + E1 + E1.t() + E2 + E2.t() + E3 + E3.t()
+
+    nsparse = 32
     vals, indices = torch.topk(D, k=min(nsparse, D.shape[0]), dim=1)
     nd = D.shape[0]
     I = torch.ger(torch.arange(nd), torch.ones(nsparse, dtype=torch.long))
