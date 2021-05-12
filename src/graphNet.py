@@ -182,6 +182,8 @@ class graphNetwork(nn.Module):
 
         return x
 
+
+
     def forward(self, xn, xe, Graph):
 
         # Opening layer

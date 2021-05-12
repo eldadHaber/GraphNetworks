@@ -8,6 +8,48 @@ import torch
 import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
+import matplotlib.pyplot as plt
+from matplotlib import animation
+
+
+
+def plot_protein_comparison(coords_pred,coords_target,filename,save_animation=True):
+    import matplotlib.patches as mpatches
+    def rotate(angle):
+        axes.view_init(azim=angle)
+    n = coords_pred.shape[0]
+    fig = plt.figure(num=2, dpi=200)
+    plt.clf()
+    axes = plt.axes(projection='3d')
+    axes.set_xlabel("x")
+    axes.set_ylabel("y")
+    axes.set_zlabel("z")
+    axes.plot3D(coords_target[:,0],coords_target[:,1],coords_target[:,2], 'lightblue', marker='')
+    axes.scatter(coords_target[:,0],coords_target[:,1],coords_target[:,2], s=10, c='blue', depthshade=True)
+
+    axes.plot3D(coords_pred[:,0],coords_pred[:,1],coords_pred[:,2], 'lightpink', marker='')
+    axes.scatter(coords_pred[:,0],coords_pred[:,1],coords_pred[:,2], s=10, c='red', depthshade=True)
+
+    blue_patch = mpatches.Patch(color='blue', label='Target')
+    red_patch = mpatches.Patch(color='red', label='Prediction')
+    plt.legend(handles=[red_patch, blue_patch])
+
+    if save_animation:
+        angle = 3
+        ani = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 360, angle), interval=50)
+        ani.save('{:}.gif'.format(filename), writer=animation.PillowWriter(fps=20))
+    # else:
+    #     # setup_print_figure()
+    #     # axes.grid(False)
+    #     # axes.set_xticks([])
+    #     # axes.set_yticks([])
+    #     # axes.set_zticks([])
+    #     # axes.set_axis_off()
+    #     # plt.savefig(filename, bbox_inches='tight', dpi=600)
+
+    return
+
+
 
 
 class list2np(object):
