@@ -88,6 +88,7 @@ def getDistMat(X, msk=torch.tensor([1.0])):
     mm = torch.ger(msk, msk)
     return mm * torch.sqrt(torch.relu(D))
 
+
 def getBatchDRMSDloss(XX, XXobs, N, MM):
     XX = XX.squeeze(0)
     N  = torch.cat((torch.zeros(1),N))

@@ -119,8 +119,8 @@ ndata = 1 #n_data_total
 bestModel = model
 hist = torch.zeros(epochs)
 
-#dst = torch.linspace(100*3.8, 3*3.8, epochs)
-dst = torch.ones(epochs)*1e6
+dst = torch.linspace(100*3.8, 3*3.8, epochs)
+#dst = torch.ones(epochs)*1e6
 for j in range(epochs):
     # Prepare the data
     aloss = 0.0

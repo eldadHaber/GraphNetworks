@@ -127,22 +127,23 @@ class graphNetwork(nn.Module):
         stdvp = 1.0 # 1e-3
         self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
         self.K2Nopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
-        self.K1Eopen = nn.Parameter(torch.randn(nopen, nEin) * stdv)
-        self.K2Eopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
+        #self.K1Eopen = nn.Parameter(torch.randn(nopen, nEin) * stdv)
+        #self.K2Eopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
 
-        nopen      = 3*nopen  # [xn; Av*xe; Div*xe]
+        #nopen      = 3*nopen  # [xn; Av*xe; Div*xe]
         self.nopen = nopen
-        Nfeatures  = 2*nopen # [G*xn; Av*xn]
 
-        Id  = torch.eye(nhid,Nfeatures).unsqueeze(0)
-        Idt = torch.eye(Nfeatures,nhid).unsqueeze(0)
+        nhid = 5*nopen
+        Id  = (torch.eye(nhid,5*nopen)).unsqueeze(0) #+ 1e-3*torch.randn(nhid,5*nopen)).unsqueeze(0)
+        #Idt = torch.eye(Nfeatures,nhid).unsqueeze(0)
+        Idt = (torch.eye(5*nopen, nhid)).unsqueeze(0) # + 1e-3*torch.randn(5*nopen,nhid)).unsqueeze(0)
+
         IdTensor  = torch.repeat_interleave(Id, nlayer, dim=0)
         IdTensort = torch.repeat_interleave(Idt, nlayer, dim=0)
         self.KE1 = nn.Parameter(IdTensor * stdvp)
         self.KE2 = nn.Parameter(IdTensort * stdvp)
 
         self.KNclose = nn.Parameter(torch.eye(nNclose, nopen))
-
         self.Kw = nn.Parameter(torch.ones(nopen,1))
 
     def doubleLayer(self, x, K1, K2):
@@ -163,17 +164,14 @@ class graphNetwork(nn.Module):
         # xe =  [B, C, E]
         # Opening layer
         xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
-        xe = self.doubleLayer(xe, self.K1Eopen, self.K2Eopen)
-        xn = torch.cat([xn,Graph.edgeDiv(xe), Graph.edgeAve(xe)], dim=1)
+        #xe = self.doubleLayer(xe, self.K1Eopen, self.K2Eopen)
+        #xn = torch.cat([xn,Graph.edgeDiv(xe), Graph.edgeAve(xe)], dim=1)
         if self.const:
             xn = proj(xn, self.KNclose, n=100)
-            #x3 = F.conv1d(xn, self.KNclose.unsqueeze(-1))
-            #c = constraint(x3)
-            #print(c.abs().mean().item())
 
         nlayers = self.KE1.shape[0]
 
-        #xold = xn
+        xnold = xn
         for i in range(nlayers):
 
             # Compute the distance in real space
@@ -184,26 +182,34 @@ class graphNetwork(nn.Module):
             w     = torch.exp(-(w**2))
             #w     = torch.ones(xe.shape[2], device=xe.device)
 
-            gradX = Graph.nodeGrad(xn,w)
-            intX = Graph.nodeAve(xn,w)
+            gradX   = Graph.nodeGrad(xn,w)
+            #gradX   = tv_norm(gradX)
+            intX    = Graph.nodeAve(xn,w)
+            #intX    = tv_norm(intX)
+            xgradX  = gradX*intX
+            #xgradX  = tv_norm(xgradX)
+            gradXsq = gradX*gradX
+            #gradXsq = tv_norm(gradXsq)
+            xSq     = intX*intX
+            #xSq     = tv_norm(xSq)
 
-            dxe = torch.cat([gradX, intX], dim=1)
+            #dxe = torch.cat([gradX, intX], dim=1)
+            dxe = torch.cat([gradX, intX, xgradX, gradXsq, xSq], dim=1)
             dxe  = self.doubleLayer(dxe, self.KE1[i], self.KE2[i])
 
             divE = Graph.edgeDiv(dxe[:,:self.nopen,:],w)
-            aveE = Graph.edgeAve(dxe[:,self.nopen:,:],w)
+            aveE = Graph.edgeAve(dxe[:,self.nopen:2*self.nopen,:],w)
+            aveB = Graph.edgeAve(dxe[:,2*self.nopen:3*self.nopen, :], w)
+            aveI = Graph.edgeAve(dxe[:,3*self.nopen:4*self.nopen, :], w)
+            aveS = Graph.edgeAve(dxe[:,4*self.nopen:, :], w)
 
-            xn = xn - self.h * (divE + aveE)
-
-            #tmp = xn
-            #xn = 2*xn - xold - (self.h**2) * (divE + aveE)
-            #xold = tmp
+            tmp  = xn.clone()
+            xn   = 2*xn - xnold - self.h * (divE + aveE + aveB + aveI + aveS)
+            xnold = tmp
 
             if self.const:
                 xn = proj(xn, self.KNclose, n=5)
-                #x3 = F.conv1d(xn, self.KNclose.unsqueeze(-1))
-                #c = constraint(x3)
-                #print(c.abs().mean().item())
+            gere = 1
 
         xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
         if self.const:
@@ -225,6 +231,20 @@ def vectorLayer(V, wx, wy, wz):
     Vout  = torch.cat((Vx,Vy,Vz),dim=1)
 
     return Vout
+
+def vectorFeatures(V, Graph):
+
+    # get invariant vector features
+    V = Graph.nodeGrad(V)
+    nvecs = V.shape[1] // 3
+    Vx = V[:, nvecs, :]
+    Vy = V[:, nvecs:2 * nvecs, :]
+    Vz = V[:, 2 * nvecs:, :]
+
+    # Length
+    L = Vx**2 + Vy**2 + Vz**2
+
+    return L
 
 
 class graphNetworkEqvrnt(nn.Module):
@@ -337,3 +357,9 @@ class graphNetworkEqvrnt(nn.Module):
 
 
         return Coords, xn, xe
+
+
+
+#
+# u_t = f(u,(Ku_x)_x, uu_x, u^2, u_x^2, theta)
+#
