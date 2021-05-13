@@ -225,7 +225,7 @@ class Dataset_protein(data.Dataset):
         V[::3,0] = math.sqrt(3)
         V[1::3,1] = math.sqrt(3)
         V[2::3,2] = math.sqrt(3)
-        V = torch.cumsum(V,0)
+        # V = torch.cumsum(V,0)
 
         nn_dist = 3.8 #Angstrom
         coords_init = compute_spherical_coords_init(n, nn_dist)
