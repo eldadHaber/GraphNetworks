@@ -12,11 +12,83 @@ import torch.autograd.profiler as profiler
 
 from src import graphOps as GO
 from src import utils
-from src import graphNet as GN
 from torch.autograd import grad
 from torch.utils.data import DataLoader
 import torch.utils.data as data
 from torch_cluster import radius_graph
+from src.Equivariant.eq_utils import coordinate_loss
+from src.utils import plot_protein_comparison
+
+
+def use_proteinmodel(model,dataloader,train,max_samples,optimizer, w, batch_size=1, debug=False, viz=False, epoch=0):
+    aloss = 0.0
+    aloss_distogram_rel = 0.0
+    aloss_distogram = 0.0
+    aloss_coords = 0.0
+    if train:
+        model.train()
+    else:
+        model.eval()
+    t3 = time.time()
+    for i, (batch, seq, seq_1hot, pssm, coords, coords_init, mask, I, J, V, I_all, J_all) in enumerate(dataloader):
+        mask = mask.to(dtype=torch.bool)
+        nb = len(torch.unique(batch))
+
+        optimizer.zero_grad()
+        node_attr = torch.cat([pssm,seq_1hot],dim=1)
+        t0 = time.time()
+        # with profiler.profile(record_shapes=True) as prof:
+        #     with profiler.record_function("model_inference"):
+        node_vec = model(input=coords_init,xn_attr=node_attr)
+        t1 = time.time()
+
+        Dout = torch.norm(node_vec[I_all] - node_vec[J_all],p=2,dim=-1).view(-1,1)
+        Dtrue = torch.norm(coords[I_all]-coords[J_all],p=2,dim=-1).view(-1,1)
+
+        If, _ = torch.nonzero(Dtrue < 7*3.8, as_tuple=True)
+        Dtrue = Dtrue[If]
+        Dout = Dout[If]
+        loss_coordinates = 0
+        for i in range(nb):
+            idx = batch == i
+            maski = mask[idx]
+            loss_i, coords_pred, coords_true = coordinate_loss(node_vec[idx][maski], coords[idx][maski])
+            loss_coordinates += loss_i
+
+        loss_distogram = F.mse_loss(Dout, Dtrue)
+
+        loss = (1-w)*loss_distogram + w * loss_coordinates
+
+        loss_distogram_rel = loss_distogram / F.mse_loss(Dtrue * 0, Dtrue)
+
+        t2 = time.time()
+        # with profiler.record_function("backward"):
+        if train:
+            loss.backward()
+            optimizer.step()
+        aloss += loss.detach()
+        aloss_distogram += loss_distogram.detach()
+        aloss_distogram_rel += loss_distogram_rel.detach()
+        aloss_coords += loss_coordinates.detach()
+        if debug:
+            print(f"dataloader:{t0-t3:2.4f}, model:{t1-t0:2.4f}, loss:{t2-t1:2.4f}, backward:{time.time()-t2:2.4f}")
+        if viz:
+            plot_protein_comparison(coords_pred.cpu().detach(),coords_true.cpu().detach(),"protein_{:}".format(epoch))
+        t3 = time.time()
+        if (i + 1) * batch_size >= max_samples:
+            break
+        # print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=10))
+
+    aloss /= (i + 1)
+    aloss_distogram_rel /= (i + 1)
+    aloss_coords /= (i + 1)
+    aloss_distogram /= (i + 1)
+
+    return aloss, aloss_distogram, aloss_distogram_rel, aloss_coords
+
+
+
+
 
 def compute_all_connections(n,mask=None, include_self_connections=False, device='cpu'):
     tmp = torch.arange(n, device=device)
@@ -60,17 +132,20 @@ class GraphCollate:
         nb = len(data)    # Number of batches
         nv = len(data[0]) # Number of variables in each batch
 
-        seqs, pssms, coords,masks,Is,Js,Vs = zip(*data)
+        seqs, seqs_1hot, pssms, coords, coords_init, masks,Is,Js,Vs = zip(*data)
         batchs = [i+0*datai[0] for i,datai in enumerate(data)]
 
         batch = torch.cat(batchs)
         seq = torch.cat(seqs)
+        seq_1hot = torch.cat(seqs_1hot,dim=0)
+
         pssm = torch.cat(pssms,dim=0)
         coord = torch.cat(coords, dim=0)
+        coords_init = torch.cat(coords_init, dim=0)
         mask = torch.cat(masks,dim=0)
 
-        n_nodes = torch.tensor([len(datai[0]) for datai in data], device=seq.device)
-        n_edges = torch.tensor([len(datai[5]) for datai in data], device=seq.device)
+        n_nodes = torch.tensor([cc.shape[0] for cc in coords], device=seq.device)
+        n_edges = torch.tensor([len(cc) for cc in Is], device=seq.device)
 
 
         pp = torch.cumsum(n_nodes,dim=0)
@@ -96,7 +171,7 @@ class GraphCollate:
         I_all = torch.cat(I_all)
         J_all = torch.cat(J_all)
 
-        return batch, seq, pssm, coord,mask,Ishift,Jshift,V, I_all, J_all
+        return batch, seq, seq_1hot, pssm, coord, coords_init, mask, Ishift, Jshift, V, I_all, J_all
 
 class Dataset_protein(data.Dataset):
     def __init__(self, seq, coords, mask, pssm, device):
@@ -114,7 +189,7 @@ class Dataset_protein(data.Dataset):
         coords = (self.coords[index]*self.scale) #This gives coordinates in Angstrom, with a typical amino acid binding distance of 3.8 A
         mask = self.mask[index]
         n = seq.shape[0]
-        # seq_1hot = F.one_hot(seq, num_classes=20)
+        seq_1hot = F.one_hot(seq, num_classes=20)
         # node_features = torch.cat((pssm,seq_1hot),dim=1)
 
         D = torch.relu(torch.sum(coords.t() ** 2, dim=0, keepdim=True) + \
@@ -150,8 +225,17 @@ class Dataset_protein(data.Dataset):
         V[::3,0] = math.sqrt(3)
         V[1::3,1] = math.sqrt(3)
         V[2::3,2] = math.sqrt(3)
+        V = torch.cumsum(V,0)
 
-        return seq.to(device=self.device), pssm.to(device=self.device,dtype=torch.float32), coords.to(device=self.device,dtype=torch.float32), mask.to(device=self.device), I.to(device=self.device), J.to(device=self.device), V.to(device=self.device)
+        nn_dist = 3.8 #Angstrom
+        coords_init = compute_spherical_coords_init(n, nn_dist)
+        # coords_init = torch.zeros((n,3),dtype=torch.float32)
+        # coords_init[::3,0] = math.sqrt(3)
+        # coords_init[1::3,1] = math.sqrt(3)
+        # coords_init[2::3,2] = math.sqrt(3)
+        # coords_init = torch.cumsum(coords_init,0)
+
+        return seq.to(device=self.device), seq_1hot.to(device=self.device), pssm.to(device=self.device,dtype=torch.float32), coords.to(device=self.device,dtype=torch.float32), coords_init.to(device=self.device), mask.to(device=self.device), I.to(device=self.device), J.to(device=self.device), V.to(device=self.device)
 
     def __len__(self):
         return len(self.seq)
@@ -159,6 +243,16 @@ class Dataset_protein(data.Dataset):
     def __repr__(self):
         return self.__class__.__name__ + ' (' + ')'
 
+
+def compute_spherical_coords_init(n,nn_dist):
+    dist = n*nn_dist
+    radius = dist/math.pi
+    radians = torch.arange(n) * (math.pi / n)
+    x = radius * torch.cos(radians)
+    y = radius * torch.sin(radians)
+    z = x*0
+    coords_init = torch.cat([x[:,None],y[:,None],z[:,None]],dim=1)
+    return coords_init.to(dtype=torch.float32)
 
 def compute_inverse_square_distogram(r):
     D2 = torch.relu(torch.sum(r ** 2, dim=1, keepdim=True) + \

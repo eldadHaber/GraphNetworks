@@ -49,7 +49,7 @@ def coordinate_loss(rp,rt):
     distance_error = torch.norm(rpcr - rtc,p=2,dim=1)
     loss = torch.sum(distance_error)
     # loss = F.mse_loss(rpcr, rtc)
-    return loss #, rpcr,rtc
+    return loss, rpcr,rtc
 
 def use_model_eq(model,dataloader,train,max_samples,optimizer,batch_size=1):
     aloss = 0.0
