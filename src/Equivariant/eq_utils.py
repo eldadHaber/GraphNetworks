@@ -140,6 +140,7 @@ def use_proteinmodel_eq_inner(model,dataloader,train,max_samples,optimizer,batch
     aloss_distogram_rel = 0.0
     aloss_coords = 0.0
     for i, (batch, seq, pssm, coords, mask, I, J, V, I_all, J_all) in enumerate(dataloader):
+        print("protein length {:}".format(len(seq)))
         mask = mask.to(dtype=torch.bool)
         nb = len(torch.unique(batch))
         data = {

@@ -61,10 +61,10 @@ if __name__ == '__main__':
     MSKTest = torch.load(base_path + caspver + '/MasksTesting.pt')
     STest = torch.load(base_path + caspver + '/PSSMTesting.pt')
 
-    # Aind = AindTest
-    # Yobs = YobsTest
-    # MSK = MSKTest
-    # S = STest
+    Aind = AindTest
+    Yobs = YobsTest
+    MSK = MSKTest
+    S = STest
 
     Aind = move_list_to_device(Aind, device)
     Yobs = move_list_to_device(Yobs, device)
@@ -77,14 +77,15 @@ if __name__ == '__main__':
     SVal = move_list_to_device(SVal, device)
 
     ndata = len(Aind)
+    ndata = 1
     epochs_for_lr_adjustment = 50
-    batch_size = 5
-
+    batch_size = 1
+    use_validation = False
     print(f'Number of training data: {len(Aind):}, and validation data: {len(AindVal):}')
 
 
     # Following Equivariant paper, we select 1000 configurations from these as our training set, 1000 as our validation set, and the rest are used as test data.
-    dataset_train = Dataset_protein(Aind,Yobs,MSK,S,device=device)
+    dataset_train = Dataset_protein(Aind[:ndata],Yobs[:ndata],MSK[:ndata],S[:ndata],device=device)
     dataset_val = Dataset_protein(AindVal,YobsVal,MSKVal,SVal,device=device)
     # dataset_test = Dataset_MD17(R_test, F_test, E_test, z)
 
@@ -113,14 +114,15 @@ if __name__ == '__main__':
     model.to(device)
     total_params = sum(p.numel() for p in model.parameters())
     print('Number of parameters ', total_params)
+    # print("network parameters")
 
 
     #### Start Training ####
-    lr = 1e-3
+    lr = 1e-2
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
     alossBest = 1e6
-    epochs = 1000
+    epochs = 10000
 
     bestModel = model
     hist = torch.zeros(epochs)
@@ -128,11 +130,14 @@ if __name__ == '__main__':
     t0 = time.time()
     epochs_since_best = 0
     for epoch in range(epochs):
-        w = epoch/epochs * 0.05
+        w = epoch/epochs * 0.0
         t1 = time.time()
         aloss_t,aloss_rel, aloss_coords= use_proteinmodel_eq(model, dataloader_train, train=True, max_samples=1e6, optimizer=optimizer, batch_size=batch_size,w=w)
         t2 = time.time()
-        aloss_v,aloss_rel_v, aloss_coords_v= use_proteinmodel_eq(model, dataloader_val, train=False, max_samples=1e6, optimizer=optimizer, batch_size=batch_size,w=w)
+        if use_validation:
+            aloss_v,aloss_rel_v, aloss_coords_v= use_proteinmodel_eq(model, dataloader_val, train=False, max_samples=1, optimizer=optimizer, batch_size=batch_size,w=w)
+        else:
+            aloss_v, aloss_rel_v, aloss_coords_v = 0,0,0
         # aloss_v= use_proteinmodel_eq(model, dataloader_val, train=False, max_samples=10, optimizer=optimizer, batch_size=batch_size)
         t3 = time.time()
 
