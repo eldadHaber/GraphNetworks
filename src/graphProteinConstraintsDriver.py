@@ -174,7 +174,13 @@ for j in range(epochs):
         #                                                                      MSKTest, i, device=device)
 
         nodeProperties, Coords, M, I, J, edgeProperties, Ds, a = data
-
+        nodeProperties = nodeProperties.to(device)
+        Coords = Coords.to(device)
+        M = M.to(device)
+        I = I.to(device)
+        J = J.to(device)
+        edgeProperties = edgeProperties.to(device)
+        Ds = Ds.to(device)
         if nodeProperties.shape[2] > 700:
             continue
         nNodes = Ds.shape[0]
