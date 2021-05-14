@@ -316,7 +316,7 @@ for j in range(epochs):
                     ind = a.clone()[known_idx].detach().cpu().numpy().astype(int)
                     atoms = [inv_AA_DICT[i] for i in ind]
                     atoms_group = prody.AtomGroup('prot' + str(jj))
-                    print("pred coords shape:", xnOut.shape)
+                    #print("pred coords shape:", xnOut.shape)
                     pred_coords = xnOut.clone().squeeze()[:, known_idx].t().detach().cpu().numpy()
 
                     chids = len(atoms) * ['CA']
