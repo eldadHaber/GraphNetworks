@@ -49,11 +49,11 @@ class CaspDataset(Dataset):
         A = torch.zeros(20, n)
         A[a, torch.arange(0, n)] = 1.0
         Seq = torch.cat((PSSM, A))
-        Seq = Seq.to(device=self.device)
+        #Seq = Seq.to(device=self.device)
 
         Coords = Coords.to(device=self.device)
         M = M.type('torch.FloatTensor')
-        M = M.to(device=self.device)
+        #M = M.to(device=self.device)
 
         D = torch.relu(torch.sum(Coords ** 2, dim=0, keepdim=True) + \
                        torch.sum(Coords ** 2, dim=0, keepdim=True).t() - \
@@ -73,7 +73,7 @@ class CaspDataset(Dataset):
         # print("IJ shape:", IJ.shape)
         # Organize the edge data
         nEdges = I.shape[0]
-        xe = torch.zeros(1, 1, nEdges, device=self.device)
+        xe = torch.zeros(1, 1, nEdges) # device=self.device
         for i in range(nEdges):
             if I[i] + 1 == J[i]:
                 xe[:, :, i] = 1
