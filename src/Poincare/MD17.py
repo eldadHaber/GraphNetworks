@@ -59,6 +59,7 @@ if __name__ == '__main__':
 
     z = torch.from_numpy(data['z']).to(dtype=torch.float32, device=device)
 
+
     ndata = E.shape[0]
     natoms = z.shape[0]
 
