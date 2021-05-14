@@ -28,7 +28,7 @@ def generate_poincare_datasets(nhist,nskips,R):
     nR, natoms, ndim = R.shape
     ndata = nR - nhist - nskips
 
-    Rin = torch.empty((ndata,natoms,nhist,ndim),dtype=torch.float32)
+    Rin = torch.empty((ndata,natoms,nhist,ndim),dtype=torch.float32,device=R.device)
 
     R_target = R[nhist:]
     for i in range(nhist):
@@ -39,28 +39,28 @@ def generate_poincare_datasets(nhist,nskips,R):
 
 
 if __name__ == '__main__':
-    n_train = 1
+    n_train = 10000
     n_val = 1000
-    batch_size = 1
+    batch_size = 40
     nhist = 2
     nskips = 0
-    epochs_for_lr_adjustment = 30
+    epochs_for_lr_adjustment = 50
     use_validation = False
     lr = 1e-2
 
     device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
-    device='cpu'
+    # device='cpu'
     # load training data
     data = np.load('../../../../data/MD/MD17/aspirin_dft.npz')
-    E = data['E']
-    Force = data['F']
+    # E = data['E']
+    # Force = data['F']
     R = torch.from_numpy(data['R']).to(dtype=torch.float32, device=device)
     Rin, Rout = generate_poincare_datasets(nhist, nskips, R)
 
     z = torch.from_numpy(data['z']).to(dtype=torch.float32, device=device)
 
 
-    ndata = E.shape[0]
+    ndata = R.shape[0]
     natoms = z.shape[0]
 
     print('Number of data: {:}, Number of atoms {:}'.format(ndata, natoms))
@@ -85,7 +85,7 @@ if __name__ == '__main__':
     dataloader_val = DataLoader(dataset_val, batch_size=batch_size, shuffle=True, drop_last=False)
 
     irreps_in = None  # o3.Irreps("0x0e")
-    irreps_hidden = o3.Irreps("10x0e+10x0o+5x1e+5x1o")
+    irreps_hidden = o3.Irreps("100x0e+100x0o+50x1e+50x1o")
     irreps_out = o3.Irreps("1x1o")
     irreps_node_attr = o3.Irreps("1x0e")
     irreps_edge_attr = o3.Irreps("{:}x0e+{:}x1o".format(nhist,nhist))

@@ -118,7 +118,7 @@ if __name__ == '__main__':
 
 
     #### Start Training ####
-    lr = 1e-2
+    lr = 5e-2
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
     alossBest = 1e6
