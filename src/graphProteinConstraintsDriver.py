@@ -88,7 +88,7 @@ nNclose = 3
 nEclose = 1
 nlayer = 18
 
-model = GN.graphNetwork(nNin, nEin, nopen, nhid, nNclose, nlayer, h=.1, const=True)
+model = GN.graphNetwork_pFold(nNin, nEin, nopen, nhid, nNclose, nlayer, h=.1, const=True)
 model.to(device)
 
 total_params = sum(p.numel() for p in model.parameters())
