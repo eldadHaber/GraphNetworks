@@ -170,16 +170,27 @@ for j in range(epochs):
         #nodeProperties, Coords, M, I, J, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
         #                                                                      MSK, i, device=device)
 
-        #nodeProperties, Coords, M, I, J, edgeProperties, Ds = prc.getIterData(STest, AindTest, YobsTest,
-        #                                                                      MSKTest, i, device=device)
+        nodeProperties, Coords, M, I, J, edgeProperties, Ds = prc.getIterData(STest, AindTest, YobsTest,
+                                                                              MSKTest, i, device=device)
+        print("old:")
+        print("nodeProperties:", nodeProperties.shape)
+        print("Coords:", Coords.shape)
+        print("edgeProperties:", edgeProperties.shape)
+
 
         nodeProperties, Coords, M, I, J, edgeProperties, Ds, a = data
-        nodeProperties = nodeProperties.to(device).squeeze()
+        nodeProperties = nodeProperties.to(device)
         Coords = Coords.to(device)
         M = M.to(device)
         I = I.to(device)
         J = J.to(device)
         edgeProperties = edgeProperties.to(device).squeeze()
+
+        print("old:")
+        print("nodeProperties:", nodeProperties.shape)
+        print("Coords:", Coords.shape)
+        print("new:", edgeProperties.shape)
+
         Ds = Ds.to(device)
         if nodeProperties.shape[2] > 700:
             continue
