@@ -134,6 +134,7 @@ def constraintIJ(X, I, J, d=3.8):
     XI = X[:, I]
     XJ = X[:, J]
     c = torch.ones(1, 3, device=X.device) @ ((XI - XJ) ** 2) - d ** 2
+
     return c
 
 
@@ -144,6 +145,7 @@ def doubleLayer(x, K1, K2):
     x = F.conv1d(x, K2.unsqueeze(-1))
     return x
 
+
 class graphNetwork_pFold(nn.Module):
 
     def __init__(self, nNin, nEin, nopen, nhid, nNclose, nlayer, h=0.1, const=False):
@@ -151,28 +153,28 @@ class graphNetwork_pFold(nn.Module):
 
         self.const = const
         self.h = h
-        stdv = 1.0 #1e-2
-        stdvp = 1.0 # 1e-3
+        stdv = 1.0  # 1e-2
+        stdvp = 1.0  # 1e-3
         self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
         self.K2Nopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
-        #self.K1Eopen = nn.Parameter(torch.randn(nopen, nEin) * stdv)
-        #self.K2Eopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
+        # self.K1Eopen = nn.Parameter(torch.randn(nopen, nEin) * stdv)
+        # self.K2Eopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
 
-        #nopen      = 3*nopen  # [xn; Av*xe; Div*xe]
+        # nopen      = 3*nopen  # [xn; Av*xe; Div*xe]
         self.nopen = nopen
 
-        nhid = 5*nopen
-        Id  = (torch.eye(nhid,5*nopen)).unsqueeze(0) #+ 1e-3*torch.randn(nhid,5*nopen)).unsqueeze(0)
-        #Idt = torch.eye(Nfeatures,nhid).unsqueeze(0)
-        Idt = (torch.eye(5*nopen, nhid)).unsqueeze(0) # + 1e-3*torch.randn(5*nopen,nhid)).unsqueeze(0)
+        nhid = 5 * nopen
+        Id = (torch.eye(nhid, 5 * nopen)).unsqueeze(0)  # + 1e-3*torch.randn(nhid,5*nopen)).unsqueeze(0)
+        # Idt = torch.eye(Nfeatures,nhid).unsqueeze(0)
+        Idt = (torch.eye(5 * nopen, nhid)).unsqueeze(0)  # + 1e-3*torch.randn(5*nopen,nhid)).unsqueeze(0)
 
-        IdTensor  = torch.repeat_interleave(Id, nlayer, dim=0)
+        IdTensor = torch.repeat_interleave(Id, nlayer, dim=0)
         IdTensort = torch.repeat_interleave(Idt, nlayer, dim=0)
         self.KE1 = nn.Parameter(IdTensor * stdvp)
         self.KE2 = nn.Parameter(IdTensort * stdvp)
 
         self.KNclose = nn.Parameter(torch.eye(nNclose, nopen))
-        self.Kw = nn.Parameter(torch.ones(nopen,1))
+        self.Kw = nn.Parameter(torch.ones(nopen, 1))
 
     def doubleLayer(self, x, K1, K2):
 
@@ -192,8 +194,8 @@ class graphNetwork_pFold(nn.Module):
         # xe =  [B, C, E]
         # Opening layer
         xn = self.doubleLayer(xn, self.K1Nopen, self.K2Nopen)
-        #xe = self.doubleLayer(xe, self.K1Eopen, self.K2Eopen)
-        #xn = torch.cat([xn,Graph.edgeDiv(xe), Graph.edgeAve(xe)], dim=1)
+        # xe = self.doubleLayer(xe, self.K1Eopen, self.K2Eopen)
+        # xn = torch.cat([xn,Graph.edgeDiv(xe), Graph.edgeAve(xe)], dim=1)
         if self.const:
             xn = proj(xn, self.KNclose, n=100)
 
@@ -203,36 +205,36 @@ class graphNetwork_pFold(nn.Module):
         for i in range(nlayers):
 
             # Compute the distance in real space
-            x3    = F.conv1d(xn, self.KNclose.unsqueeze(-1))
-            w     = Graph.edgeLength(x3)
-            w     = self.Kw@w
-            w     = w/(torch.std(w)+1e-4)
-            w     = torch.exp(-(w**2))
-            #w     = torch.ones(xe.shape[2], device=xe.device)
+            x3 = F.conv1d(xn, self.KNclose.unsqueeze(-1))
+            w = Graph.edgeLength(x3)
+            w = self.Kw @ w
+            w = w / (torch.std(w) + 1e-4)
+            w = torch.exp(-(w ** 2))
+            # w     = torch.ones(xe.shape[2], device=xe.device)
 
-            gradX   = Graph.nodeGrad(xn,w)
-            #gradX   = tv_norm(gradX)
-            intX    = Graph.nodeAve(xn,w)
-            #intX    = tv_norm(intX)
-            xgradX  = gradX*intX
-            #xgradX  = tv_norm(xgradX)
-            gradXsq = gradX*gradX
-            #gradXsq = tv_norm(gradXsq)
-            xSq     = intX*intX
-            #xSq     = tv_norm(xSq)
+            gradX = Graph.nodeGrad(xn, w)
+            # gradX   = tv_norm(gradX)
+            intX = Graph.nodeAve(xn, w)
+            # intX    = tv_norm(intX)
+            xgradX = gradX * intX
+            # xgradX  = tv_norm(xgradX)
+            gradXsq = gradX * gradX
+            # gradXsq = tv_norm(gradXsq)
+            xSq = intX * intX
+            # xSq     = tv_norm(xSq)
 
-            #dxe = torch.cat([gradX, intX], dim=1)
+            # dxe = torch.cat([gradX, intX], dim=1)
             dxe = torch.cat([gradX, intX, xgradX, gradXsq, xSq], dim=1)
-            dxe  = self.doubleLayer(dxe, self.KE1[i], self.KE2[i])
+            dxe = self.doubleLayer(dxe, self.KE1[i], self.KE2[i])
 
-            divE = Graph.edgeDiv(dxe[:,:self.nopen,:],w)
-            aveE = Graph.edgeAve(dxe[:,self.nopen:2*self.nopen,:],w)
-            aveB = Graph.edgeAve(dxe[:,2*self.nopen:3*self.nopen, :], w)
-            aveI = Graph.edgeAve(dxe[:,3*self.nopen:4*self.nopen, :], w)
-            aveS = Graph.edgeAve(dxe[:,4*self.nopen:, :], w)
+            divE = Graph.edgeDiv(dxe[:, :self.nopen, :], w)
+            aveE = Graph.edgeAve(dxe[:, self.nopen:2 * self.nopen, :], w)
+            aveB = Graph.edgeAve(dxe[:, 2 * self.nopen:3 * self.nopen, :], w)
+            aveI = Graph.edgeAve(dxe[:, 3 * self.nopen:4 * self.nopen, :], w)
+            aveS = Graph.edgeAve(dxe[:, 4 * self.nopen:, :], w)
 
-            tmp  = xn.clone()
-            xn   = 2*xn - xnold - self.h * (divE + aveE + aveB + aveI + aveS)
+            tmp = xn.clone()
+            xn = 2 * xn - xnold - self.h * (divE + aveE + aveB + aveI + aveS)
             xnold = tmp
 
             if self.const:
@@ -243,10 +245,10 @@ class graphNetwork_pFold(nn.Module):
         if self.const:
             c = constraint(xn)
             if c.abs().mean() > 0.1:
-                xn = proj(xn, torch.eye(3, 3), n=500)
-
+                xn = proj(xn, torch.eye(3, 3).to(device), n=500)
 
         return xn, xe
+
 
 ###################################################################################pdegcn
 
