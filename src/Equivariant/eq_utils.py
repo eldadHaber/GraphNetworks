@@ -140,6 +140,7 @@ def use_proteinmodel_eq_inner(model,dataloader,train,max_samples,optimizer,batch
     aloss_distogram_rel = 0.0
     aloss_coords = 0.0
     for i, (batch, seq, seq_1hot, pssm, coords, coords_init, mask, I, J, V, I_all, J_all) in enumerate(dataloader):
+        # print("protein length {:}".format(len(seq)))
         mask = mask.to(dtype=torch.bool)
         nb = len(torch.unique(batch))
         data = {
@@ -173,7 +174,7 @@ def use_proteinmodel_eq_inner(model,dataloader,train,max_samples,optimizer,batch
         for ii in range(nb):
             idx = batch == ii
             maski = mask[idx]
-            loss_i, _, _ = coordinate_loss(node_vec[idx][maski], coords[idx][maski])
+            loss_i, _,_ = coordinate_loss(node_vec[idx][maski], coords[idx][maski])
             loss_coordinates += loss_i
 
         loss_distogram = F.mse_loss(Dout, Dtrue)
