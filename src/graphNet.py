@@ -72,6 +72,7 @@ def diffXT(X):
 def constraint(X, d=3.8):
     X = X.squeeze()
     c = torch.ones(1, 3, device=X.device) @ (diffX(X) ** 2) - d ** 2
+    c = c.to(device)
 
     return c
 
