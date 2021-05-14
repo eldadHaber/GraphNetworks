@@ -73,20 +73,20 @@ class CaspDataset(Dataset):
         # print("IJ shape:", IJ.shape)
         # Organize the edge data
         nEdges = I.shape[0]
-        xe = torch.zeros(1, 1, nEdges, device=device)
+        xe = torch.zeros(1, 1, nEdges, device=self.device)
         for i in range(nEdges):
             if I[i] + 1 == J[i]:
                 xe[:, :, i] = 1
             if I[i] - 1 == J[i]:
                 xe[:, :, i] = 1
 
-        Seq = Seq.to(device=self.device, non_blocking=True)
-        Coords = Coords.to(device=self.device, non_blocking=True)
-        M = M.to(device=self.device, non_blocking=True)
-        I = I.to(device=self.device, non_blocking=True)
-        J = J.to(device=self.device, non_blocking=True)
-        xe = xe.to(device=self.device, non_blocking=True)
-        D = D.to(device=self.device, non_blocking=True)
+        #Seq = Seq.to(device=self.device, non_blocking=True)
+        #Coords = Coords.to(device=self.device, non_blocking=True)
+        #M = M.to(device=self.device, non_blocking=True)
+        #I = I.to(device=self.device, non_blocking=True)
+        #J = J.to(device=self.device, non_blocking=True)
+        #xe = xe.to(device=self.device, non_blocking=True)
+        #D = D.to(device=self.device, non_blocking=True)
         if self.return_a:
             return Seq.unsqueeze(0), Coords.unsqueeze(0), M.unsqueeze(0).unsqueeze(0), I, J, xe, D, a
 
