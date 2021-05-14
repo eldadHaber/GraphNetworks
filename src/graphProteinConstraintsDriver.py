@@ -183,7 +183,7 @@ for j in range(epochs):
         M = M.to(device).squeeze()
         I = I.to(device).squeeze()
         J = J.to(device).squeeze()
-        edgeProperties = edgeProperties.to(device).squeeze()
+        edgeProperties = edgeProperties.to(device).unsqueeze(0)
         Ds = Ds.to(device).squeeze()
 
         print("new:")
