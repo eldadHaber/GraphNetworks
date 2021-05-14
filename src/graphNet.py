@@ -497,7 +497,7 @@ class graphNetwork_nodesOnly(nn.Module):
 
         self.KN1 = nn.Parameter(identityInit(self.KN1) + rrnd)
 
-        #if Nfeatures != nhid:
+        # if Nfeatures != nhid:
         #    self.interClosing = nn.Parameter(torch.rand(nlayer, Nfeatures, nhid) * stdvp)
 
         if self.realVarlet:
@@ -574,17 +574,16 @@ class graphNetwork_nodesOnly(nn.Module):
         if not openclose:  # if K.shape[0] == K.shape[1]:
             # x = F.relu(x)
             x = self.edgeConv(x, K, groups=groups)
-            x = F.tanh(x)
-            # x = F.relu(x)
+            if not relu:
+                x = F.tanh(x)
+            else:
+                x = F.relu(x)
             if norm:
                 # x = F.layer_norm(x, x.shape)
                 beta = torch.norm(x)
                 x = beta * tv_norm(x)
             x = self.edgeConv(x, K.t(), groups=groups)
             # F.relu(x)
-        if not relu:
-            return x
-        x = F.relu(x)
         return x
 
     def newDoubleLayer(self, x, K1, K2):
@@ -857,10 +856,10 @@ class graphNetwork_nodesOnly(nn.Module):
                     efficient = True
                     if efficient:
                         if not self.doubleConv:
-                            #gradSq = gradX * gradX #Graph.nodeAve(xn)
-                            #gradX = torch.cat([gradX, gradSq], dim=1)
-                            dxn = (self.singleLayer(gradX, self.KN1[i], norm=False, relu=True, groups=1))  # KN2
-                            #dxn = (self.singleLayer(dxn, self.interClosing[i], norm=False, relu=False, groups=1))
+                            # gradSq = gradX * gradX #Graph.nodeAve(xn)
+                            # gradX = torch.cat([gradX, gradSq], dim=1)
+                            dxn = (self.singleLayer(gradX, self.KN1[i], norm=False, relu=False, groups=1))  # KN2
+                            # dxn = (self.singleLayer(dxn, self.interClosing[i], norm=False, relu=False, groups=1))
                         else:
                             dxn = self.finalDoubleLayer(gradX, self.KN1[i], self.KN2[i])
                         dxn = Graph.edgeDiv(dxn)  # + Graph.edgeAve(dxe2, method='ave')
