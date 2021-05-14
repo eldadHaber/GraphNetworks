@@ -1,6 +1,22 @@
 import time
 import torch
 import torch.utils.data as data
+import numpy as np
+import random
+
+
+def fix_seed(seed, include_cuda=True):
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+    # if you are using GPU
+    if include_cuda:
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.enabled = False
+        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.deterministic = True
+
 
 class Dataset_MD17_pc(data.Dataset):
     def __init__(self, Rin, Rout, z):
@@ -25,6 +41,7 @@ class Dataset_MD17_pc(data.Dataset):
 def use_model_eq_pc(model,dataloader,train,max_samples,optimizer,batch_size=1):
     aloss = 0.0
     aloss_ref = 0.0
+    MAE = 0.0
     t_dataload = 0.0
     t_prepare = 0.0
     t_model = 0.0
@@ -55,12 +72,14 @@ def use_model_eq_pc(model,dataloader,train,max_samples,optimizer,batch_size=1):
 
         loss = torch.sum(torch.norm(Rpred-Rout_vec,p=2,dim=1))/nb
         loss_last_step = torch.sum(torch.norm(Rin[:,:,-1,:].reshape(Rout_vec.shape) - Rout_vec, p=2,dim=1))/nb
+        MAEi = torch.mean(torch.abs(Rpred - Rout_vec)).detach()
 
         if train:
             loss.backward()
             optimizer.step()
         aloss += loss.detach()
         aloss_ref += loss_last_step
+        MAE += MAEi
         t_dataload += t0 - t3
         t3 = time.time()
         t_prepare += t1 - t0
@@ -70,9 +89,10 @@ def use_model_eq_pc(model,dataloader,train,max_samples,optimizer,batch_size=1):
             break
     aloss /= (i+1)
     aloss_ref /= (i+1)
+    MAE /= (i+1)
     t_dataload /= (i+1)
     t_prepare /= (i+1)
     t_model /= (i+1)
     t_backprop /= (i+1)
 
-    return aloss, aloss_ref, t_dataload, t_prepare, t_model, t_backprop
+    return aloss, aloss_ref, MAE, t_dataload, t_prepare, t_model, t_backprop
