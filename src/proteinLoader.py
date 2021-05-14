@@ -23,7 +23,7 @@ class CaspDataset(Dataset):
         self.return_a = return_a
 
     def __len__(self):
-        return len(S)
+        return len(self.S)
 
     def __getitem__(self, i):
         scale = 1e-2
