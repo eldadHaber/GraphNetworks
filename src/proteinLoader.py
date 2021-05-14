@@ -51,7 +51,7 @@ class CaspDataset(Dataset):
         Seq = torch.cat((PSSM, A))
         #Seq = Seq.to(device=self.device)
 
-        Coords = Coords.to(device=self.device)
+        #Coords = Coords.to(device=self.device)
         M = M.type('torch.FloatTensor')
         #M = M.to(device=self.device)
 
