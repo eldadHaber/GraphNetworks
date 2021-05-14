@@ -181,9 +181,9 @@ for j in range(epochs):
         nodeProperties, Coords, M, I, J, edgeProperties, Ds, a = data
         nodeProperties = nodeProperties.to(device)
         Coords = Coords.to(device)
-        M = M.to(device)
-        I = I.to(device)
-        J = J.to(device)
+        M = M.to(device).squeeze()
+        I = I.to(device).squeeze()
+        J = J.to(device).squeeze()
         edgeProperties = edgeProperties.to(device).squeeze()
 
         print("old:")
