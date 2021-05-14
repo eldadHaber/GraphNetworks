@@ -99,8 +99,8 @@ n_data_total = len(S)
 # Setup the network and its parameters
 nNin = 40
 nEin = 1
-nopen = 64
-nhid = 128
+nopen = 8
+nhid = 16
 nNclose = 3
 nEclose = 1
 nlayer = 18
@@ -237,7 +237,7 @@ for j in range(epochs):
 
             aloss = 0.0
             alossAQ = 0.0
-        # Validation
+    # Validation
     nextval = 1
     if (j + 1) % nextval == 0:
         with torch.no_grad():
