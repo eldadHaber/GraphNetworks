@@ -174,7 +174,7 @@ for j in range(epochs):
         #                                                                      MSKTest, i, device=device)
 
         nodeProperties, Coords, M, I, J, edgeProperties, Ds, a = data
-        nodeProperties = nodeProperties.to(device)
+        nodeProperties = nodeProperties.to(device).squeeze()
         Coords = Coords.to(device)
         M = M.to(device)
         I = I.to(device)
