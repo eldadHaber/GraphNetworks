@@ -88,6 +88,6 @@ class CaspDataset(Dataset):
         #xe = xe.to(device=self.device, non_blocking=True)
         #D = D.to(device=self.device, non_blocking=True)
         if self.return_a:
-            return Seq, Coords.unsqueeze(0), M.unsqueeze(0).unsqueeze(0), I, J, xe, D, a
+            return Seq, Coords, M.unsqueeze(0), I, J, xe, D, a
 
-        return Seq, Coords.unsqueeze(0), M.unsqueeze(0).unsqueeze(0), I, J, xe, D
+        return Seq, Coords, M.unsqueeze(0), I, J, xe, D
