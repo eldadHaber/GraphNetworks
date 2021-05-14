@@ -191,7 +191,7 @@ for j in range(epochs):
         print("Coords:", Coords.shape)
         print("new:", edgeProperties.shape)
 
-        Ds = Ds.to(device)
+        Ds = Ds.to(device).squeeze()
         if nodeProperties.shape[2] > 700:
             continue
         nNodes = Ds.shape[0]
