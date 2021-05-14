@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 import torch.autograd.profiler as profiler
+from torch.utils.data import Dataset, DataLoader
 
 from src import graphOps as GO
 from src import processContacts as prc
@@ -39,6 +40,8 @@ caspver = "casp11"  # Change this to choose casp version
 if "s" in sys.argv:
     base_path = '/home/eliasof/pFold/data/'
     import graphOps_proteins_eldad as GO
+    import proteinLoader
+
     import processContacts as prc
     import utils
     import graphNet as GN
@@ -48,6 +51,8 @@ if "s" in sys.argv:
 elif "e" in sys.argv:
     base_path = '/home/cluster/users/erant_group/pfold/'
     from src import graphOps_proteins_eldad as GO
+    from src import proteinLoader
+
     from src import processContacts as prc
     from src import utils
     from src import graphNet as GN
@@ -57,6 +62,8 @@ elif "e" in sys.argv:
 else:
     base_path = '../../../data/'
     from src import graphOps_proteins_eldad as GO
+    from src import proteinLoader
+
     from src import processContacts as prc
     from src import utils
     from src import graphNet as GN
@@ -84,6 +91,14 @@ Yobs = YobsTest
 MSK = MSKTest
 S = STest
 
+train_dataset = proteinLoader(S, Aind, Yobs, MSK, device=device, return_a=False)
+test_dataset = proteinLoader(STest, AindTest, YobsTest, MSKTest, device=device, return_a=True)
+
+trainLoader = dataloader = DataLoader(train_dataset, batch_size=1,
+                        shuffle=True, num_workers=6)
+
+testLoader = dataloader = DataLoader(test_dataset, batch_size=1,
+                        shuffle=True, num_workers=6)
 
 def maskMat(T, M):
     M = M.squeeze()
@@ -149,14 +164,16 @@ for j in range(epochs):
     # Prepare the data
     aloss = 0.0
     alossAQ = 0.0
-    for i in range(ndata):
-
+    #for i in range(ndata):
+    for i, data in enumerate(testLoader):
         # Get the data
         #nodeProperties, Coords, M, I, J, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
         #                                                                      MSK, i, device=device)
 
-        nodeProperties, Coords, M, I, J, edgeProperties, Ds = prc.getIterData(STest, AindTest, YobsTest,
-                                                                              MSKTest, i, device=device)
+        #nodeProperties, Coords, M, I, J, edgeProperties, Ds = prc.getIterData(STest, AindTest, YobsTest,
+        #                                                                      MSKTest, i, device=device)
+
+        nodeProperties, Coords, M, I, J, edgeProperties, Ds, a = data
 
         if nodeProperties.shape[2] > 700:
             continue
