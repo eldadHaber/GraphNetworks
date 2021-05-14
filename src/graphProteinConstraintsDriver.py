@@ -12,6 +12,24 @@ from src import graphOps as GO
 from src import processContacts as prc
 from src import utils
 from src import graphNet as GN
+import prody
+from collections import OrderedDict
+
+AA_DICT = OrderedDict(
+    {'A': '0', 'C': '1', 'D': '2', 'E': '3', 'F': '4', 'G': '5', 'H': '6', 'I': '7', 'K': '8', 'L': '9',
+     'M': '10', 'N': '11', 'P': '12', 'Q': '13', 'R': '14', 'S': '15', 'T': '16', 'V': '17', 'W': '18',
+     'Y': '19', '-': '20'})
+inv_AA_DICT = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L',
+               'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W',
+               'Y', '-']
+# inv_AA_DICT = list({k for (k, v) in AA_DICT.items()})
+
+amino_dict = {'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q', 'LYS': 'K',
+              'ILE': 'I', 'PRO': 'P', 'THR': 'T', 'PHE': 'F', 'ASN': 'N',
+              'GLY': 'G', 'HIS': 'H', 'LEU': 'L', 'ARG': 'R', 'TRP': 'W',
+              'ALA': 'A', 'VAL': 'V', 'GLU': 'E', 'TYR': 'Y', 'MET': 'M', '-': '-'}
+
+amino_dict = {v: k for k, v in amino_dict.items()}
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
@@ -116,6 +134,16 @@ ndata = n_data_total
 bestModel = model
 hist = torch.zeros(epochs)
 
+checkpoints_path = "/home/cluster/users/erant_group/moshe/"
+filename = filename = caspver + "nopen" + str(nopen) + "nhid" + str(nhid) + "nclose" + str(nNclose) + "nlayers" + str(
+    nlayer)
+checkpoints_path = checkpoints_path + "/" + filename + "/"
+import os
+
+if not os.path.exists(checkpoints_path):
+    os.makedirs(checkpoints_path)
+
+
 dst = torch.linspace(100 * 3.8, 3 * 3.8, epochs) * 0 + 1e4
 for j in range(epochs):
     # Prepare the data
@@ -206,37 +234,139 @@ for j in range(epochs):
             aloss = 0.0
             alossAQ = 0.0
         # Validation
-        nextval = 300
-        if (i + 1) % nextval == 0:
+        nextval = 10
+        if (j + 1) % nextval == 0:
             with torch.no_grad():
-                misVal = 0
+                aloss = 0
                 AQdis = 0
                 nVal = len(STest)
                 for jj in range(nVal):
-                    nodeProperties, Coords, M, I, J, edgeProperties, Ds = prc.getIterData(STest, AindTest, YobsTest,
-                                                                                          MSKTest, jj, device=device)
-
+                    nodeProperties, Coords, M, I, J, edgeProperties, Ds, a = prc.getIterData(STest, AindTest, YobsTest,
+                                                                                          MSKTest, jj, device=device, return_a=True)
+                    if nodeProperties.shape[2] > 700:
+                        continue
                     nNodes = Ds.shape[0]
-                    # G = GO.dense_graph(nNodes, Ds)
                     w = Ds[I, J]
                     G = GO.graph(I, J, nNodes, w)
-                    # Organize the node data
                     xn = nodeProperties
-                    # xe = Ds.unsqueeze(0).unsqueeze(0)  # edgeProperties
                     xe = w.unsqueeze(0).unsqueeze(0)
 
-                    M = torch.ger(M.squeeze(), M.squeeze())
-
                     xnOut, xeOut = model(xn, xe, G)
-
+                    #xnOut = utils.distConstraint(xnOut, dc=3.8)
                     Dout = utils.getDistMat(xnOut)
                     Dtrue = utils.getDistMat(Coords)
-                    loss = F.mse_loss(M * Dout, M * Dtrue)
 
-                    AQdis += (torch.norm(M * Dout - M * Dtrue) / torch.sqrt(torch.sum(M))).detach()
-                    misVal += loss.detach()
+                    Medge = torch.ger(M.squeeze(), M.squeeze())
+                    Medge = Medge > 0
+                    # loss = F.mse_loss(M * Dout, M * Dtrue)
+                    #loss = F.mse_loss(maskMat(Dout, M), maskMat(Dtrue, M))
 
-                print("%2d       %10.3E   %10.3E" % (j, misVal / nVal, AQdis / nVal))
+                    n = xnOut.shape[-1]
+                    Xl = torch.zeros(3, n, device=xnOut.device)
+                    Xl[0, :] = 3.9 * torch.arange(0, n)
+                    Dl = torch.sum(Xl ** 2, dim=0, keepdim=True) + torch.sum(Xl ** 2, dim=0,
+                                                                             keepdim=True).t() - 2 * Xl.t() @ Xl
+                    Dl = torch.sqrt(torch.relu(Dl))
+                    ML = (Medge * Dl - Medge * (torch.relu(Dtrue))) > 0
+                    MS = (torch.relu(Dtrue)) < 7 * 3.9
+                    Medge = (Medge & MS & ML) * 1.0
+                    Medge = torch.triu(Medge, 1)
+                    R = torch.triu(Dout - (torch.relu(Dtrue)), 1)
+                    loss = torch.norm(Medge * R) ** 2 / torch.sum(Medge)
+                    loss = torch.sqrt(loss)
+
+
+                    aloss += loss.detach()
+                    AQdis += (torch.norm(maskMat(Dout, M) - maskMat(Dtrue, M)) / torch.sqrt(
+                        torch.sum(Medge)).detach())
+
+                    if 1 == 1:
+                        known_idx = (M == 1).squeeze()
+                        gt_coords = Coords.clone().squeeze().t().detach().cpu().numpy()
+                        if j == 0:
+                            ##SAVE GT FILE
+                            ind = a.clone()[known_idx].detach().cpu().numpy().astype(int)
+                            # print("ind:", ind)
+                            atoms = [inv_AA_DICT[i] for i in ind]
+                            # print("atoms:", atoms)
+                            atoms_group = prody.AtomGroup('prot' + str(jj))
+                            gt_coords = Coords.clone().squeeze()[:, known_idx].t().detach().cpu().numpy()
+
+                            # print("coords shape:", gt_coords.shape)
+
+                            chids = len(atoms) * ['CA']
+                            # atoms_group.setChids(chids)
+                            atoms_group.setNames(chids)
+                            # print("len(atoms):", len(atoms))
+                            atoms_group.setResnums(range(1, len(atoms) + 1))
+
+                            res_names = [amino_dict[i] for i in atoms]
+                            # print("res_names:", res_names)
+                            # exit()
+                            atoms_group.setResnames(res_names)
+                            labels = len(atoms) * ['ATOM']
+                            atoms_group.setCoords(gt_coords, label=labels)
+
+                            prody.writePDB(checkpoints_path + 'gt_prot' + str(jj) + '.pdb', atoms_group)
+
+                        ind = a.clone()[known_idx].detach().cpu().numpy().astype(int)
+                        atoms = [inv_AA_DICT[i] for i in ind]
+                        atoms_group = prody.AtomGroup('prot' + str(jj))
+                        print("pred coords shape:", xnOut.shape)
+                        pred_coords = xnOut.clone().squeeze()[:, known_idx].t().detach().cpu().numpy()
+
+                        chids = len(atoms) * ['CA']
+                        atoms_group.setNames(chids)
+                        atoms_group.setResnums(range(1, len(atoms) + 1))
+
+                        res_names = [amino_dict[iii] for iii in atoms]
+                        atoms_group.setResnames(res_names)
+                        labels = len(atoms) * ['ATOM']
+                        atoms_group.setCoords(pred_coords, label=labels)
+
+                        prody.writePDB(checkpoints_path + 'epoch' + str(j) + '_pred_prot' + str(jj) + '.pdb',
+                                       atoms_group)
+
+                        fname = checkpoints_path + 'epoch' + str(j) + '_pred_protCoords' + str(jj) + '.txt'
+
+                        np.savetxt(fname, pred_coords)
+                        if (jj < 1000) and 1 == 1:
+                            gtC = Coords.clone().squeeze()[:, known_idx].squeeze()
+                            if j == 0:
+                                distMap = utils.getDistMat(gtC)  # * M
+                                distMap = distMap.cpu().numpy()
+                                # indices_bad = distMap > 26.6
+                                # distMap[distMap > 26.6] = 0
+                                plt.figure()
+                                plt.imshow(distMap)
+                                # plt.clim(0, 26.6)
+                                plt.colorbar()
+                                plt.axis('off')
+                                plt.savefig(
+                                    checkpoints_path + '_epoch_' + str(
+                                        j) + 'distmap_gt_' + str(jj) + ".jpg")
+                                plt.close()
+                                plt.cla()
+
+                            ##Save distmap:
+                            # predC = Cout.clone().squeeze()
+                            predC = torch.from_numpy(pred_coords).t()
+                            distMap = utils.getDistMat(predC)  # * M
+                            distMap = distMap.cpu().numpy()
+                            # distMap[indices_bad] = 0
+                            plt.figure()
+                            plt.imshow(distMap)
+                            # plt.clim(0, 26.6)
+
+                            plt.colorbar()
+                            plt.axis('off')
+                            plt.savefig(
+                                checkpoints_path + '_epoch_' + str(
+                                    j) + 'distmap_pred_' + str(jj) + ".jpg")
+                            plt.close()
+                            plt.cla()
+
+                print("%2d       %10.3E   %10.3E" % (j, aloss / nVal, AQdis / nVal))
                 print('===============================================')
 
     if aloss < alossBest:
