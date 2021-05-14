@@ -179,7 +179,7 @@ for j in range(epochs):
         M = M.to(device)
         I = I.to(device)
         J = J.to(device)
-        edgeProperties = edgeProperties.to(device)
+        edgeProperties = edgeProperties.to(device).squeeze()
         Ds = Ds.to(device)
         if nodeProperties.shape[2] > 700:
             continue
