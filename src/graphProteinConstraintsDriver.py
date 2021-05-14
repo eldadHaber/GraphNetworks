@@ -63,27 +63,26 @@ STest = torch.load(base_path + caspver + '/PSSMTesting.pt')
 
 Aind = AindTest
 Yobs = YobsTest
-MSK  = MSKTest
-S    = STest
+MSK = MSKTest
+S = STest
 
 
-def maskMat(T,M):
+def maskMat(T, M):
     M = M.squeeze()
-    MT = (M*(M*T).t()).t()
+    MT = (M * (M * T).t()).t()
     return MT
+
 
 ##
 
 print('Number of data: ', len(S))
 n_data_total = len(S)
 
-
-
 # Setup the network and its parameters
 nNin = 40
 nEin = 1
 nopen = 8
-nhid  = 16
+nhid = 16
 nNclose = 3
 nEclose = 1
 nlayer = 18
@@ -95,30 +94,29 @@ total_params = sum(p.numel() for p in model.parameters())
 print('Number of parameters ', total_params)
 
 #### Start Training ####
-lrO  = 1e-3
-lrC  = 1e-3
+lrO = 1e-3
+lrC = 1e-3
 lrE1 = 1e-3
 lrE2 = 1e-3
-lrw  = 1e-3
+lrw = 1e-3
 
 optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO},
                         {'params': model.K2Nopen, 'lr': lrO},
-                        #{'params': model.K1Eopen, 'lr': lrO},
-                        #{'params': model.K2Eopen, 'lr': lrO},
+                        # {'params': model.K1Eopen, 'lr': lrO},
+                        # {'params': model.K2Eopen, 'lr': lrO},
                         {'params': model.KE1, 'lr': lrE1},
                         {'params': model.KE2, 'lr': lrE2},
                         {'params': model.KNclose, 'lr': lrC},
                         {'params': model.Kw, 'lr': lrw}])
 
-
 alossBest = 1e6
 epochs = 200
 
-ndata = 5 #n_data_total
+ndata = 5  # n_data_total
 bestModel = model
 hist = torch.zeros(epochs)
 
-dst = torch.linspace(100*3.8, 3*3.8, epochs)*0+1e4
+dst = torch.linspace(100 * 3.8, 3 * 3.8, epochs) * 0 + 1e4
 for j in range(epochs):
     # Prepare the data
     aloss = 0.0
@@ -127,35 +125,35 @@ for j in range(epochs):
 
         # Get the data
         nodeProperties, Coords, M, I, J, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
-                                                                            MSK, i, device=device)
+                                                                              MSK, i, device=device)
         if nodeProperties.shape[2] > 700:
             continue
         nNodes = Ds.shape[0]
         # G = GO.dense_graph(nNodes, Ds)
-        w = torch.ones(I.shape,device=I.device)
-        G = GO.graph(I, J, nNodes, w)
+        w = torch.ones(I.shape, device=I.device)
+        G = GO.graph(I, J, nNodes, w).to(device)
         # Organize the node data
         xn = nodeProperties
         # xe = Ds.unsqueeze(0).unsqueeze(0)  # edgeProperties
-        xe = edgeProperties #w.unsqueeze(0).unsqueeze(0)
+        xe = edgeProperties  # w.unsqueeze(0).unsqueeze(0)
 
-        #M = torch.ger(M.squeeze(), M.squeeze())
+        # M = torch.ger(M.squeeze(), M.squeeze())
 
         optimizer.zero_grad()
 
         xnOut, xeOut = model(xn, xe, G)
-        #xnOut = utils.distConstraint(xnOut)
+        # xnOut = utils.distConstraint(xnOut)
 
         Dout = utils.getDistMat(xnOut)
         Dtrue = utils.getDistMat(Coords)
-        W     = 1/torch.sqrt(Dtrue+2)
+        W = 1 / torch.sqrt(Dtrue + 2)
 
-        #loss = F.mse_loss(M * Dout, M * Dtrue)
-        #dm    = Dtrue.max()
-        #Dtrue = torch.exp(-sigma[j] * Dtrue/Dtrue.max())
-        #Dout  = torch.exp(-sigma[j] * Dout/Dtrue.max())
-        DtrueM = maskMat(W*Dtrue, M)
-        DoutM = maskMat(W*Dout, M)
+        # loss = F.mse_loss(M * Dout, M * Dtrue)
+        # dm    = Dtrue.max()
+        # Dtrue = torch.exp(-sigma[j] * Dtrue/Dtrue.max())
+        # Dout  = torch.exp(-sigma[j] * Dout/Dtrue.max())
+        DtrueM = maskMat(W * Dtrue, M)
+        DoutM = maskMat(W * Dout, M)
 
         If, Jf = torch.nonzero(DtrueM < dst[j], as_tuple=True)
         DtrueM = DtrueM[If, Jf]
@@ -174,8 +172,8 @@ for j in range(epochs):
 
         torch.nn.utils.clip_grad_norm_(model.K1Nopen, 1.0e-2, norm_type=2.0)
         torch.nn.utils.clip_grad_norm_(model.K2Nopen, 1.0e-2, norm_type=2.0)
-        #torch.nn.utils.clip_grad_norm_(model.K1Eopen, 1.0e-2, norm_type=2.0)
-        #torch.nn.utils.clip_grad_norm_(model.K2Eopen, 1.0e-2, norm_type=2.0)
+        # torch.nn.utils.clip_grad_norm_(model.K1Eopen, 1.0e-2, norm_type=2.0)
+        # torch.nn.utils.clip_grad_norm_(model.K2Eopen, 1.0e-2, norm_type=2.0)
         torch.nn.utils.clip_grad_norm_(model.KE1, 1.0e-2, norm_type=2.0)
         torch.nn.utils.clip_grad_norm_(model.KE2, 1.0e-2, norm_type=2.0)
         torch.nn.utils.clip_grad_norm_(model.KNclose, 1.0e-2, norm_type=2.0)
@@ -186,20 +184,20 @@ for j in range(epochs):
 
         optimizer.step()
 
-        #d1 = torch.diag(maskMat(Dtrue,M),-1)
-        #d1 = d1[d1 > 0.01]
-        #print(' ')
-        #print('Estimated noise level ', (torch.norm(d1-3.8)/torch.norm(d1)).item())
-        #print(' ')
+        # d1 = torch.diag(maskMat(Dtrue,M),-1)
+        # d1 = d1[d1 > 0.01]
+        # print(' ')
+        # print('Estimated noise level ', (torch.norm(d1-3.8)/torch.norm(d1)).item())
+        # print(' ')
 
         # scheduler.step()
         nprnt = 1
         if (i + 1) % nprnt == 0:
             aloss = aloss / nprnt
             alossAQ = alossAQ / nprnt
-            c       = GN.constraint(xnOut)
-            c       = c.abs().mean().item()
-            if c>0.4:
+            c = GN.constraint(xnOut)
+            c = c.abs().mean().item()
+            if c > 0.4:
                 print('warning constraint non fulfilled ')
 
             print("%2d.%1d   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E   %10.3E" %
@@ -216,7 +214,7 @@ for j in range(epochs):
                 nVal = len(STest)
                 for jj in range(nVal):
                     nodeProperties, Coords, M, I, J, edgeProperties, Ds = prc.getIterData(STest, AindTest, YobsTest,
-                                                                                        MSKTest, jj, device=device)
+                                                                                          MSKTest, jj, device=device)
 
                     nNodes = Ds.shape[0]
                     # G = GO.dense_graph(nNodes, Ds)
