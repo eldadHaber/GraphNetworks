@@ -95,10 +95,11 @@ train_dataset = proteinLoader.CaspDataset(S, Aind, Yobs, MSK, device=device, ret
 test_dataset = proteinLoader.CaspDataset(STest, AindTest, YobsTest, MSKTest, device=device, return_a=True)
 
 trainLoader = dataloader = DataLoader(train_dataset, batch_size=1,
-                        shuffle=True, num_workers=6)
+                                      shuffle=True, num_workers=6)
 
 testLoader = dataloader = DataLoader(test_dataset, batch_size=1,
-                        shuffle=True, num_workers=6)
+                                     shuffle=False, num_workers=6)
+
 
 def maskMat(T, M):
     M = M.squeeze()
@@ -158,16 +159,15 @@ import os
 if not os.path.exists(checkpoints_path):
     os.makedirs(checkpoints_path)
 
-
 dst = torch.linspace(100 * 3.8, 3 * 3.8, epochs) * 0 + 1e4
 for j in range(epochs):
     # Prepare the data
     aloss = 0.0
     alossAQ = 0.0
-    #for i in range(ndata):
+    # for i in range(ndata):
     for (i, data) in enumerate(testLoader):
         # Get the data
-        #nodeProperties, Coords, M, I, J, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
+        # nodeProperties, Coords, M, I, J, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
         #                                                                      MSK, i, device=device)
 
         nodeProperties, Coords, M, I, J, edgeProperties, Ds = prc.getIterData(STest, AindTest, YobsTest,
@@ -177,7 +177,6 @@ for j in range(epochs):
         print("Coords:", Coords.shape)
         print("edgeProperties:", edgeProperties.shape)
 
-
         nodeProperties, Coords, M, I, J, edgeProperties, Ds, a = data
         nodeProperties = nodeProperties.to(device)
         Coords = Coords.to(device)
@@ -185,13 +184,13 @@ for j in range(epochs):
         I = I.to(device).squeeze()
         J = J.to(device).squeeze()
         edgeProperties = edgeProperties.to(device).squeeze()
+        Ds = Ds.to(device).squeeze()
 
-        print("old:")
+        print("new:")
         print("nodeProperties:", nodeProperties.shape)
         print("Coords:", Coords.shape)
-        print("new:", edgeProperties.shape)
+        print("edgeProperties:", edgeProperties.shape)
 
-        Ds = Ds.to(device).squeeze()
         if nodeProperties.shape[2] > 700:
             continue
         nNodes = Ds.shape[0]
@@ -280,7 +279,8 @@ for j in range(epochs):
             nVal = len(STest)
             for jj in range(nVal):
                 nodeProperties, Coords, M, I, J, edgeProperties, Ds, a = prc.getIterData(STest, AindTest, YobsTest,
-                                                                                      MSKTest, jj, device=device, return_a=True)
+                                                                                         MSKTest, jj, device=device,
+                                                                                         return_a=True)
                 if nodeProperties.shape[2] > 700:
                     continue
                 nNodes = Ds.shape[0]
@@ -290,14 +290,14 @@ for j in range(epochs):
                 xe = w.unsqueeze(0).unsqueeze(0)
 
                 xnOut, xeOut = model(xn, xe, G)
-                #xnOut = utils.distConstraint(xnOut, dc=3.8)
+                # xnOut = utils.distConstraint(xnOut, dc=3.8)
                 Dout = utils.getDistMat(xnOut)
                 Dtrue = utils.getDistMat(Coords)
 
                 Medge = torch.ger(M.squeeze(), M.squeeze())
                 Medge = Medge > 0
                 # loss = F.mse_loss(M * Dout, M * Dtrue)
-                #loss = F.mse_loss(maskMat(Dout, M), maskMat(Dtrue, M))
+                # loss = F.mse_loss(maskMat(Dout, M), maskMat(Dtrue, M))
 
                 n = xnOut.shape[-1]
                 Xl = torch.zeros(3, n, device=xnOut.device)
@@ -312,7 +312,6 @@ for j in range(epochs):
                 R = torch.triu(Dout - (torch.relu(Dtrue)), 1)
                 loss = torch.norm(Medge * R) ** 2 / torch.sum(Medge)
                 loss = torch.sqrt(loss)
-
 
                 aloss += loss.detach()
                 AQdis += (torch.norm(maskMat(Dout, M) - maskMat(Dtrue, M)) / torch.sqrt(
@@ -350,7 +349,7 @@ for j in range(epochs):
                     ind = a.clone()[known_idx].detach().cpu().numpy().astype(int)
                     atoms = [inv_AA_DICT[i] for i in ind]
                     atoms_group = prody.AtomGroup('prot' + str(jj))
-                    #print("pred coords shape:", xnOut.shape)
+                    # print("pred coords shape:", xnOut.shape)
                     pred_coords = xnOut.clone().squeeze()[:, known_idx].t().detach().cpu().numpy()
 
                     chids = len(atoms) * ['CA']
