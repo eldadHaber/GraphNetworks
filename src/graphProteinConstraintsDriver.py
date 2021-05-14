@@ -176,6 +176,7 @@ for j in range(epochs):
         print("nodeProperties:", nodeProperties.shape)
         print("Coords:", Coords.shape)
         print("edgeProperties:", edgeProperties.shape)
+        print("Ds:", Ds.shape)
 
         nodeProperties, Coords, M, I, J, edgeProperties, Ds, a = data
         nodeProperties = nodeProperties.to(device)
@@ -190,6 +191,7 @@ for j in range(epochs):
         print("nodeProperties:", nodeProperties.shape)
         print("Coords:", Coords.shape)
         print("edgeProperties:", edgeProperties.shape)
+        print("Ds:", Ds.shape)
 
         if nodeProperties.shape[2] > 700:
             continue
