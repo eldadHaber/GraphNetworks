@@ -152,8 +152,8 @@ for j in range(epochs):
     for i in range(ndata):
 
         # Get the data
-        nodeProperties, Coords, M, I, J, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
-                                                                              MSK, i, device=device)
+        #nodeProperties, Coords, M, I, J, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
+        #                                                                      MSK, i, device=device)
 
         nodeProperties, Coords, M, I, J, edgeProperties, Ds = prc.getIterData(STest, AindTest, YobsTest,
                                                                               MSKTest, i, device=device)
@@ -223,7 +223,7 @@ for j in range(epochs):
         # print(' ')
 
         # scheduler.step()
-        nprnt = 50
+        nprnt = 1
         if (j + 1) % nprnt == 0:
             aloss = aloss / nprnt
             alossAQ = alossAQ / nprnt
