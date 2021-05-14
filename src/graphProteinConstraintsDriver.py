@@ -134,13 +134,13 @@ lrE1 = 1e-3
 lrE2 = 1e-3
 lrw = 1e-3
 
-optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO},
-                        {'params': model.K2Nopen, 'lr': lrO},
+optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO, 'wd': 4e-5},
+                        {'params': model.K2Nopen, 'lr': lrO, 'wd': 4e-5},
                         # {'params': model.K1Eopen, 'lr': lrO},
                         # {'params': model.K2Eopen, 'lr': lrO},
                         {'params': model.KE1, 'lr': lrE1},
                         {'params': model.KE2, 'lr': lrE2},
-                        {'params': model.KNclose, 'lr': lrC},
+                        {'params': model.KNclose, 'lr': lrC, 'wd': 4e-5},
                         {'params': model.Kw, 'lr': lrw}])
 
 alossBest = 1e6
