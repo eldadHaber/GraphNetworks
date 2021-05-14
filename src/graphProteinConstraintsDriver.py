@@ -20,7 +20,7 @@ caspver = "casp11"  # Change this to choose casp version
 
 if "s" in sys.argv:
     base_path = '/home/eliasof/pFold/data/'
-    import graphOps as GO
+    import graphOps_proteins_eldad as GO
     import processContacts as prc
     import utils
     import graphNet as GN
@@ -29,7 +29,7 @@ if "s" in sys.argv:
 
 elif "e" in sys.argv:
     base_path = '/home/cluster/users/erant_group/pfold/'
-    from src import graphOps as GO
+    from src import graphOps_proteins_eldad as GO
     from src import processContacts as prc
     from src import utils
     from src import graphNet as GN
@@ -38,7 +38,7 @@ elif "e" in sys.argv:
 
 else:
     base_path = '../../../data/'
-    from src import graphOps as GO
+    from src import graphOps_proteins_eldad as GO
     from src import processContacts as prc
     from src import utils
     from src import graphNet as GN

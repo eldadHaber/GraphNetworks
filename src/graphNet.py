@@ -17,6 +17,7 @@ try:
     from mpl_toolkits.mplot3d import Axes3D
     from src.utils import saveMesh, h_swish
     from src.inits import glorot, identityInit
+
 except:
     import graphOps as GO
     from batchGraphOps import getConnectivity
