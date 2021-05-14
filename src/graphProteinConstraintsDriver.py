@@ -224,7 +224,7 @@ for j in range(epochs):
 
         # scheduler.step()
         nprnt = 10
-        if (j + 1) % nprnt == 0:
+        if (i + 1) % nprnt == 0:
             aloss = aloss / nprnt
             alossAQ = alossAQ / nprnt
             c = GN.constraint(xnOut)
