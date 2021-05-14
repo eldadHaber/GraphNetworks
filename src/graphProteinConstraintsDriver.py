@@ -91,8 +91,8 @@ Yobs = YobsTest
 MSK = MSKTest
 S = STest
 
-train_dataset = proteinLoader(S, Aind, Yobs, MSK, device=device, return_a=False)
-test_dataset = proteinLoader(STest, AindTest, YobsTest, MSKTest, device=device, return_a=True)
+train_dataset = proteinLoader.CaspDataset(S, Aind, Yobs, MSK, device=device, return_a=False)
+test_dataset = proteinLoader.CaspDataset(STest, AindTest, YobsTest, MSKTest, device=device, return_a=True)
 
 trainLoader = dataloader = DataLoader(train_dataset, batch_size=1,
                         shuffle=True, num_workers=6)
