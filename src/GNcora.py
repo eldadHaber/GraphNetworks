@@ -50,7 +50,7 @@ nEin = 1
 nopen = 64
 nhid = 64
 nNclose = 64
-nlayer = 8
+nlayer = 16
 h = 2 # 16 / nlayer
 
 import os
@@ -91,6 +91,7 @@ if not realVarlet:
         dict(params=model.KN1, lr=0.0001, weight_decay=0),
         dict(params=model.KN2, lr=0.0001, weight_decay=0),
         #dict(params=model.KN3, lr=0.00001, weight_decay=0),
+        #dict(params=model.interClosing, lr=0.0001, weight_decay=5e-2),
 
         dict(params=model.K1Nopen, weight_decay=5e-4),
         dict(params=model.K2Nopen, weight_decay=5e-4),

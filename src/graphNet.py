@@ -492,10 +492,13 @@ class graphNetwork_nodesOnly(nn.Module):
         else:
             Nfeatures = 1 * nopen
 
-        self.KN1 = nn.Parameter(torch.rand(nlayer, nhid, Nfeatures) * stdvp)
-        rrnd = torch.rand(nlayer, nhid, Nfeatures) * (1e-3)
+        self.KN1 = nn.Parameter(torch.rand(nlayer, Nfeatures, nhid) * stdvp)
+        rrnd = torch.rand(nlayer, Nfeatures, nhid) * (1e-3)
 
-        self.KN1 = nn.Parameter(identityInit(self.KN1))  # + rrnd)
+        self.KN1 = nn.Parameter(identityInit(self.KN1) + rrnd)
+
+        #if Nfeatures != nhid:
+        #    self.interClosing = nn.Parameter(torch.rand(nlayer, Nfeatures, nhid) * stdvp)
 
         if self.realVarlet:
             self.KN1 = nn.Parameter(torch.rand(nlayer, nhid, 2 * Nfeatures) * stdvp)
@@ -569,17 +572,16 @@ class graphNetwork_nodesOnly(nn.Module):
             if norm:
                 x = F.instance_norm(x)
         if not openclose:  # if K.shape[0] == K.shape[1]:
-            x = F.relu(x)
+            # x = F.relu(x)
             x = self.edgeConv(x, K, groups=groups)
-
             x = F.tanh(x)
-            #x = F.relu(x)
+            # x = F.relu(x)
             if norm:
                 # x = F.layer_norm(x, x.shape)
                 beta = torch.norm(x)
                 x = beta * tv_norm(x)
             x = self.edgeConv(x, K.t(), groups=groups)
-            F.relu(x)
+            # F.relu(x)
         if not relu:
             return x
         x = F.relu(x)
@@ -720,19 +722,18 @@ class graphNetwork_nodesOnly(nn.Module):
 
         if not self.faust:
             [Graph, edge_index] = self.updateGraph(Graph)
-        #if self.faust:
+        # if self.faust:
         #    xn = torch.cat([xn, Graph.edgeDiv(xe)], dim=1)
 
         debug = False
-
 
         if debug:
             xnnorm = torch.norm(xn, dim=1)
             vmin = xnnorm.min().detach().numpy()
             vmax = xnnorm.max().detach().numpy()
             xnnorm = torch.norm(xn, dim=1)
-            #vmin = xnnorm.min().detach().numpy()
-            #vmax = xnnorm.max().detach().numpy()
+            # vmin = xnnorm.min().detach().numpy()
+            # vmax = xnnorm.max().detach().numpy()
 
             saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, -1, vmax=vmax, vmin=vmin)
 
@@ -760,15 +761,15 @@ class graphNetwork_nodesOnly(nn.Module):
             plt.close()
 
         xn = self.singleLayer(xn, self.K1Nopen, relu=True, openclose=True, norm=False)
-        #xn = F.normalize(xn)
+        # xn = F.normalize(xn)
         # xn = self.singleLayer(xn, self.K2Nopen, relu=True, openclose=True)
 
         x0 = xn.clone()
         debug = False
         if debug:
             xnnorm = torch.norm(xn, dim=1)
-            #vmin = xnnorm.min().detach().numpy()
-            #vmax = xnnorm.max().detach().numpy()
+            # vmin = xnnorm.min().detach().numpy()
+            # vmax = xnnorm.max().detach().numpy()
             image = False
             if image:
                 plt.figure()
@@ -856,7 +857,10 @@ class graphNetwork_nodesOnly(nn.Module):
                     efficient = True
                     if efficient:
                         if not self.doubleConv:
-                            dxn = (self.singleLayer(gradX, self.KN1[i], norm=False, relu=False, groups=1))  # KN2
+                            #gradSq = gradX * gradX #Graph.nodeAve(xn)
+                            #gradX = torch.cat([gradX, gradSq], dim=1)
+                            dxn = (self.singleLayer(gradX, self.KN1[i], norm=False, relu=True, groups=1))  # KN2
+                            #dxn = (self.singleLayer(dxn, self.interClosing[i], norm=False, relu=False, groups=1))
                         else:
                             dxn = self.finalDoubleLayer(gradX, self.KN1[i], self.KN2[i])
                         dxn = Graph.edgeDiv(dxn)  # + Graph.edgeAve(dxe2, method='ave')
@@ -936,11 +940,12 @@ class graphNetwork_nodesOnly(nn.Module):
                     xn_old = tmp_xn
                 else:
                     tmp = xn.clone()
-
-                    xn = (xn - self.h * dxn)  # +
+                    # print("xn shape:", xn.shape)
+                    # print("dxn shape:", dxn.shape)
+                    xn = (xn - self.h * dxn[:, :64, :])  # +
                     # xn = (xn_old - self.h * dxn)
                     xn_old = tmp
-            #xn = F.conv1d(xn, self.convs1x1[i].unsqueeze(-1))
+            # xn = F.conv1d(xn, self.convs1x1[i].unsqueeze(-1))
 
             if debug:
                 if image:
