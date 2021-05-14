@@ -571,6 +571,10 @@ class graphNetwork_nodesOnly(nn.Module):
             x = self.edgeConv(x, K, groups=groups)
             if norm:
                 x = F.instance_norm(x)
+            if relu:
+                x = F.relu(x)
+            else:
+                x = F.tanh(x)
         if not openclose:  # if K.shape[0] == K.shape[1]:
             # x = F.relu(x)
             x = self.edgeConv(x, K, groups=groups)
