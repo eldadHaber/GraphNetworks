@@ -165,7 +165,7 @@ for j in range(epochs):
     aloss = 0.0
     alossAQ = 0.0
     #for i in range(ndata):
-    for i, data in enumerate(testLoader):
+    for (i, data) in enumerate(testLoader):
         # Get the data
         #nodeProperties, Coords, M, I, J, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
         #                                                                      MSK, i, device=device)
