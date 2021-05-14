@@ -945,7 +945,7 @@ class graphNetwork_nodesOnly(nn.Module):
                     tmp = xn.clone()
                     # print("xn shape:", xn.shape)
                     # print("dxn shape:", dxn.shape)
-                    xn = (xn - self.h * dxn[:, :64, :])  # +
+                    xn = (xn - self.h * dxn)  # +
                     # xn = (xn_old - self.h * dxn)
                     xn_old = tmp
             # xn = F.conv1d(xn, self.convs1x1[i].unsqueeze(-1))
