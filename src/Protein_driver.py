@@ -70,8 +70,8 @@ if __name__ == '__main__':
     print('Number of data: {:}'.format(ndata))
 
     # Following Equivariant paper, we select 1000 configurations from these as our training set, 1000 as our validation set, and the rest are used as test data.
-    dataset_train = Dataset_protein(Aind,Yobs,MSK,S)
-    dataset_val = Dataset_protein(Aind,Yobs,MSK,S)
+    dataset_train = Dataset_protein(Aind[:n_train],Yobs[:n_train],MSK[:n_train],S[:n_train])
+    dataset_val = Dataset_protein(Aind[:n_train],Yobs[:n_train],MSK[:n_train],S[:n_train])
     # dataset_test = Dataset_MD17(R_test, F_test, E_test, z)
 
     dataloader_train = DataLoader(dataset_train, batch_size=batch_size, shuffle=True, drop_last=False)

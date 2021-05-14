@@ -39,7 +39,7 @@ def use_proteinmodel(model,dataloader,train,max_samples,optimizer, w, batch_size
         t0 = time.time()
         # with profiler.profile(record_shapes=True) as prof:
         #     with profiler.record_function("model_inference"):
-        node_vec = model(input=coords_init,xn_attr=node_attr)
+        node_vec = model(input=coords_init,xn_attr=node_attr, xe_src=I, xe_dst=J)
         t1 = time.time()
 
         Dout = torch.norm(node_vec[I_all] - node_vec[J_all],p=2,dim=-1).view(-1,1)
@@ -183,6 +183,41 @@ class Dataset_protein(data.Dataset):
         self.device = device
         return
 
+    # def compute_graph(self, r, n_connections=16):
+    #     n = r.shape[0]
+    #     D = torch.relu(torch.sum(r.t() ** 2, dim=0, keepdim=True) + \
+    #                    torch.sum(r.t() ** 2, dim=0, keepdim=True).t() - \
+    #                    2 * r @ r.t())
+    #     D2 = D / D.std()
+    #     D2 = torch.exp(-2 * D2)
+    #     _, indices = torch.topk(D2, k=min(n_connections, D.shape[0]), dim=1)
+    #     indices_ext = torch.empty((n, n_connections + 4), dtype=torch.int64)
+    #     indices_ext[:, :16] = indices
+    #     indices_ext[:, 16] = torch.arange(n) - 1
+    #     indices_ext[:, 17] = torch.arange(n) - 2
+    #     indices_ext[:, 18] = torch.arange(n) + 1
+    #     indices_ext[:, 19] = torch.arange(n) + 2
+    #     nd = D.shape[0]
+    #     I = torch.ger(torch.arange(nd), torch.ones(n_connections + 4, dtype=torch.long))
+    #     I = I.view(-1)
+    #     J = indices_ext.view(-1).type(torch.LongTensor)
+    #
+    #     IJ = torch.stack([I, J], dim=1)
+    #     IJ_unique = torch.unique(IJ, dim=0)
+    #     I = IJ_unique[:, 0]
+    #     J = IJ_unique[:, 1]
+    #     M1 = torch.sum(IJ_unique < 0, dim=1).to(dtype=torch.bool)
+    #     M2 = torch.sum(IJ_unique > nd - 1, dim=1).to(dtype=torch.bool)
+    #     M3 = I == J  # remove self interaction
+    #     MM = ~ (M1 + M2 + M3)
+    #     I = I[MM]
+    #     J = J[MM]
+    #
+    #     edge_dst = I
+    #     edge_src = J
+    #     edge_vec = r[edge_src] - r[edge_dst]
+    #     return edge_vec, edge_src, edge_dst
+
     def __getitem__(self, index):
         pssm = self.pssm[index]
         seq = self.seq[index]
@@ -217,7 +252,10 @@ class Dataset_protein(data.Dataset):
         J = IJ_unique[:, 1]
         M1 = torch.sum(IJ_unique < 0, dim=1).to(dtype=torch.bool)
         M2 = torch.sum(IJ_unique > nd - 1, dim=1).to(dtype=torch.bool)
+        # M3 = I == J  # remove self interaction
+        # MM = ~ (M1 + M2 + M3)
         MM = ~ (M1 + M2)
+
         I = I[MM]
         J = J[MM]
 
@@ -225,7 +263,7 @@ class Dataset_protein(data.Dataset):
         V[::3,0] = math.sqrt(3)
         V[1::3,1] = math.sqrt(3)
         V[2::3,2] = math.sqrt(3)
-        V = torch.cumsum(V,0)
+        # V = torch.cumsum(V,0)
 
         nn_dist = 3.8 #Angstrom
         coords_init = compute_spherical_coords_init(n, nn_dist)

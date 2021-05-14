@@ -40,7 +40,7 @@ def tp_path_exists(irreps_in1, irreps_in2, ir_out):
                 return True
     return False
 
-class Protein_network(torch.nn.Module):
+class NequIP_pc(torch.nn.Module):
     r"""equivariant neural network
     Parameters
     ----------
@@ -86,13 +86,14 @@ class Protein_network(torch.nn.Module):
         number_of_basis,
         radial_neurons,
         num_neighbors,
+        num_nodes,
         reduce_output=True,
     ) -> None:
         super().__init__()
         self.max_radius = max_radius
         self.number_of_basis = number_of_basis
         self.num_neighbors = num_neighbors
-        # self.num_nodes = num_nodes
+        self.num_nodes = num_nodes
         self.reduce_output = reduce_output
 
         self.irreps_in = o3.Irreps(irreps_in) if irreps_in is not None else None
@@ -117,14 +118,21 @@ class Protein_network(torch.nn.Module):
         embed_dim = 8
         self.node_embedder = torch.nn.Embedding(nmax_atoms,embed_dim)
         # irreps = o3.Irreps("{:}x0e".format(embed_dim))
-        self.irreps_node_attr = o3.Irreps("{:}x0e".format(embed_dim+20))
+        self.irreps_node_attr = o3.Irreps("{:}x0e".format(embed_dim))
 
         self.self_interaction = torch.nn.ModuleList()
         irreps = self.irreps_in if self.input_has_node_in else o3.Irreps("1x0e")
-        self.self_interaction.append(SelfInteraction(self.irreps_node_attr,self.irreps_node_attr))
+        self.self_interaction.append(SelfInteraction(irreps,irreps))
         for _ in range(1,layers):
             self.self_interaction.append(SelfInteraction(self.irreps_hidden,self.irreps_hidden))
+        # n_0e = o3.Irreps(self.irreps_hidden).count('0e')
+        # second_to_last_irrep = o3.Irreps("16x0e")
+        # last_irrep = o3.Irreps("1x0e")
         self.self_interaction.append(SelfInteraction(self.irreps_hidden,self.irreps_out))
+        # self.self_interaction.append(SelfInteraction(second_to_last_irrep,last_irrep))
+        # self.activation = Activation("16x0e", [torch.nn.functional.silu])
+        # n_1e = o3.Irreps(self.irreps_hidden).count('0e')
+        # n_1o = o3.Irreps(self.irreps_hidden).count('1o')
 
 
         self.convolutions = torch.nn.ModuleList()
@@ -170,26 +178,36 @@ class Protein_network(torch.nn.Module):
             batch = data['batch']
         else:
             batch = data['pos'].new_zeros(data['pos'].shape[0], dtype=torch.long)
-        edge_src = data['edge_src']
-        edge_dst = data['edge_dst']
-        edge_vec = data['edge_vec']
 
         h = 0.1
-        # edge_index = radius_graph(data['pos'], self.max_radius, batch)
-        # edge_src = edge_index[0]
-        # edge_dst = edge_index[1]
-        # edge_vec = data['pos'][edge_src] - data['pos'][edge_dst]
-        edge_sh = o3.spherical_harmonics(self.irreps_edge_attr, edge_vec, True, normalization='component')
-        edge_length = edge_vec.norm(dim=1)
-        edge_length_embedded = soft_one_hot_linspace(
-            x=edge_length,
-            start=0.0,
-            end=self.max_radius,
-            number=self.number_of_basis,
-            basis='bessel',
-            cutoff=False
-        ).mul(self.number_of_basis**0.5)
-        edge_attr = smooth_cutoff(edge_length / self.max_radius)[:, None] * edge_sh
+
+        pos = data['pos'][:,-3:]
+        edge_index = radius_graph(pos, self.max_radius, batch)
+        edge_src = edge_index[0]
+        edge_dst = edge_index[1]
+
+        nhist = data['pos'].shape[-1]//3
+        edge_attr = []
+        edge_features = []
+        for i in range(nhist):
+            posi = data['pos'][:,3*i:3*i+3]
+            edge_veci = posi[edge_src] - posi[edge_dst]
+            edge_sh = o3.spherical_harmonics(o3.Irreps("1x0e+1x1o"), edge_veci, True, normalization='component')
+            edge_length = edge_veci.norm(dim=1)
+            edge_length_embedded = soft_one_hot_linspace(
+                x=edge_length,
+                start=0.0,
+                end=self.max_radius,
+                number=self.number_of_basis,
+                basis='bessel',
+                cutoff=False
+            ).mul(self.number_of_basis**0.5)
+            edge_attri = smooth_cutoff(edge_length / self.max_radius)[:, None] * edge_sh
+            edge_featuresi = edge_length_embedded
+            edge_attr.append(edge_attri)
+            edge_features.append(edge_featuresi)
+        edge_features = torch.cat(edge_features,dim=-1)
+        edge_attr = torch.cat(edge_attr,dim=-1)
 
         if self.input_has_node_in and 'x' in data:
             assert self.irreps_in is not None
@@ -198,35 +216,35 @@ class Protein_network(torch.nn.Module):
             assert self.irreps_in is None
             x = data['pos'].new_ones((data['pos'].shape[0], 1))
 
+        if self.input_has_node_attr and 'z' in data:
+            z = data['z']
+        else:
+            assert self.irreps_node_attr == o3.Irreps("0e")
+            z = data['pos'].new_ones((data['pos'].shape[0], 1))
+
         # scalar_z = self.ext_z(z)
-        edge_features = edge_length_embedded #/ torch.sqrt(edge_length_embedded.pow(2).mean())
 
-        pssm = data['pssm']
-        seq = data['seq']
-
-        seq_embedded = self.node_embedder(seq.to(dtype=torch.int64)).squeeze()
-
-        node_attr = torch.cat([pssm,seq_embedded],dim=1)
-
-        # print(f'mean={node_attr.pow(2).mean():2.2f}')
-        node_attr = self.self_interaction[0](node_attr)
-        # print(f'mean={node_attr.pow(2).mean():2.2f}')
+        # print(f'mean={x.pow(2).mean():2.2f}')
+        z = self.node_embedder(z.to(dtype=torch.int64)).squeeze()
+        # print(f'mean={x.pow(2).mean():2.2f}')
+        # x = self.self_interaction[0](x)
+        # print(f'mean={x.pow(2).mean():2.2f}')
 
         for i,(conv,norm,gate) in enumerate(zip(self.convolutions,self.norms,self.gates)):
-            y = conv(x, node_attr, edge_src, edge_dst, edge_attr, edge_features)
+            y = conv(x, z, edge_src, edge_dst, edge_attr, edge_features)
             # y = norm(y)
             # print(f'mean={x.pow(2).mean():2.2f}')
             y = gate(y)
-            # print(f'mea/n={x.pow(2).mean():2.2f}')
+            # print(f'mean={x.pow(2).mean():2.2f}')
             if y.shape == x.shape:
                 y = self.self_interaction[i](y)
                 x = x + h*y
             else:
                 x = y
             # print(f'mean(abs(x))={torch.abs(x).mean():2.2f},norm={x.norm():2.2f}')
-        # x = self.self_interaction[-2](x,normalize_variance=False)
-        # x = self.activation(x)
         x = self.self_interaction[-1](x,normalize_variance=False)
+        # x = self.activation(x)
+        # x = self.self_interaction[-1](x,normalize_variance=False)
 
         if self.reduce_output:
             return scatter(x, batch, dim=0).div(self.num_nodes**0.5)
@@ -273,3 +291,66 @@ def test_equivariance(model,data=None):
     return
 
 
+
+if __name__ == '__main__':
+    # na = 7 #Number of atoms
+    # nb = 1 #Number of batches
+    # nf = 1 #Number of features
+    # # irreps_out = "{:}x1e".format(na)
+    # R = torch.randn((nb, na, 3), dtype=torch.float32)
+    # F = torch.randn((1,4,3),dtype=torch.float32)
+    # node_attr = torch.randint(0,10,(nb,na,nf))
+
+    data = np.load('../../../../data/MD/MD17/aspirin_dft.npz')
+    E = torch.from_numpy(data['E']).to(dtype=torch.float32)
+    Force = torch.from_numpy(data['F']).to(dtype=torch.float32)
+    R = torch.from_numpy(data['R']).to(dtype=torch.float32)
+    z = torch.from_numpy(data['z']).to(dtype=torch.float32)
+
+    nd,na,_ = R.shape
+
+    irreps_in = o3.Irreps("1x0e")
+    irreps_hidden = o3.Irreps("64x0e+64x0o+64x1e+64x1o")
+    irreps_out = o3.Irreps("1x0e")
+    irreps_node_attr = o3.Irreps("1x0e")
+    irreps_edge_attr = o3.Irreps("1x0e+1x1o")
+    layers = 6
+    max_radius = 5
+    number_of_basis = 8
+    radial_layers = 1
+    radial_neurons = 8
+    num_neighbors = 15
+    num_nodes = na
+    model = NequIP(irreps_in=irreps_in, irreps_hidden=irreps_hidden, irreps_out=irreps_out, irreps_node_attr=irreps_node_attr, irreps_edge_attr=irreps_edge_attr, layers=layers, max_radius=max_radius,
+                    number_of_basis=number_of_basis, radial_layers=radial_layers, radial_neurons=radial_neurons, num_neighbors=num_neighbors, num_nodes=num_nodes)
+
+    total_params = sum(p.numel() for p in model.parameters())
+    print('Number of parameters ', total_params)
+
+    optim = torch.optim.Adam(model.parameters(), lr=1e-3)
+
+
+    Ri = R[0,:,:]
+    Ri.requires_grad_(True)
+    Fi = Force[0,:,:]
+
+
+    data = {'pos': Ri,
+            'x': z[:,None]
+            }
+
+    test_equivariance(model)
+
+
+    niter = 100000
+    for i in range(niter):
+        optim.zero_grad()
+        E_pred = model(data)
+        F_pred = -grad(E_pred, Ri, create_graph=True)[0].requires_grad_(True)
+        print(f'mean(abs(F_pred))={torch.abs(F_pred).mean():2.2f}')
+        loss = F.mse_loss(F_pred, Fi)
+        MAE = torch.mean(torch.abs(F_pred - Fi)).detach()
+        loss.backward()
+        optim.step()
+        print(f'{i:}, loss:{loss.detach():2.2e}, MAE:{MAE:2.2f}')
+    print('done')

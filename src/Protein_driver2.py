@@ -61,10 +61,10 @@ if __name__ == '__main__':
     MSKTest = torch.load(base_path + caspver + '/MasksTesting.pt')
     STest = torch.load(base_path + caspver + '/PSSMTesting.pt')
 
-    # Aind = AindTest
-    # Yobs = YobsTest
-    # MSK = MSKTest
-    # S = STest
+    Aind = AindTest
+    Yobs = YobsTest
+    MSK = MSKTest
+    S = STest
 
     Aind = move_list_to_device(Aind, device)
     Yobs = move_list_to_device(Yobs, device)
@@ -77,14 +77,15 @@ if __name__ == '__main__':
     SVal = move_list_to_device(SVal, device)
 
     ndata = len(Aind)
+    ndata = 1
     epochs_for_lr_adjustment = 50
-    batch_size = 5
+    batch_size = 1
 
     print(f'Number of training data: {len(Aind):}, and validation data: {len(AindVal):}')
 
 
     # Following Equivariant paper, we select 1000 configurations from these as our training set, 1000 as our validation set, and the rest are used as test data.
-    dataset_train = Dataset_protein(Aind,Yobs,MSK,S,device=device)
+    dataset_train = Dataset_protein(Aind[:ndata],Yobs[:ndata],MSK[:ndata],S[:ndata],device=device)
     dataset_val = Dataset_protein(AindVal,YobsVal,MSKVal,SVal,device=device)
     # dataset_test = Dataset_MD17(R_test, F_test, E_test, z)
 
@@ -130,9 +131,9 @@ if __name__ == '__main__':
     for epoch in range(epochs):
         w = epoch/epochs * 0.05
         t1 = time.time()
-        aloss_t,aloss_rel, aloss_coords= use_proteinmodel_eq(model, dataloader_train, train=True, max_samples=1e6, optimizer=optimizer, batch_size=batch_size,w=w)
+        aloss_t,aloss_rel, aloss_coords = use_proteinmodel_eq(model, dataloader_train, train=True, max_samples=1e6, optimizer=optimizer, batch_size=batch_size,w=w)
         t2 = time.time()
-        aloss_v,aloss_rel_v, aloss_coords_v= use_proteinmodel_eq(model, dataloader_val, train=False, max_samples=1e6, optimizer=optimizer, batch_size=batch_size,w=w)
+        # aloss_v,aloss_rel_v, aloss_coords_v= use_proteinmodel_eq(model, dataloader_val, train=False, max_samples=1, optimizer=optimizer, batch_size=batch_size,w=w)
         # aloss_v= use_proteinmodel_eq(model, dataloader_val, train=False, max_samples=10, optimizer=optimizer, batch_size=batch_size)
         t3 = time.time()
 
@@ -141,6 +142,7 @@ if __name__ == '__main__':
                 g['lr'] *= 0.8
                 lr = g['lr']
         # print(f' t_dataloader(train): {t_dataload_t:.3f}s  t_dataloader(val): {t_dataload_v:.3f}s  t_prepare(train): {t_prepare_t:.3f}s  t_prepare(val): {t_prepare_v:.3f}s  t_model(train): {t_model_t:.3f}s  t_model(val): {t_model_v:.3f}s  t_backprop(train): {t_backprop_t:.3f}s  t_backprop(val): {t_backprop_v:.3f}s')
-        print(f'{epoch:2d}  Loss(train): {aloss_t:.2e}  Loss_distogram(train): {aloss_rel:.2e}    Loss_coordinates(train): {aloss_coords:.2e} Loss(val): {aloss_v:.2e}  Loss_distogram(val): {aloss_rel_v:.2e}    Time(train): {t2-t1:.1f}s  Time(val): {t3-t2:.1f}s  Lr: {lr:2.2e}  w: {w:2.7f}')
+        print(f'{epoch:2d}  Loss(train): {aloss_t:.2e}  Loss_distogram_rel(train): {aloss_rel:.2e}    Loss_coordinates(train): {aloss_coords:.2e} Time(train): {t2-t1:.1f}s  Time(val): {t3-t2:.1f}s  Lr: {lr:2.2e}  w: {w:2.7f}')
+        # print(f'{epoch:2d}  Loss(train): {aloss_t:.2e}  Loss_distogram(train): {aloss_rel:.2e}    Loss_coordinates(train): {aloss_coords:.2e} Loss(val): {aloss_v:.2e}  Loss_distogram(val): {aloss_rel_v:.2e}    Time(train): {t2-t1:.1f}s  Time(val): {t3-t2:.1f}s  Lr: {lr:2.2e}  w: {w:2.7f}')
 
 

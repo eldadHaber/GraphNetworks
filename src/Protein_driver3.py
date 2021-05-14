@@ -11,6 +11,7 @@ import matplotlib.patches as mpatches
 from torch.utils.data import DataLoader
 
 from src.GraphNet2 import GraphNet2
+from src.GraphNet3 import GraphNet3
 from src.protein_utils import Dataset_protein, GraphCollate, use_proteinmodel
 
 
@@ -82,7 +83,7 @@ if __name__ == '__main__':
 
 
 
-    model = GraphNet2(xn_attr_dim, xn_dim, xe_dim, xe_attr_dim, nlayers)
+    model = GraphNet3(xn_attr_dim, xn_dim, xe_dim, xe_attr_dim, nlayers)
     model.to(device)
     total_params = sum(p.numel() for p in model.parameters())
     print('Number of parameters ', total_params)

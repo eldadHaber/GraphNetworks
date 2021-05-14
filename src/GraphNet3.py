@@ -11,21 +11,39 @@ import torch.optim as optim
 from torch_scatter import scatter
 
 
+class Mixing(nn.Module):
+    def __init__(self, dim_in1,dim_in2,dim_out,use_bilinear=True,use_e3nn=True):
+        super(Mixing, self).__init__()
+        self.use_bilinear = use_bilinear
+        if use_bilinear:
+            if use_e3nn:
+                irreps1 = e3nn.o3.Irreps("{:}x0e".format(dim_in1))
+                irreps2 = e3nn.o3.Irreps("{:}x0e".format(dim_in2))
+                self.bilinear = e3nn.o3.FullyConnectedTensorProduct(irreps1, irreps2, irreps1)
+            else:
+                self.bilinear = nn.Bilinear(dim_in1, dim_in2, dim_out, bias=False)
+        self.lin = nn.Linear(2*dim_in1+dim_in2,dim_out)
+
+    def forward(self, x1,x2):
+        x = torch.cat([x1,x2],dim=-1)
+        if self.use_bilinear:
+            x_bi = self.bilinear(x1,x2)
+            x = torch.cat([x,x_bi],dim=-1)
+        x = self.lin(x)
+        return x
+
+
 class NodesToEdges(nn.Module):
-    def __init__(self, dim_in, dim_out, use_e3nn=True):
+    def __init__(self, dim_in, dim_out):
         super().__init__()
         self.dim_in = dim_in
         self.dim_out = dim_out
-        if use_e3nn:
-            irreps = e3nn.o3.Irreps("{:}x0e".format(dim_in))
-            self.bilinear = e3nn.o3.FullyConnectedTensorProduct(irreps,irreps,irreps)
-        else:
-            self.bilinear = nn.Bilinear(dim_in, dim_in, dim_in, bias=False)
+        self.mix = Mixing(dim_in,dim_in,dim_out)
 
     def forward(self,xn,xe_src,xe_dst, W):
         xe_grad = W * (xn[xe_src] - xn[xe_dst])
         xe_ave = W * (xn[xe_src] + xn[xe_dst]) / 2
-        xe = self.bilinear(xe_grad,xe_ave)
+        xe = self.mix(xe_grad,xe_ave)
         return xe
 
 
@@ -34,19 +52,15 @@ class EdgesToNodes(nn.Module):
         super().__init__()
         self.dim_in = dim_in
         self.dim_out = dim_out
-        if use_e3nn:
-            irreps = e3nn.o3.Irreps("{:}x0e".format(dim_in))
-            self.bilinear = e3nn.o3.FullyConnectedTensorProduct(irreps,irreps,irreps)
-        else:
-            self.bilinear = nn.Bilinear(dim_in, dim_in, dim_in, bias=False)
         self.norm = 1 / math.sqrt(num_neighbours)
+        self.mix = Mixing(dim_in, dim_in, dim_out)
 
     def forward(self, xe, xe_src, xe_dst, W):
         xn_1 = scatter(W * xe,xe_dst,dim=0) * self.norm
         xn_2 = scatter(W * xe,xe_src,dim=0) * self.norm
         xn_div = xn_1 - xn_2
         xn_ave = xn_1 + xn_2
-        xn = self.bilinear(xn_div, xn_ave)
+        xn = self.mix(xn_div, xn_ave)
         return xn
 
 class FullyConnectedNet(nn.Module):
@@ -69,9 +83,6 @@ class FullyConnectedNet(nn.Module):
         x = self.activation(x)
         return x
 
-
-
-
 class PropagationBlock(nn.Module):
     def __init__(self, xn_dim, xn_attr_dim, xe_dim, xe_attr_dim, use_e3nn=True):
         super().__init__()
@@ -79,16 +90,8 @@ class PropagationBlock(nn.Module):
         self.fc1 = FullyConnectedNet([1, xe_dim],activation_fnc=torch.nn.functional.silu)
         self.fc2 = FullyConnectedNet([1, xn_dim],activation_fnc=torch.nn.functional.silu)
 
-        if use_e3nn:
-            irreps_xn = e3nn.o3.Irreps("{:}x0e".format(xn_dim))
-            irreps_xn_attr = e3nn.o3.Irreps("{:}x0e".format(xn_attr_dim))
-            irreps_xe = e3nn.o3.Irreps("{:}x0e".format(xe_dim))
-            irreps_xe_attr = e3nn.o3.Irreps("{:}x0e".format(xe_attr_dim))
-            self.xn_bilinear = e3nn.o3.FullyConnectedTensorProduct(irreps_xn,irreps_xn_attr,irreps_xn)
-            self.xe_bilinear = e3nn.o3.FullyConnectedTensorProduct(irreps_xe,irreps_xe_attr,irreps_xe)
-        else:
-            self.xn_bilinear = nn.Bilinear(xn_dim, xn_attr_dim, xn_dim, bias=False)
-            self.xe_bilinear = nn.Bilinear(xe_dim, xe_attr_dim, xe_dim, bias=False)
+        self.mix_xn = Mixing(xn_dim,xn_attr_dim,xn_dim)
+        self.mix_xe = Mixing(xe_dim,xe_attr_dim,xe_dim)
 
         self.nodes_to_edges = NodesToEdges(xn_dim,xn_dim)
         self.edges_to_nodes = EdgesToNodes(xe_dim,xe_dim)
@@ -100,13 +103,14 @@ class PropagationBlock(nn.Module):
     def forward(self, xn, xn_attr, xe_attr, xe_src, xe_dst):
         eps = 1e-9
 
-        xn = self.xn_bilinear(xn, xn_attr)
+
+        xn = self.mix_xn(xn, xn_attr)
         xn = xn / (xn.std(dim=1)[:,None] + eps)
 
         weight = self.fc1(xe_attr)
         xe = self.nodes_to_edges(xn, xe_src, xe_dst, weight)
 
-        xe = self.xe_bilinear(xe, xe_attr)
+        xe = self.mix_xe(xe, xe_attr)
         xe = xe / (xe.std(dim=1)[:,None] + eps)
 
         weight = self.fc2(xe_attr)
@@ -118,7 +122,7 @@ class PropagationBlock(nn.Module):
         return xn
 
 
-class GraphNet2(nn.Module):
+class GraphNet3(nn.Module):
     """
     This network is designed to predict the 3D coordinates of a set of particles.
     """
@@ -141,40 +145,7 @@ class GraphNet2(nn.Module):
             self.angles.append(angle)
         return
 
-    def compute_graph(self,r,n_connections=16):
-        n = r.shape[0]
-        D = torch.relu(torch.sum(r.t() ** 2, dim=0, keepdim=True) + \
-                       torch.sum(r.t() ** 2, dim=0, keepdim=True).t() - \
-                       2 * r @ r.t())
-        D2 = D / D.std()
-        D2 = torch.exp(-2 * D2)
-        _, indices = torch.topk(D2, k=min(n_connections, D.shape[0]), dim=1)
-        indices_ext = torch.empty((n, n_connections + 4), dtype=torch.int64)
-        indices_ext[:, :16] = indices
-        indices_ext[:, 16] = torch.arange(n) - 1
-        indices_ext[:, 17] = torch.arange(n) - 2
-        indices_ext[:, 18] = torch.arange(n) + 1
-        indices_ext[:, 19] = torch.arange(n) + 2
-        nd = D.shape[0]
-        I = torch.ger(torch.arange(nd), torch.ones(n_connections + 4, dtype=torch.long))
-        I = I.view(-1)
-        J = indices_ext.view(-1).type(torch.LongTensor)
 
-        IJ = torch.stack([I, J], dim=1)
-        IJ_unique = torch.unique(IJ, dim=0)
-        I = IJ_unique[:, 0]
-        J = IJ_unique[:, 1]
-        M1 = torch.sum(IJ_unique < 0, dim=1).to(dtype=torch.bool)
-        M2 = torch.sum(IJ_unique > nd - 1, dim=1).to(dtype=torch.bool)
-        M3 = I == J #remove self interaction
-        MM = ~ (M1 + M2+ M3)
-        I = I[MM]
-        J = J[MM]
-
-        edge_dst = I
-        edge_src = J
-        edge_vec = r[edge_src] - r[edge_dst]
-        return edge_vec, edge_src, edge_dst
 
     def make_matrix_semi_unitary(self, M,debug=False):
         I = torch.eye(M.shape[-2])
@@ -192,8 +163,6 @@ class GraphNet2(nn.Module):
     def project(self,x, std=None):
         M = self.projection_matrix
         M = self.make_matrix_semi_unitary(M)
-        # if std is not None:
-        #     x2 = x * std
         R = x @ M.t()
         return R
 
@@ -201,9 +170,7 @@ class GraphNet2(nn.Module):
         M = self.projection_matrix
         M = self.make_matrix_semi_unitary(M)
         x = R @ M
-        # std = x.std(dim=1)[:, None]
-        # x = x / (std + eps)
-        return x#, std
+        return x
 
     def apply_constraints(self, x, n=1, d=3.8):
         for j in range(n):
@@ -231,26 +198,16 @@ class GraphNet2(nn.Module):
             x = x - alpha * lam
         return x
 
-    def forward(self, input, xn_attr, eps=1e-9):
-
-        # xn_attr = xn_attr / torch.sqrt((xn_attr**2).mean())
+    def forward(self, input, xn_attr, xe_src, xe_dst):
 
         if input.shape[-1] == 3:
-            # R should be the best guess of 3D coordinates on input, and if none is had it should just be something that spans 3D space, and makes sure that the neighbouring connections are upheld.
             R = input
-            # R_norm = torch.sqrt((R**2).mean())
-            # R = R / R_norm
             xn = self.uplift(R) # We take R from 3D to nhidden dimension with a reversible learnable operation where the reverse is the projection. Maybe a unitary matrix would be the answer if this is possible to learn in pytorch?
-        # else:
-        #     # Alternatively you can also give something in in higher dimension in which case we have xn, and calculate R by projection
-        #     xn = input
-        #     xn = self.xn_open(xn) # In this case we need to bring xn up to the full hidden dimension
-        #     R = self.project(xn)
 
         for i in range(self.nlayers):
-            xe_vec, xe_src, xe_dst = self.compute_graph(R)
-            xe_attr = xe_vec.norm(dim=1)[:,None]
-            # xe_attr = xe_attr / (xe_attr**2).mean()
+            # xe_vec, xe_src, xe_dst = self.compute_graph(R)
+            xe_vec = R[xe_dst] - R[xe_src]
+            xe_attr = 1 / (xe_vec.norm(dim=1)[:,None] + 1e-9)
             xn_org = xn.clone() # Make sure this actually becomes a clone and not just a pointer
 
             #We mix node information by using a node_to_edge_propagation block.
@@ -265,7 +222,6 @@ class GraphNet2(nn.Module):
             xn = w_self_conn * xn_org + w_layer_conn * xn
 
             xn = self.apply_constraints(xn, n=100)
-            # xn = self.apply_constraints(xn,xn_std, n=100)
             #Finally we prepare to go to the next layer
             R = self.project(xn)
 
