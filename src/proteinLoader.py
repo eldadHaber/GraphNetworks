@@ -49,11 +49,11 @@ class CaspDataset(Dataset):
         A = torch.zeros(20, n)
         A[a, torch.arange(0, n)] = 1.0
         Seq = torch.cat((PSSM, A))
-        Seq = Seq.to(device=self.device, non_blocking=True)
+        Seq = Seq.to(device=self.device)
 
-        Coords = Coords.to(device=self.device, non_blocking=True)
+        Coords = Coords.to(device=self.device)
         M = M.type('torch.FloatTensor')
-        M = M.to(device=self.device, non_blocking=True)
+        M = M.to(device=self.device)
 
         D = torch.relu(torch.sum(Coords ** 2, dim=0, keepdim=True) + \
                        torch.sum(Coords ** 2, dim=0, keepdim=True).t() - \
