@@ -154,6 +154,10 @@ for j in range(epochs):
         # Get the data
         nodeProperties, Coords, M, I, J, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
                                                                               MSK, i, device=device)
+
+        nodeProperties, Coords, M, I, J, edgeProperties, Ds = prc.getIterData(STest, AindTest, YobsTest,
+                                                                              MSKTest, i, device=device)
+
         if nodeProperties.shape[2] > 700:
             continue
         nNodes = Ds.shape[0]
@@ -219,8 +223,8 @@ for j in range(epochs):
         # print(' ')
 
         # scheduler.step()
-        nprnt = 1
-        if (i + 1) % nprnt == 0:
+        nprnt = 50
+        if (j + 1) % nprnt == 0:
             aloss = aloss / nprnt
             alossAQ = alossAQ / nprnt
             c = GN.constraint(xnOut)
