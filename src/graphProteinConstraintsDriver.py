@@ -112,7 +112,7 @@ optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO},
 alossBest = 1e6
 epochs = 200
 
-ndata = 5  # n_data_total
+ndata = n_data_total
 bestModel = model
 hist = torch.zeros(epochs)
 
