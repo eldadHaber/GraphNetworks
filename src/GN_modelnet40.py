@@ -151,10 +151,10 @@ if printFiles:
     print("**********************************************************************************")
 
 nEin = 1
-nopen = 64
+nopen = 128
 nNin = 3
-nhid = 64
-nNclose = 64
+nhid = 128
+nNclose = 128
 nlayer = 4
 h = 0.1  # / nlayer
 dropout = 0.0

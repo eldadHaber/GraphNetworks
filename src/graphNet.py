@@ -771,7 +771,7 @@ class graphNetwork_nodesOnly(nn.Module):
             else:
                 x = F.tanh(x)
         if not openclose:  # if K.shape[0] == K.shape[1]:
-            # x = F.relu(x)
+            #x = F.relu(x)
             x = self.edgeConv(x, K, groups=groups)
             if not relu:
                 x = F.tanh(x)
@@ -782,7 +782,7 @@ class graphNetwork_nodesOnly(nn.Module):
                 beta = torch.norm(x)
                 x = beta * tv_norm(x)
             x = self.edgeConv(x, K.t(), groups=groups)
-            # F.relu(x)
+            #F.relu(x)
         return x
 
     def newDoubleLayer(self, x, K1, K2):
