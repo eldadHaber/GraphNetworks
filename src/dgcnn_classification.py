@@ -32,8 +32,8 @@ class Net(torch.nn.Module):
     def __init__(self, out_channels, k=10, aggr='max'):
         super().__init__()
 
-        self.conv1 = EdgeConv(MLP([2 * 3, 64, 64, 64]), k, aggr)
-        self.conv2 = EdgeConv(MLP([2 * 64, 128]), k, aggr)
+        self.conv1 = EdgeConv(MLP([2 * 3, 64, 64, 64]), aggr)
+        self.conv2 = EdgeConv(MLP([2 * 64, 128]), aggr)
         self.lin1 = MLP([128 + 64, 1024])
 
         self.mlp = Seq(
