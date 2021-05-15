@@ -90,5 +90,5 @@ for epoch in range(1, 201):
     loss = train()
     test_acc = test(test_loader)
     print('Epoch {:03d}, Loss: {:.4f}, Test: {:.4f}'.format(
-        epoch, loss, test_acc))
+        epoch, loss, test_acc), flush=True)
     scheduler.step()
