@@ -69,9 +69,9 @@ transform = T.FaceToEdge(remove_faces=False)
 train_dataset = ModelNet(path, '10', True, pre_transform=pre_transform, transform=transform)
 test_dataset = ModelNet(path, '10', False, pre_transform=pre_transform, transform=transform)
 train_loader = DataLoader(
-    train_dataset, batch_size=32, shuffle=True, num_workers=6)
+    train_dataset, batch_size=16, shuffle=True, num_workers=6)
 test_loader = DataLoader(
-    test_dataset, batch_size=32, shuffle=False, num_workers=6)
+    test_dataset, batch_size=16, shuffle=False, num_workers=6)
 
 
 def MLP(channels, batch_norm=True):
@@ -145,7 +145,7 @@ nopen = 64
 nNin = 3
 nhid = 64
 nNclose = 64
-nlayer = 1
+nlayer = 3
 h = 0.1  # / nlayer
 dropout = 0.0
 wave = False
@@ -157,7 +157,7 @@ filename = 'nopen_' + str(nopen) + 'nhid_' + str(nhid) + 'nlayer_' + str(nlayer)
     now.minute) + "_" + str(
     now.second) + '.pth'
 model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=wave,
-                                  diffOrder=1, num_output=nopen, dropOut=dropout, modelnet=True)
+                                  diffOrder=1, num_output=nlayer*nopen, dropOut=dropout, modelnet=True)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = model.to(device)
