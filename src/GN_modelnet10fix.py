@@ -83,9 +83,9 @@ transform = T.FaceToEdge(remove_faces=True)
 train_dataset = ModelNet(path, '10', True, pre_transform=pre_transform, transform=transform)
 test_dataset = ModelNet(path, '10', False, pre_transform=pre_transform, transform=transform)
 train_loader = DataLoader(
-    train_dataset, batch_size=16, shuffle=True, num_workers=6)
+    train_dataset, batch_size=8, shuffle=True, num_workers=6)
 test_loader = DataLoader(
-    test_dataset, batch_size=16, shuffle=False, num_workers=6)
+    test_dataset, batch_size=8, shuffle=False, num_workers=6)
 
 
 def MLP(channels, batch_norm=True):
