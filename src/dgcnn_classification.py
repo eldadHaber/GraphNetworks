@@ -23,9 +23,9 @@ transform = T.FaceToEdge(remove_faces=False)
 train_dataset = ModelNet(path, '10', True, transform, pre_transform)
 test_dataset = ModelNet(path, '10', False, transform, pre_transform)
 train_loader = DataLoader(
-    train_dataset, batch_size=32, shuffle=True, num_workers=6)
+    train_dataset, batch_size=16, shuffle=True, num_workers=6)
 test_loader = DataLoader(
-    test_dataset, batch_size=32, shuffle=False, num_workers=6)
+    test_dataset, batch_size=16, shuffle=False, num_workers=6)
 
 
 class Net(torch.nn.Module):
