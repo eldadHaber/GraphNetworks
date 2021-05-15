@@ -17,7 +17,7 @@ def MLP(channels, batch_norm=True):
 
 path = osp.join(osp.dirname(osp.realpath(__file__)), '..', 'data/ModelNet10')
 path = '/home/cluster/users/erant_group/moshe/ModelNet10_fixed'
-pre_transform, transform = T.NormalizeScale(), T.SamplePoints(1024)
+pre_transform, transform = T.NormalizeScale() #, T.SamplePoints(1024)
 train_dataset = ModelNet(path, '10', True, transform, pre_transform)
 test_dataset = ModelNet(path, '10', False, transform, pre_transform)
 train_loader = DataLoader(
