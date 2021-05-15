@@ -14,11 +14,24 @@ from torch.nn import Sequential as Seq, Linear as Lin, ReLU, BatchNorm1d as BN, 
 from torch_cluster import knn
 from torch_geometric.typing import PairTensor
 
-from src import graphOps as GO
-from src import processContacts as prc
-from src import utils
-from src import graphNet as GN
-from src import pnetArch as PNA
+import sys
+if "s" in sys.argv:
+    import graphOps as GO
+    import processContacts as prc
+    import utils
+    import graphNet as GN
+    import pnetArch as PNA
+
+    path = osp.join(osp.dirname(osp.realpath(__file__)), '..', 'data/ModelNet10_fixed')
+
+else:
+    from src import graphOps as GO
+    from src import processContacts as prc
+    from src import utils
+    from src import graphNet as GN
+    from src import pnetArch as PNA
+
+    path = '/home/cluster/users/erant_group/moshe/ModelNet10_fixed'
 
 
 def transferWeights(smallmodel, largemodel, interp=True):
@@ -61,12 +74,12 @@ def transferWeights(smallmodel, largemodel, interp=True):
         largemodel.KN1 = torch.nn.Parameter(new_KN1)
         largemodel.KN2 = torch.nn.Parameter(new_KN1)
 
-path = osp.join(osp.dirname(osp.realpath(__file__)), '..', 'data/ModelNet10_fixed')
+#path = osp.join(osp.dirname(osp.realpath(__file__)), '..', 'data/ModelNet10_fixed')
 
 #path = '/home/cluster/users/erant_group/moshe/ModelNet10_fixed'
 # pre_transform, transform = T.NormalizeScale() , T.SamplePoints(1024)
 pre_transform = T.NormalizeScale()
-transform = T.FaceToEdge(remove_faces=False)
+transform = T.FaceToEdge(remove_faces=True)
 train_dataset = ModelNet(path, '10', True, pre_transform=pre_transform, transform=transform)
 test_dataset = ModelNet(path, '10', False, pre_transform=pre_transform, transform=transform)
 train_loader = DataLoader(
