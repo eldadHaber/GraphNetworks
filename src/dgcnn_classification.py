@@ -15,17 +15,17 @@ def MLP(channels, batch_norm=True):
         for i in range(1, len(channels))
     ])
 
-path = osp.join(osp.dirname(osp.realpath(__file__)), '..', 'data/ModelNet10')
-path = '/home/cluster/users/erant_group/moshe/ModelNet10_fixed'
+path = osp.join(osp.dirname(osp.realpath(__file__)), '..', 'data/ModelNet10_fixed')
+#path = '/home/cluster/users/erant_group/moshe/ModelNet10_fixed'
 #pre_transform, transform = T.NormalizeScale(), T.SamplePoints(1024)
 pre_transform = T.NormalizeScale()
 transform = T.FaceToEdge(remove_faces=False)
 train_dataset = ModelNet(path, '10', True, transform, pre_transform)
 test_dataset = ModelNet(path, '10', False, transform, pre_transform)
 train_loader = DataLoader(
-    train_dataset, batch_size=4, shuffle=True, num_workers=6)
+    train_dataset, batch_size=16, shuffle=True, num_workers=6)
 test_loader = DataLoader(
-    test_dataset, batch_size=4, shuffle=False, num_workers=6)
+    test_dataset, batch_size=16, shuffle=False, num_workers=6)
 
 
 class Net(torch.nn.Module):
