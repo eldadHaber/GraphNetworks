@@ -672,11 +672,13 @@ class graphNetwork_nodesOnly(nn.Module):
         self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
         self.K2Nopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
         self.convs1x1 = nn.Parameter(torch.randn(nlayer, nopen, nopen) * stdv)
+        self.modelnet = modelnet
 
-        if not self.faust:
+        if self.modelnet:
+            self.KNclose = nn.Parameter(torch.randn(1024,num_output) * stdv)  # num_output on left size
+        elif not self.faust:
             self.KNclose = nn.Parameter(torch.randn(num_output, nopen) * stdv)  # num_output on left size
             # self.KNclose2 = nn.Parameter(torch.randn(num_output, int(round(nopen / 2))) * stdv)
-
         else:
             self.KNclose = nn.Parameter(torch.randn(nopen, nopen) * stdv)
 
@@ -731,7 +733,7 @@ class graphNetwork_nodesOnly(nn.Module):
         self.PPI = PPI
         if self.modelnet:
             self.mlp = Seq(
-                MLP([64, 512]), Dropout(0.5), MLP([512, 256]), Dropout(0.5),
+                MLP([1024, 512]), Dropout(0.5), MLP([512, 256]), Dropout(0.5),
                 Lin(256, 10))
 
     def reset_parameters(self):
@@ -1158,6 +1160,7 @@ class graphNetwork_nodesOnly(nn.Module):
             xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
         else:
             xn = torch.cat(xhist, dim=1)
+            xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
         # xn = F.conv1d(xn, self.KNclose2.unsqueeze(-1))
         xn = xn.squeeze().t()
         if self.modelnet:

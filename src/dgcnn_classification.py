@@ -23,9 +23,9 @@ transform = T.FaceToEdge(remove_faces=False)
 train_dataset = ModelNet(path, '10', True, transform, pre_transform)
 test_dataset = ModelNet(path, '10', False, transform, pre_transform)
 train_loader = DataLoader(
-    train_dataset, batch_size=8, shuffle=True, num_workers=6)
+    train_dataset, batch_size=4, shuffle=True, num_workers=6)
 test_loader = DataLoader(
-    test_dataset, batch_size=8, shuffle=False, num_workers=6)
+    test_dataset, batch_size=4, shuffle=False, num_workers=6)
 
 
 class Net(torch.nn.Module):
@@ -34,11 +34,11 @@ class Net(torch.nn.Module):
 
         self.conv1 = EdgeConv(MLP([2 * 3, 64, 64, 64]), aggr)
         self.conv2 = EdgeConv(MLP([2 * 64, 64]), aggr)
-        self.lin1 = MLP([64 + 64, 1024])
+        self.lin1 = MLP([64 + 64, 128])
 
         self.mlp = Seq(
-            MLP([1024, 512]), Dropout(0.5), MLP([512, 256]), Dropout(0.5),
-            Lin(256, out_channels))
+            MLP([128, 128]), Dropout(0.5), MLP([128, 128]), Dropout(0.5),
+            Lin(128, out_channels))
 
     def forward(self, data):
         pos, batch = data.pos, data.batch
