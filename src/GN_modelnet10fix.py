@@ -72,7 +72,6 @@ train_loader = DataLoader(
     train_dataset, batch_size=32, shuffle=True, num_workers=6)
 test_loader = DataLoader(
     test_dataset, batch_size=32, shuffle=False, num_workers=6)
-torch.nn.Conv2d()
 
 def MLP(channels, batch_norm=True):
     return Seq(*[
