@@ -61,8 +61,9 @@ def transferWeights(smallmodel, largemodel, interp=True):
         largemodel.KN1 = torch.nn.Parameter(new_KN1)
         largemodel.KN2 = torch.nn.Parameter(new_KN1)
 
+path = osp.join(osp.dirname(osp.realpath(__file__)), '..', 'data/ModelNet10_fixed')
 
-path = '/home/cluster/users/erant_group/moshe/ModelNet10_fixed'
+#path = '/home/cluster/users/erant_group/moshe/ModelNet10_fixed'
 # pre_transform, transform = T.NormalizeScale() , T.SamplePoints(1024)
 pre_transform = T.NormalizeScale()
 transform = T.FaceToEdge(remove_faces=False)
