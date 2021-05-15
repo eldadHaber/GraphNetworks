@@ -10,6 +10,8 @@ import torch.optim as optim
 from torch_geometric.nn import global_max_pool
 
 from torch.nn import Sequential as Seq, Linear as Lin, ReLU, BatchNorm1d as BN, LeakyReLU as LRU
+from torch.nn import Sequential as Seq, Dropout, Linear as Lin
+
 
 try:
     from src import graphOps as GO
@@ -729,8 +731,8 @@ class graphNetwork_nodesOnly(nn.Module):
         self.PPI = PPI
         if self.modelnet:
             self.mlp = Seq(
-                MLP([nopen, nopen]), MLP([nopen, nopen]),
-                Lin(nopen, 10))
+                MLP([64, 512]), Dropout(0.5), MLP([512, 256]), Dropout(0.5),
+                Lin(256, 10))
 
     def reset_parameters(self):
         # glorot(self.KN1)
@@ -918,7 +920,7 @@ class graphNetwork_nodesOnly(nn.Module):
             [Graph, edge_index] = self.updateGraph(Graph)
         # if self.faust:
         #    xn = torch.cat([xn, Graph.edgeDiv(xe)], dim=1)
-
+        xhist = []
         debug = False
 
         if debug:
@@ -1019,6 +1021,7 @@ class graphNetwork_nodesOnly(nn.Module):
                     dxn = F.dropout(dxn, p=self.dropout, training=self.training)
                 dxn = F.tanh(self.singleLayer(dxn, self.KN1[i], relu=False))
                 xn = (xn + self.h * dxn)
+
             if not self.realVarlet:
                 if self.varlet:
                     # Define operators:
@@ -1139,6 +1142,9 @@ class graphNetwork_nodesOnly(nn.Module):
                     xn = (xn - self.h * dxn)  # +
                     # xn = (xn_old - self.h * dxn)
                     xn_old = tmp
+
+                if self.modelnet:
+                    xhist.append(xn)
             # xn = F.conv1d(xn, self.convs1x1[i].unsqueeze(-1))
 
             if debug:
@@ -1147,8 +1153,11 @@ class graphNetwork_nodesOnly(nn.Module):
                 else:
                     saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, i + 1, vmax=vmax, vmin=vmin)
 
-        xn = F.dropout(xn, p=self.dropout, training=self.training)
-        xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
+        if not self.modelnet:
+            xn = F.dropout(xn, p=self.dropout, training=self.training)
+            xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
+        else:
+            xn = torch.cat(xhist, dim=1)
         # xn = F.conv1d(xn, self.KNclose2.unsqueeze(-1))
         xn = xn.squeeze().t()
         if self.modelnet:

@@ -153,7 +153,7 @@ filename = 'nopen_' + str(nopen) + 'nhid_' + str(nhid) + 'nlayer_' + str(nlayer)
     now.minute) + "_" + str(
     now.second) + '.pth'
 model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=wave,
-                                  diffOrder=1, num_output=nopen, dropOut=dropout, modelnet=True)
+                                  diffOrder=1, num_output=nlayer*nopen, dropOut=dropout, modelnet=True)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = model.to(device)
