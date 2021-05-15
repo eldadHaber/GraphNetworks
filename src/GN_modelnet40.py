@@ -155,7 +155,7 @@ nopen = 64
 nNin = 3
 nhid = 64
 nNclose = 64
-nlayer = 8
+nlayer = 4
 h = 0.1  # / nlayer
 dropout = 0.0
 wave = False
@@ -259,7 +259,7 @@ for epoch in range(1, 201):
         epoch, loss, test_acc))
     if test_acc > best_test_acc:
         best_test_acc = test_acc
-        torch.save(model.state_dict(), save_path)
+        #torch.save(model.state_dict(), save_path)
 
     scheduler.step()
 
