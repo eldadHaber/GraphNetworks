@@ -73,6 +73,7 @@ train_loader = DataLoader(
 test_loader = DataLoader(
     test_dataset, batch_size=32, shuffle=False, num_workers=6)
 
+
 def MLP(channels, batch_norm=True):
     return Seq(*[
         Seq(Lin(channels[i - 1], channels[i]), BN(channels[i]), ReLU())
