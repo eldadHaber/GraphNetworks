@@ -33,12 +33,12 @@ class Net(torch.nn.Module):
         super().__init__()
 
         self.conv1 = EdgeConv(MLP([2 * 3, 64, 64, 64]), aggr)
-        self.conv2 = EdgeConv(MLP([2 * 64, 128]), aggr)
-        self.lin1 = MLP([128 + 64, 1024])
+        self.conv2 = EdgeConv(MLP([2 * 64, 64]), aggr)
+        self.lin1 = MLP([64 + 64, 128])
 
         self.mlp = Seq(
-            MLP([1024, 512]), Dropout(0.5), MLP([512, 256]), Dropout(0.5),
-            Lin(256, out_channels))
+            MLP([128, 128]), Dropout(0.5), MLP([128, 128]), Dropout(0.5),
+            Lin(128, out_channels))
 
     def forward(self, data):
         pos, batch = data.pos, data.batch
