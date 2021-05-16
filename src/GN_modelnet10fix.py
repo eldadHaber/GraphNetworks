@@ -22,7 +22,7 @@ if "s" in sys.argv:
     import graphNet as GN
     import pnetArch as PNA
 
-    path = osp.join(osp.dirname(osp.realpath(__file__)), '..', 'data/ModelNet40_fixed')
+    path = osp.join(osp.dirname(osp.realpath(__file__)), '..', 'data/ModelNet10_fixed')
 
 else:
     from src import graphOps as GO
@@ -80,8 +80,8 @@ def transferWeights(smallmodel, largemodel, interp=True):
 # pre_transform, transform = T.NormalizeScale() , T.SamplePoints(1024)
 pre_transform = T.NormalizeScale()
 transform = T.FaceToEdge(remove_faces=True)
-train_dataset = ModelNet(path, '40', True, pre_transform=pre_transform, transform=transform)
-test_dataset = ModelNet(path, '40', False, pre_transform=pre_transform, transform=transform)
+train_dataset = ModelNet(path, '10', True, pre_transform=pre_transform, transform=transform)
+test_dataset = ModelNet(path, '10', False, pre_transform=pre_transform, transform=transform)
 train_loader = DataLoader(
     train_dataset, batch_size=16, shuffle=True, num_workers=6)
 test_loader = DataLoader(
@@ -138,6 +138,8 @@ class Net(torch.nn.Module):
 
 
 printFiles = False
+if "s" in sys.argv:
+    printFiles=True
 if printFiles:
     print("**********************************************************************************")
     file2Open = "src/optuna_GNcora.py"
@@ -267,7 +269,7 @@ for epoch in range(1, 201):
         epoch, loss, test_acc))
     if test_acc > best_test_acc:
         best_test_acc = test_acc
-        torch.save(model.state_dict(), save_path)
+        #torch.save(model.state_dict(), save_path)
 
     scheduler.step()
 
