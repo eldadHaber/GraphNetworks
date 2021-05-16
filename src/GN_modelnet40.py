@@ -183,7 +183,7 @@ optimizer = torch.optim.Adam([
     # dict(params=model.alpha, lr=0.1, weight_decay=0),
 ], lr=0.002)
 
-#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.5)
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.5)
 
 
 def train():
