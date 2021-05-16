@@ -144,7 +144,7 @@ optimizer = optim.Adam([{'params': model.K1Nopen, 'lr': lrO, 'wd': 4e-5},
                         {'params': model.Kw, 'lr': lrw}])
 
 alossBest = 1e6
-epochs = 200
+epochs = 100
 
 ndata = n_data_total
 bestModel = model
@@ -165,7 +165,7 @@ for j in range(epochs):
     aloss = 0.0
     alossAQ = 0.0
     # for i in range(ndata):
-    for (i, data) in enumerate(testLoader):
+    for (i, data) in enumerate(trainLoader):
         # Get the data
         # nodeProperties, Coords, M, I, J, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
         #                                                                      MSK, i, device=device)
@@ -178,7 +178,7 @@ for j in range(epochs):
         # print("edgeProperties:", edgeProperties.shape)
         # print("Ds:", Ds.shape)
 
-        nodeProperties, Coords, M, I, J, edgeProperties, Ds, a = data
+        nodeProperties, Coords, M, I, J, edgeProperties, Ds = data
         nodeProperties = nodeProperties.to(device)
         Coords = Coords.to(device)
         M = M.to(device).squeeze()
@@ -273,7 +273,7 @@ for j in range(epochs):
             aloss = 0.0
             alossAQ = 0.0
     # Validation
-    nextval = 5
+    nextval = 1
     if (j + 1) % nextval == 0:
         with torch.no_grad():
             aloss = 0
@@ -319,7 +319,7 @@ for j in range(epochs):
                 AQdis += (torch.norm(maskMat(Dout, M) - maskMat(Dtrue, M)) / torch.sqrt(
                     torch.sum(Medge)).detach())
 
-                if 1 == 1:
+                if 1 == 0:
                     known_idx = (M == 1).squeeze()
                     gt_coords = Coords.clone().squeeze().t().detach().cpu().numpy()
                     if j == 0:
