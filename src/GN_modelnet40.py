@@ -256,7 +256,7 @@ for epoch in range(1, 201):
         optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=0)
 
     print('Epoch {:03d}, Loss: {:.4f}, Test: {:.4f}'.format(
-        epoch, loss, test_acc))
+        epoch, loss, test_acc), flush=True)
     if test_acc > best_test_acc:
         best_test_acc = test_acc
         #torch.save(model.state_dict(), save_path)
