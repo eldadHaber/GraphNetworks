@@ -734,7 +734,7 @@ class graphNetwork_nodesOnly(nn.Module):
         if self.modelnet:
             self.mlp = Seq(
                 MLP([1024, 512]), Dropout(0.5), MLP([512, 256]), Dropout(0.5),
-                Lin(256, 10))
+                Lin(256, 40))
 
     def reset_parameters(self):
         # glorot(self.KN1)

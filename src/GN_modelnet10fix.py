@@ -22,7 +22,7 @@ if "s" in sys.argv:
     import graphNet as GN
     import pnetArch as PNA
 
-    path = osp.join(osp.dirname(osp.realpath(__file__)), '..', 'data/ModelNet10_fixed')
+    path = osp.join(osp.dirname(osp.realpath(__file__)), '..', 'data/ModelNet40_fixed')
 
 else:
     from src import graphOps as GO
@@ -80,12 +80,12 @@ def transferWeights(smallmodel, largemodel, interp=True):
 # pre_transform, transform = T.NormalizeScale() , T.SamplePoints(1024)
 pre_transform = T.NormalizeScale()
 transform = T.FaceToEdge(remove_faces=True)
-train_dataset = ModelNet(path, '10', True, pre_transform=pre_transform, transform=transform)
-test_dataset = ModelNet(path, '10', False, pre_transform=pre_transform, transform=transform)
+train_dataset = ModelNet(path, '40', True, pre_transform=pre_transform, transform=transform)
+test_dataset = ModelNet(path, '40', False, pre_transform=pre_transform, transform=transform)
 train_loader = DataLoader(
-    train_dataset, batch_size=4, shuffle=True, num_workers=6)
+    train_dataset, batch_size=16, shuffle=True, num_workers=6)
 test_loader = DataLoader(
-    test_dataset, batch_size=4, shuffle=False, num_workers=6)
+    test_dataset, batch_size=16, shuffle=False, num_workers=6)
 
 
 def MLP(channels, batch_norm=True):
