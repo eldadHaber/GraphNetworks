@@ -155,8 +155,8 @@ nopen = 128
 nNin = 3
 nhid = 128
 nNclose = 128
-nlayer = 4
-h = 0.1  # / nlayer
+nlayer = 8
+h = 0.3  # / nlayer
 dropout = 0.0
 wave = False
 import datetime
@@ -174,16 +174,16 @@ model = model.to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=0)
 
 optimizer = torch.optim.Adam([
-    dict(params=model.KN1, lr=0.001, weight_decay=0),
-    dict(params=model.KN2, lr=0.001, weight_decay=0),
-    dict(params=model.convs1x1, weight_decay=0),
+    dict(params=model.KN1, lr=0.0005, weight_decay=0),
+    dict(params=model.KN2, lr=0.0005, weight_decay=0),
+    #dict(params=model.convs1x1, weight_decay=0),
     dict(params=model.K1Nopen, weight_decay=0),
     dict(params=model.KNclose, weight_decay=0),
     dict(params=model.mlp.parameters(), weight_decay=0)
     # dict(params=model.alpha, lr=0.1, weight_decay=0),
-], lr=0.001)
+], lr=0.002)
 
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
+#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.5)
 
 
 def train():
@@ -241,11 +241,11 @@ def test(loader):
 save_path = '/home/cluster/users/erant_group/moshe/pdegcnCheckpoints/' + filename
 accs = []
 best_test_acc = 0
-for epoch in range(1, 201):
+for epoch in range(1, 501):
     loss = train()
     test_acc = test(test_loader)
     accs.append(test_acc)
-    if (nlayer < 8) and (epoch % 100 == 99):
+    if (nlayer < 8) and (epoch % 500 == 499):
         nlayer = nlayer * 2
         #h = h / 2
         model_new = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=wave,
