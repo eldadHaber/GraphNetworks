@@ -86,10 +86,6 @@ YobsTest = torch.load(base_path + caspver + '/RCalphaTesting.pt')
 MSKTest = torch.load(base_path + caspver + '/MasksTesting.pt')
 STest = torch.load(base_path + caspver + '/PSSMTesting.pt')
 
-Aind = AindTest
-Yobs = YobsTest
-MSK = MSKTest
-S = STest
 
 train_dataset = proteinLoader.CaspDataset(S, Aind, Yobs, MSK, device=device, return_a=False)
 test_dataset = proteinLoader.CaspDataset(STest, AindTest, YobsTest, MSKTest, device=device, return_a=True)
