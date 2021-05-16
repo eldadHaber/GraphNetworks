@@ -258,7 +258,7 @@ for j in range(epochs):
         # print(' ')
 
         # scheduler.step()
-        nprnt = 10
+        nprnt = 1000
         if (i + 1) % nprnt == 0:
             aloss = aloss / nprnt
             alossAQ = alossAQ / nprnt
