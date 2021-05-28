@@ -91,7 +91,7 @@ if __name__ == '__main__':
     device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
     # device='cpu'
     # load training data
-    data = np.load('../../../../data/MD/MD17/aspirin_dft.npz')
+    data = np.load('../../../../data/MD/MD17/salicylic_dft.npz')
     R = torch.from_numpy(data['R']).to(dtype=torch.float32, device=device)
     Rin, Rout = generate_poincare_datasets(c['nhist'], c['nskips'], R)
 
