@@ -34,7 +34,7 @@ def generate_poincare_datasets(nhist,nskips,R):
 
     Rin = torch.empty((ndata,natoms,nhist,ndim),dtype=torch.float32,device=R.device)
 
-    R_target = R[nhist:]
+    R_target = R[nhist+nskips:]
     for i in range(nhist):
         Rin[:,:,i,:] = R[i:ndata+i]
 
@@ -47,20 +47,20 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     args.mode ='standard'
-    args.n_train = 10
+    args.n_train = 100000
     args.n_val = 1000
-    args.batch_size = 5
+    args.batch_size = 50
     args.nhist = 2
-    args.nskips = 0
+    args.nskips = 99
     args.epochs_for_lr_adjustment = 50
-    args.use_validation = False
+    args.use_validation = True
     args.lr = 1e-2
     args.seed = 123545
     args.epochs = 100000
 
     args.network = {
         'irreps_in': None,  # o3.Irreps("0x0e")
-        'irreps_hidden': o3.Irreps("10x0e+10x0o+5x1e+5x1o"),
+        'irreps_hidden': o3.Irreps("100x0e+100x0o+50x1e+50x1o"),
         'irreps_out': o3.Irreps("1x1o"),
         'irreps_node_attr': o3.Irreps("1x0e"),
         'irreps_edge_attr': o3.Irreps("{:}x0e+{:}x1o".format(args.nhist,args.nhist)),
@@ -89,7 +89,7 @@ if __name__ == '__main__':
     log_all_parameters(LOG, c)
 
     device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
-    device='cpu'
+    # device='cpu'
     # load training data
     data = np.load('../../../../data/MD/MD17/aspirin_dft.npz')
     R = torch.from_numpy(data['R']).to(dtype=torch.float32, device=device)
@@ -97,7 +97,7 @@ if __name__ == '__main__':
 
     z = torch.from_numpy(data['z']).to(dtype=torch.float32, device=device)
 
-    ndata = R.shape[0]
+    ndata = Rout.shape[0]
     natoms = z.shape[0]
 
     print('Number of data: {:}, Number of atoms {:}'.format(ndata, natoms))
@@ -128,7 +128,7 @@ if __name__ == '__main__':
                    num_nodes=natoms,reduce_output=False)
     model.to(device)
     total_params = sum(p.numel() for p in model.parameters())
-    LOG.info('Number of parameters ', total_params)
+    LOG.info('Number of parameters {:}'.format(total_params))
 
     #### Start Training ####
     optimizer = torch.optim.Adam(model.parameters(), lr=c['lr'])
@@ -142,13 +142,13 @@ if __name__ == '__main__':
         aloss_t, aloss_ref_t, MAE_t, t_dataload_t, t_prepare_t, t_model_t, t_backprop_t = use_model_eq_pc(model, dataloader_train, train=True, max_samples=1e6, optimizer=optimizer, batch_size=c['batch_size'])
         t2 = time.time()
         if c['use_validation']:
-            aloss_v, aloss_ref_v, MAE_v, t_dataload_v, t_prepare_v, t_model_v, t_backprop_v = use_model_eq_pc(model, dataloader_train, train=False, max_samples=50, optimizer=optimizer, batch_size=c['batch_size'])
+            aloss_v, aloss_ref_v, MAE_v, t_dataload_v, t_prepare_v, t_model_v, t_backprop_v = use_model_eq_pc(model, dataloader_val, train=False, max_samples=50, optimizer=optimizer, batch_size=c['batch_size'])
         else:
-            aloss_v, t_dataload_v, t_prepare_v, t_model_v, t_backprop_v = 0,0,0,0,0
+            aloss_v, aloss_ref_v, MAE_v, t_dataload_v, t_prepare_v, t_model_v, t_backprop_v = 0,0,0,0,0,0,0
         t3 = time.time()
 
-        if aloss_t < alossBest:
-            alossBest = aloss_t
+        if aloss_v < alossBest:
+            alossBest = aloss_v
             epochs_since_best = 0
         else:
             epochs_since_best += 1
@@ -159,6 +159,6 @@ if __name__ == '__main__':
                 epochs_since_best = 0
 
         # print(f' t_dataloader(train): {t_dataload_t:.3f}s  t_dataloader(val): {t_dataload_v:.3f}s  t_prepare(train): {t_prepare_t:.3f}s  t_prepare(val): {t_prepare_v:.3f}s  t_model(train): {t_model_t:.3f}s  t_model(val): {t_model_v:.3f}s  t_backprop(train): {t_backprop_t:.3f}s  t_backprop(val): {t_backprop_v:.3f}s')
-        LOG.info(f'{epoch:2d}  Loss(train): {aloss_t:.2e}  Loss_ref(train): {aloss_ref_t:.2e} MAE(train) {MAE_t:.2e}  Loss(val): {aloss_v:.2f}  Time(train): {t2 - t1:.1f}s  Time(val): {t3 - t2:.1f}s  Lr: {lr:2.2e} ')
+        LOG.info(f'{epoch:2d}  Loss(train): {aloss_t:.2e}  Loss_ref(train): {aloss_ref_t:.2e} MAE(train) {MAE_t:.2e}  Loss(val): {aloss_v:.2e}   Loss_ref(val): {aloss_ref_v:.2e} MAE(val) {MAE_v:.2e}  Time(train): {t2 - t1:.1f}s  Time(val): {t3 - t2:.1f}s  Lr: {lr:2.2e} ')
 
 
