@@ -82,13 +82,13 @@ n_data_total = len(S)
 # Setup the network and its parameters
 nNin = 40
 nEin = 1
-nopen = 8
+nopen = 64
 nhid  = 16
 nNclose = 3
 nEclose = 1
 nlayer = 18
 
-model = GN.graphNetwork(nNin, nEin, nopen, nhid, nNclose, nlayer, h=.1, const=True)
+model = GN.graphNetwork(nNin, nEin, nopen, nhid, nNclose, nlayer, h=.1, const=False)
 model.to(device)
 
 total_params = sum(p.numel() for p in model.parameters())
@@ -182,9 +182,15 @@ for j in range(epochs):
         torch.nn.utils.clip_grad_norm_(model.Kw, 1.0e-2, norm_type=2.0)
 
         aloss += loss.detach()
-        alossAQ += (torch.norm(DoutM - DtrueM)) / np.sqrt(torch.numel(DtrueM))
 
         optimizer.step()
+
+        Dout = utils.getDistMat(xnOut)
+        Dtrue = utils.getDistMat(Coords)
+        DtrueM = maskMat(Dtrue, M)
+        DoutM = maskMat(Dout, M)
+        alossAQ += (torch.norm(DoutM - DtrueM)) / np.sqrt(torch.sum(DtrueM>0))
+
 
         #d1 = torch.diag(maskMat(Dtrue,M),-1)
         #d1 = d1[d1 > 0.01]

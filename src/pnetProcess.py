@@ -449,7 +449,12 @@ for i in range(n):
     seq[i]     = (torch.eye(20)[seq[i]]).t()
     pssm2[i]   = torch.tensor(pssm2[i]).t()
     entropy[i] = torch.tensor(entropy[i])
-    r1[i]      = torch.tensor(r1[i]).t()
-    r2[i]      = torch.tensor(r2[i]).t()
-    r3[i]      = torch.tensor(r3[i]).t()
+    r1[i]      = torch.tensor(r1[i]).t()  # N
+    r2[i]      = torch.tensor(r2[i]).t()  # alpha
+    r3[i]      = torch.tensor(r3[i]).t()  # beta
     mask[i]    = torch.tensor(mask[i]).t()
+
+
+# d23 = 1.52
+# d12 = 1.45
+# d13 = 2.46

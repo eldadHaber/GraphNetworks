@@ -103,7 +103,7 @@ for i in range(81):
 
 ### For saving model
 
-for i in range(5):
+for i in range(80):
     # Get the data
     nodeProperties, Coords, M, I, J, edgeProperties, Ds = prc.getIterData(S, Aind, Yobs,
                                                                           MSK, i, device=device)
