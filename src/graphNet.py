@@ -9,7 +9,7 @@ import torch.optim as optim
 ## r=1
 from src import graphOps as GO
 
-
+# t=1
 def conv2(X, Kernel):
     return F.conv2d(X, Kernel, padding=int((Kernel.shape[-1] - 1) / 2))
 
