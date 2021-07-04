@@ -12,27 +12,54 @@ import matplotlib.pyplot as plt
 plt.figure()
 # plt.show()
 import math
+#
+#
+# #What exactly does elementwisetensorproduct do?
+# n = 2
+# nd = 10
+# x = 100*torch.randn((n,nd))+1000
+# # y = 3*torch.randn((n,nd))
+#
+# tp = ElementwiseTensorProduct("{:}x0e".format(nd),"{:}x0e".format(nd))
+#
+# xx = tp(x,x)
 
 
-#What exactly does elementwisetensorproduct do?
-n = 2
-nd = 10
-x = 100*torch.randn((n,nd))+1000
-# y = 3*torch.randn((n,nd))
+irreps_x = o3.Irreps('1o')
+irreps_z = o3.Irreps('4x1o')
 
-tp = ElementwiseTensorProduct("{:}x0e".format(nd),"{:}x0e".format(nd))
+tp = o3.FullTensorProduct(irreps_x, irreps_z, ['0e'])
+print(tp)
 
-xx = tp(x,x)
+irreps_y = tp.irreps_out
+
+z = irreps_z.randn(-1)
+
+M = tp.right(z)
+print(M.shape)
+
+# forward
+x = irreps_x.randn(-1)
+y = x @ M
+
+# inverse
+invM = torch.pinverse(M)
+x2 = y @ invM
+
+assert torch.allclose(x, x2)
 
 
 
+
+irrep = "1x1o"
+irrep_hd = '1x0e+1x1e+1x2e'
+F = FullyConnectedTensorProduct(irrep,irrep,irrep_hd) # So a fullyconnected tensorproduct also mixes the outputs if they are of similar kinds, which is what the last number of paths are. However it seems like this last mixing is done differently than normal
+v = torch.tensor([[1.0,1.0,1]])
+Finv = FullyConnectedTensorProduct(irrep_hd,irrep_hd,irrep) # So a fullyconnected tensorproduct also mixes the outputs if they are of similar kinds, which is what the last number of paths are. However it seems like this last mixing is done differently than normal
 
 
 
 print("__________________________")
-irrep = "1x0e+1x1o"
-tp = FullTensorProduct(irrep,irrep)
-ftp = FullyConnectedTensorProduct(irrep,irrep,tp.irreps_out) # So a fullyconnected tensorproduct also mixes the outputs if they are of similar kinds, which is what the last number of paths are. However it seems like this last mixing is done differently than normal
 #The last mixing is done purely on a level of elements
 # ftp.weight.requires_grad_(False)
 # ftp.weight[:] = 1

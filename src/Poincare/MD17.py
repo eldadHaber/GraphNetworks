@@ -47,20 +47,20 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     args.mode ='standard'
-    args.n_train = 100000
+    args.n_train = 1
     args.n_val = 1000
-    args.batch_size = 50
+    args.batch_size = 1
     args.nhist = 2
-    args.nskips = 99
+    args.nskips = 0
     args.epochs_for_lr_adjustment = 50
-    args.use_validation = True
+    args.use_validation = False
     args.lr = 1e-2
     args.seed = 123545
     args.epochs = 100000
 
     args.network = {
         'irreps_in': None,  # o3.Irreps("0x0e")
-        'irreps_hidden': o3.Irreps("100x0e+100x0o+50x1e+50x1o"),
+        'irreps_hidden': o3.Irreps("20x0e+20x0o+5x1e+10x1o"),
         'irreps_out': o3.Irreps("1x1o"),
         'irreps_node_attr': o3.Irreps("1x0e"),
         'irreps_edge_attr': o3.Irreps("{:}x0e+{:}x1o".format(args.nhist,args.nhist)),
@@ -91,7 +91,7 @@ if __name__ == '__main__':
     device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
     # device='cpu'
     # load training data
-    data = np.load('../../../../data/MD/MD17/salicylic_dft.npz')
+    data = np.load('../../../../data/MD/MD17/aspirin_dft.npz')
     R = torch.from_numpy(data['R']).to(dtype=torch.float32, device=device)
     Rin, Rout = generate_poincare_datasets(c['nhist'], c['nskips'], R)
 

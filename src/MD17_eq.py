@@ -12,7 +12,6 @@ import torch.autograd.profiler as profiler
 
 
 from src import graphOps as GO
-from src import processContacts as prc
 from src import utils
 from src import graphNet as GN
 from torch.autograd import grad
@@ -48,8 +47,6 @@ if __name__ == '__main__':
     z = torch.from_numpy(data['z']).to(dtype=torch.float32, device=device)
     # All geometries in Å, energy labels in kcal mol-1 and force labels in kcal mol-1 Å-1.
     # According to http://quantum-machine.org/gdml/#datasets, we need to reach a test error of 0.35 kcal mol-1 Å-1 on force prediction to be compatible with the best
-
-
 
     ndata = E.shape[0]
     natoms = z.shape[0]

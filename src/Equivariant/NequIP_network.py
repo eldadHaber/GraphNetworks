@@ -212,18 +212,18 @@ class NequIP(torch.nn.Module):
         # scalar_z = self.ext_z(z)
         edge_features = edge_length_embedded
 
-        print(f'mean={x.pow(2).mean():2.2f}')
+        # print(f'mean={x.pow(2).mean():2.2f}')
         z = self.node_embedder(z.to(dtype=torch.int64)).squeeze()
-        print(f'mean={x.pow(2).mean():2.2f}')
+        # print(f'mean={x.pow(2).mean():2.2f}')
         # x = self.self_interaction[0](x)
         # print(f'mean={x.pow(2).mean():2.2f}')
 
         for i,(conv,norm,gate) in enumerate(zip(self.convolutions,self.norms,self.gates)):
             y = conv(x, z, edge_src, edge_dst, edge_attr, edge_features)
             # y = norm(y)
-            print(f'mean={x.pow(2).mean():2.2f}')
+            # print(f'mean={x.pow(2).mean():2.2f}')
             y = gate(y)
-            print(f'mean={x.pow(2).mean():2.2f}')
+            # print(f'mean={x.pow(2).mean():2.2f}')
             if y.shape == x.shape:
                 y = self.self_interaction[i](y)
                 x = x + h*y
