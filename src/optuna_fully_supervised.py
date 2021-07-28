@@ -149,7 +149,7 @@ for nlayers in num_layers:
             slurm = ("s" in sys.argv) or ("e" in sys.argv)
             adj, features, labels, idx_train, idx_val, idx_test, num_features, num_labels = process.full_load_data(
                 datastr,
-                splitstr, slurm=slurm)
+                splitstr, slurm=True)
             adj = adj.to_dense()
             #print("adj shape:", adj.shape)
 
