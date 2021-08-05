@@ -68,20 +68,19 @@ for nlayers in num_layers:
 
 
     def objective(trial):
-
         nEin = 1
         n_channels = 64  # trial.suggest_categorical('n_channels', [64, 128, 256])
         nopen = n_channels
         nhid = n_channels
         nNclose = n_channels
         nlayer = nlayers
-        datastr = "cornell"
+        datastr = "wisconsin"
         print("DATA SET IS:", datastr)
         # h = 1 / n_layers
-        h = trial.suggest_discrete_uniform('h', 0.1 / nlayer, 3, q=0.1 / (nlayer))
-        h = trial.suggest_discrete_uniform(0.1, 2, q=0.1)
+        # h = trial.suggest_discrete_uniform('h', 0.1 / nlayer, 3, q=0.1 / (nlayer))
+        h = trial.suggest_discrete_uniform('h', 0.1, 2, q=0.1)
         dropout = trial.suggest_discrete_uniform('dropout', 0.5, 0.7, q=0.1)
-        #dropout = 0.6
+        # dropout = 0.6
         # h = 20 / nlayer
         print("n channels:", nopen)
         print("n layers:", nlayer)
@@ -96,8 +95,8 @@ for nlayers in num_layers:
 
         lrGCN = trial.suggest_float("lrGCN", 1e-6, 1e-3, log=True)
         wd = trial.suggest_float("wd", 5e-8, 1e-3, log=True)
-        #wdGCN = trial.suggest_float("wdGCN", 1e-10, 1e-2, log=True)
 
+        # wdGCN = trial.suggest_float("wdGCN", 1e-10, 1e-2, log=True)
         def train_step(model, optimizer, features, labels, adj, idx_train):
             model.train()
             optimizer.zero_grad()
@@ -151,22 +150,19 @@ for nlayers in num_layers:
                 datastr,
                 splitstr, slurm=slurm)
             adj = adj.to_dense()
-            #print("adj shape:", adj.shape)
-
+            # print("adj shape:", adj.shape)
             [edge_index, edge_weight] = sparseConvert.dense_to_sparse(adj)
             del adj
-            #print("edge index shape:", edge_index.shape)
-
-            #print("features shape:", features.shape)
-            #print("labels shhape:", labels.shape)
-            #print("idx shape:", idx_train.shape)
+            # print("edge index shape:", edge_index.shape)
+            # print("features shape:", features.shape)
+            # print("labels shhape:", labels.shape)
+            # print("idx shape:", idx_train.shape)
             edge_index = edge_index.to(device)
             features = features.to(device).t().unsqueeze(0)
             idx_train = idx_train.to(device)
             idx_test = idx_test.to(device)
             labels = labels.to(device)
             #
-
             model = GN.graphNetwork_nodesOnly(num_features, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True,
                                               wave=False,
                                               diffOrder=1, num_output=num_output, dropOut=dropout, gated=False,
@@ -209,7 +205,7 @@ for nlayers in num_layers:
 
         acc_list = []
         for i in range(10):
-            #datastr = "citeseer"
+            # datastr = "citeseer"
             if datastr == "cora":
                 num_output = 7
             elif datastr == "citeseer":
@@ -231,6 +227,7 @@ for nlayers in num_layers:
         mean_test_acc = np.mean(acc_list)
         print("Test acc.:{:.2f}".format(mean_test_acc))
         return mean_test_acc
+
 
     study = optuna.create_study(direction='maximize')
     study.optimize(objective, n_trials=200)
