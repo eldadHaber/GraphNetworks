@@ -192,7 +192,7 @@ def train():
         optimizer.step()
         total_loss += loss.item() * data.num_nodes
         total_examples += data.num_nodes
-    print("alpha:", model.alpha.data)
+    #print("alpha:", model.alpha.data)
 
     return total_loss / total_examples
 

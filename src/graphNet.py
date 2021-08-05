@@ -1431,6 +1431,7 @@ class graphNetwork_seq(nn.Module):
         else:
             self.heat = False
         self.mixDynamics = mixDyamics
+        self.dynamicsPerLayer = dynamicsPerLayer
         self.h = h
         self.varlet = varlet
         self.dense = dense
