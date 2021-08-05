@@ -143,7 +143,7 @@ model = GN.graphNetwork_seq(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False
 
 model.reset_parameters()
 model.to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)
 criterion = torch.nn.BCEWithLogitsLoss()
 
 
