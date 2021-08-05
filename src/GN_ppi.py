@@ -111,7 +111,7 @@ print("n channels:", nopen)
 print("n layers:", nlayer)
 print("h step:", h)
 print("dropout:", dropout)
-wave = False
+wave = True
 print("Wave = ", wave)
 print_files = False
 if "s" in sys.argv:
@@ -139,7 +139,7 @@ model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense
 model = GN.graphNetwork_seq(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=wave,
                             diffOrder=1, num_output=train_dataset.num_classes, dropOut=dropout, PPI=True,
                             gated=False,
-                            realVarlet=False, mixDyamics=True, doubleConv=True)
+                            realVarlet=False, mixDyamics=False, doubleConv=True)
 
 model.reset_parameters()
 model.to(device)
