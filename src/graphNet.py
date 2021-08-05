@@ -612,7 +612,7 @@ class graphNetwork_nodesOnly(nn.Module):
     def __init__(self, nNin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=False, wave=True,
                  diffOrder=1, num_output=1024, dropOut=False, modelnet=False, faust=False, GCNII=False,
                  graphUpdate=None, PPI=False, gated=False, realVarlet=False, mixDyamics=False, doubleConv=False,
-                 tripleConv=False):
+                 tripleConv=False, perLayerDynamics=False):
         super(graphNetwork_nodesOnly, self).__init__()
         self.wave = wave
         self.realVarlet = realVarlet
@@ -632,6 +632,7 @@ class graphNetwork_nodesOnly(nn.Module):
         self.gated = gated
         self.faust = faust
         self.PPI = PPI
+        self.perLayerDynamics = perLayerDynamics
         if dropOut > 0.0:
             self.dropout = dropOut
         else:
@@ -674,8 +675,11 @@ class graphNetwork_nodesOnly(nn.Module):
             self.KE1 = nn.Parameter(torch.rand(nlayer, nhid, 2 * Nfeatures) * stdvp)
 
         if self.mixDynamics:
+            if self.perLayerDynamics:
+                self.alpha = nn.Parameter(-0 * torch.ones(nlayer, 1))
             # self.alpha = nn.Parameter(torch.rand(nlayer, 1) * stdvp)
-            self.alpha = nn.Parameter(-0 * torch.ones(1, 1))
+            else:
+                self.alpha = nn.Parameter(-0 * torch.ones(1, 1))
 
         self.KN2 = nn.Parameter(torch.rand(nlayer, nhid, 1 * nhid) * stdvp)
         rrnd2 = torch.rand(nlayer, nhid, nhid) * (1e-3)
@@ -1063,8 +1067,12 @@ class graphNetwork_nodesOnly(nn.Module):
                     tmp_xn = xn.clone()
                     # xn_wave = 2 * xn - xn_old - (self.h ** 2) * dxn
                     # xn_heat = (xn - self.h * dxn)
-                    beta = F.sigmoid(self.alpha)
-                    alpha = 1 - beta
+                    if not self.perLayerDynamics:
+                        beta = F.sigmoid(self.alpha)
+                        alpha = 1 - beta
+                    else:
+                        beta = F.sigmoid(self.alpha[i])
+                        alpha = 1 - beta
                     # print("heat portion:", alpha)
                     # print("wave portion:", beta)
                     if 1 == 1:

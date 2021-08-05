@@ -70,7 +70,7 @@ print("*************************************************************************
 # Setup the network and its parameters
 for nlayers in num_layers:
     torch.cuda.synchronize()
-    print("Without symmetric conv - not using TransposedConv !!!")
+    print("DOING MIXED MODEL  !!!")
     print("Doing experiment for ", nlayers, " layers!", flush=True)
     torch.cuda.synchronize()
 
@@ -118,7 +118,7 @@ for nlayers in num_layers:
         model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, n_layers, h=h, dense=False, varlet=True,
                                           wave=False,
                                           diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, gated=False,
-                                          realVarlet=False, mixDyamics=False, doubleConv=False, tripleConv=False)
+                                          realVarlet=False, mixDyamics=True, doubleConv=False, tripleConv=False, perLayerDynamics=False)
 
         # model = GN.graphNetwork_seq(nNin, nopen, nhid, nNclose, n_layers, h=h, dense=False, varlet=True, wave=False,
         #                            diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, PPI=False,
@@ -135,7 +135,7 @@ for nlayers in num_layers:
                 # dict(params=model.KN3, lr=lrGCN, weight_decay=0),
                 dict(params=model.K1Nopen, weight_decay=wd),
                 dict(params=model.KNclose, weight_decay=wd),
-                # dict(params=model.alpha, lr=lr_alpha, weight_decay=0),
+                dict(params=model.alpha, lr=lr_alpha, weight_decay=0),
 
             ], lr=lr)
         else:
@@ -228,4 +228,4 @@ for nlayers in num_layers:
 
 
     study = optuna.create_study(direction='maximize')
-    study.optimize(objective, n_trials=100)
+    study.optimize(objective, n_trials=150)
