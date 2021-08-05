@@ -189,10 +189,11 @@ def train():
         # print("gKo gKN1  gKN2    gKc gAlpha")
         # print("%10.3E   %10.3E   %10.3E   %10.3E    %10.3E" %
         #      (gKo, gKN1, gKN2, gKc, gAlpha), flush=True)
-        # print("alpha:", model.alpha.data)
         optimizer.step()
         total_loss += loss.item() * data.num_nodes
         total_examples += data.num_nodes
+    print("alpha:", model.alpha.data)
+
     return total_loss / total_examples
 
 
