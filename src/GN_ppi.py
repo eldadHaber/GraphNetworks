@@ -2,10 +2,10 @@ import os.path as osp
 
 import torch
 import os
-
 # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 print(torch.cuda.get_device_name(0))
 print(torch.cuda.get_device_properties('cuda:0'))
+from datetime import datetime
 
 from torch.nn import Linear
 import torch.nn.functional as F
@@ -14,10 +14,8 @@ from torch_geometric.datasets import PPI
 import torch_geometric.transforms as T
 from torch_geometric.nn import GCN2Conv
 from torch_geometric.data import DataLoader
-
 dataset = "ppi"
 import sys
-
 if "s" in sys.argv:
     path = '/home/eliasof/GraphNetworks/data/' + dataset
 else:
@@ -67,7 +65,6 @@ class Net(torch.nn.Module):
 
 
 import sys
-
 if "s" in sys.argv:
     base_path = '/home/eliasof/pdeGraphs/data/'
     import graphOps as GO
@@ -75,6 +72,8 @@ if "s" in sys.argv:
     import utils
     import graphNet as GN
     import pnetArch as PNA
+    results_dir = '../resultsLogs/ppi/'
+
 
 
 elif "e" in sys.argv:
@@ -84,6 +83,9 @@ elif "e" in sys.argv:
     from src import utils
     from src import graphNet as GN
     from src import pnetArch as PNA
+    results_dir = '../resultsLogs/ppi/'
+
+
 
 
 else:
@@ -103,9 +105,24 @@ nopen = 2048
 nhid = 2048
 nNclose = 2048
 nlayer = 12
-h = 0.01#25  # 1 / nlayer
+h = 0.01  # 25  # 1 / nlayer
 dropout = 0.0
+mixDynamics = True
+mixPerLayer = True  # always true for ppi
 # h = 20 / nlayer
+
+time_ = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
+experiment_name = (
+    f"PPI_nLayers_{nlayer}_nopen_{nopen}"
+    f"_dropOut{dropout}_h_{h}"
+    f"_mixDynamics_{mixDynamics}"
+)
+os.makedirs(results_dir, exist_ok=False)
+log_filename = os.path.join(results_dir, "log.txt")
+sys.stdout = open(log_filename, "w")
+
+print(torch.cuda.get_device_name(0))
+print(torch.cuda.get_device_properties('cuda:0'))
 print("dataset:", dataset)
 print("n channels:", nopen)
 print("n layers:", nlayer)
@@ -139,7 +156,7 @@ model = GN.graphNetwork_nodesOnly(nNin, nopen, nhid, nNclose, nlayer, h=h, dense
 model = GN.graphNetwork_seq(nNin, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True, wave=wave,
                             diffOrder=1, num_output=train_dataset.num_classes, dropOut=dropout, PPI=True,
                             gated=False,
-                            realVarlet=False, mixDyamics=False, doubleConv=False)
+                            realVarlet=False, mixDyamics=mixDynamics, doubleConv=False)
 
 model.reset_parameters()
 model.to(device)
@@ -192,8 +209,7 @@ def train():
         optimizer.step()
         total_loss += loss.item() * data.num_nodes
         total_examples += data.num_nodes
-    #print("alpha:", model.alpha.data)
-
+    # print("alpha:", model.alpha.data)
     return total_loss / total_examples
 
 

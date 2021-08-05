@@ -170,7 +170,7 @@ for nlayers in num_layers:
             model = GN.graphNetwork_nodesOnly(num_features, nopen, nhid, nNclose, nlayer, h=h, dense=False, varlet=True,
                                               wave=False,
                                               diffOrder=1, num_output=num_output, dropOut=dropout, gated=False,
-                                              realVarlet=realVarlet, mixDyamics=True)
+                                              realVarlet=realVarlet, mixDyamics=True, perLayerDynamics=True)
             model = model.to(device)
 
             optimizer = torch.optim.Adam([
