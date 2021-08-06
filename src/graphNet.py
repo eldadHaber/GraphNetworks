@@ -1026,7 +1026,10 @@ class graphNetwork_nodesOnly(nn.Module):
                         if not self.doubleConv:
                             # gradSq = gradX * gradX #Graph.nodeAve(xn)
                             # gradX = torch.cat([gradX, gradSq], dim=1)
-                            dxn = (self.singleLayer(gradX, self.KN1[i], norm=False, relu=True, groups=1))  # KN2
+
+                            #############WATCH HERE !!################
+                            print("im here man")
+                            dxn = (self.singleLayer(0.1*x0 + 0.9*gradX, self.KN1[i], norm=False, relu=True, groups=1))  # KN2
                             # dxn = (self.singleLayer(dxn, self.interClosing[i], norm=False, relu=False, groups=1))
                         else:
                             dxn = self.finalDoubleLayer(gradX, self.KN1[i], self.KN2[i])
