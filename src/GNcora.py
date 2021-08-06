@@ -51,7 +51,7 @@ nopen = 64
 nhid = 64
 nNclose = 64
 nlayer = 16
-h = 2 # 16 / nlayer
+h = 0.9 # 16 / nlayer
 
 import os
 
@@ -88,8 +88,8 @@ orig_w = model.KN1[2].clone().detach().cpu().numpy()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0.0001)
 if not realVarlet:
     optimizer = torch.optim.Adam([
-        dict(params=model.KN1, lr=0.00001, weight_decay=0),
-        dict(params=model.KN2, lr=0.00001, weight_decay=0),
+        dict(params=model.KN1, lr=5e-5, weight_decay=0),
+        dict(params=model.KN2, lr=5e-5, weight_decay=0),
         #dict(params=model.KN3, lr=0.00001, weight_decay=0),
         #dict(params=model.interClosing, lr=0.0001, weight_decay=5e-2),
 
@@ -99,7 +99,7 @@ if not realVarlet:
         #dict(params=model.KNclose2, weight_decay=5e-4),
 
         #dict(params=model.alpha, lr=0.0001, weight_decay=0)
-    ], lr=0.01)
+    ], lr=0.07)
 else:
     optimizer = torch.optim.Adam([
         dict(params=model.KN1, weight_decay=0.01),
