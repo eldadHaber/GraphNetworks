@@ -100,6 +100,8 @@ for nlayers in num_layers:
             path = '/home/eliasof/GraphNetworks/data/' + dataset
         elif "j" in sys.argv:
             path = '/home/ephrathj/GraphNetworks/data/' + dataset
+        elif "b" in sys.argv:
+            path = '/home/bodnerb/GraphNetworks/data/' + dataset
 
         else:
             path = '/home/cluster/users/erant_group/moshe/' + dataset
