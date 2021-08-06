@@ -22,7 +22,7 @@ if "s" in sys.argv:
     import graphNet as GN
     import pnetArch as PNA
 
-elif "j" in sys.argv:
+elif "j" in sys.argv or "b" in sys.argv:
     base_path = '/home/ephrathj/pFold/data/'
     import graphOps as GO
     import processContacts as prc
