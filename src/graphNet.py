@@ -1028,12 +1028,11 @@ class graphNetwork_nodesOnly(nn.Module):
                             # gradX = torch.cat([gradX, gradSq], dim=1)
 
                             #############WATCH HERE !!################
-                            print("im here man")
-                            dxn = (self.singleLayer(0.1*x0 + 0.9*gradX, self.KN1[i], norm=False, relu=True, groups=1))  # KN2
+                            dxn = (self.singleLayer(gradX, self.KN1[i], norm=False, relu=True, groups=1))  # KN2
                             # dxn = (self.singleLayer(dxn, self.interClosing[i], norm=False, relu=False, groups=1))
                         else:
                             dxn = self.finalDoubleLayer(gradX, self.KN1[i], self.KN2[i])
-                        dxn = Graph.edgeDiv(dxn)  # + Graph.edgeAve(dxe2, method='ave')
+                        dxn = 0.1*x0 + 0.9*Graph.edgeDiv(dxn)  # + Graph.edgeAve(dxe2, method='ave')
 
                         if self.tripleConv:
                             dxn = self.singleLayer(dxn, self.KN3[i], norm=False, relu=False)
