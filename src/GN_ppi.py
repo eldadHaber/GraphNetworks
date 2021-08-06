@@ -115,10 +115,10 @@ time_ = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
 experiment_name = (
     f"PPI_nLayers_{nlayer}_nopen_{nopen}"
     f"_dropOut{dropout}_h_{h}"
-    f"_mixDynamics_{mixDynamics}"
+    f"_mixDynamics_{mixDynamics}.txt"
 )
 os.makedirs(results_dir, exist_ok=False)
-log_filename = os.path.join(results_dir, "log.txt")
+log_filename = os.path.join(results_dir, experiment_name)
 sys.stdout = open(log_filename, "w")
 
 print(torch.cuda.get_device_name(0))
