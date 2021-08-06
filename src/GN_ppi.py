@@ -117,9 +117,9 @@ experiment_name = (
     f"_dropOut{dropout}_h_{h}"
     f"_mixDynamics_{mixDynamics}.txt"
 )
-os.makedirs(results_dir, exist_ok=False)
-log_filename = os.path.join(results_dir, experiment_name)
-sys.stdout = open(log_filename, "w")
+#os.makedirs(results_dir, exist_ok=False)
+#log_filename = os.path.join(results_dir, experiment_name)
+#sys.stdout = open(log_filename, "w")
 
 print(torch.cuda.get_device_name(0))
 print(torch.cuda.get_device_properties('cuda:0'))
