@@ -1008,7 +1008,7 @@ class graphNetwork_nodesOnly(nn.Module):
                     # nodalGradX = Graph.edgeAve(gradX, method='ave')
                     # dxn = torch.cat([xn, nodalGradX], dim=1)
                     # dxn = nodalGradX
-                    gradX = Graph.nodeGrad(0.2*x0 + 0.8*xn)
+                    gradX = Graph.nodeGrad(xn)
                     # gradXtmp = F.tanh(Graph.edgeDiv(gradX))
                     # gradXtmp = Graph.nodeGrad(gradXtmp)
                     # gradX = gradX
