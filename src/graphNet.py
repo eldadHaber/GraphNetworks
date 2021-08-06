@@ -934,9 +934,10 @@ class graphNetwork_nodesOnly(nn.Module):
             plt.close()
 
         xn = self.singleLayer(xn, self.K1Nopen, relu=True, openclose=True, norm=False)
-        if self.dropout:
-            xn = F.dropout(xn, p=self.dropout, training=self.training)
-        xn = self.singleLayer(xn, self.K2Nopen, relu=True, openclose=True, norm=False)
+        #if self.dropout:
+        #    xn = F.dropout(xn, p=self.dropout, training=self.training)
+        #xn = self.singleLayer(xn, self.K2Nopen, relu=True, openclose=True, norm=False)
+
 
         # xn = F.normalize(xn)
         # xn = self.singleLayer(xn, self.K2Nopen, relu=True, openclose=True)
