@@ -980,7 +980,7 @@ class graphNetwork_nodesOnly(nn.Module):
             # if debug and image:
             #    self.saveOperatorImages(operators)
             if self.realVarlet:
-                gradX = Graph.nodeGrad(xn)
+                gradX = Graph.nodeGrad(0.1*x0 + 0.9*xn)
                 intX = Graph.nodeAve(xn)
                 dxe = torch.cat([intX, gradX], dim=1)
                 if self.dropout:
@@ -1032,7 +1032,7 @@ class graphNetwork_nodesOnly(nn.Module):
                             # dxn = (self.singleLayer(dxn, self.interClosing[i], norm=False, relu=False, groups=1))
                         else:
                             dxn = self.finalDoubleLayer(gradX, self.KN1[i], self.KN2[i])
-                        dxn = 0.1*x0 + 0.9*Graph.edgeDiv(dxn)  # + Graph.edgeAve(dxe2, method='ave')
+                        dxn = Graph.edgeDiv(dxn)  # + Graph.edgeAve(dxe2, method='ave')
 
                         if self.tripleConv:
                             dxn = self.singleLayer(dxn, self.KN3[i], norm=False, relu=False)
