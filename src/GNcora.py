@@ -98,7 +98,7 @@ if not realVarlet:
         dict(params=model.KNclose, weight_decay=5e-4),
         #dict(params=model.KNclose2, weight_decay=5e-4),
 
-        dict(params=model.alpha, lr=0.0001, weight_decay=0)
+        #dict(params=model.alpha, lr=0.0001, weight_decay=0)
     ], lr=0.01)
 else:
     optimizer = torch.optim.Adam([
