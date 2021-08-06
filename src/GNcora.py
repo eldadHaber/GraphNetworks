@@ -88,8 +88,8 @@ orig_w = model.KN1[2].clone().detach().cpu().numpy()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0.0001)
 if not realVarlet:
     optimizer = torch.optim.Adam([
-        dict(params=model.KN1, lr=0.0001, weight_decay=0),
-        dict(params=model.KN2, lr=0.0001, weight_decay=0),
+        dict(params=model.KN1, lr=0.00001, weight_decay=0),
+        dict(params=model.KN2, lr=0.00001, weight_decay=0),
         #dict(params=model.KN3, lr=0.00001, weight_decay=0),
         #dict(params=model.interClosing, lr=0.0001, weight_decay=5e-2),
 
