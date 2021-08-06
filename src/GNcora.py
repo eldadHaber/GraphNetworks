@@ -51,7 +51,7 @@ nopen = 64
 nhid = 64
 nNclose = 64
 nlayer = 16
-h = 2 # 16 / nlayer
+h = 1 # 16 / nlayer
 
 import os
 
