@@ -105,10 +105,10 @@ nopen = 2048
 nhid = 2048
 nNclose = 2048
 nlayer = 12
-h = 0.1  # 25  # 1 / nlayer
+h = 0.2  # 25  # 1 / nlayer
 dropout = 0.0
-mixDynamics = True
-mixPerLayer = True  # always true for ppi
+mixDynamics = False
+mixPerLayer = False  # always true for ppi
 # h = 20 / nlayer
 
 time_ = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
