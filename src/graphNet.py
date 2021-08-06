@@ -935,7 +935,7 @@ class graphNetwork_nodesOnly(nn.Module):
 
         xn = self.singleLayer(xn, self.K1Nopen, relu=True, openclose=True, norm=False)
         #if self.dropout:
-        #    xn = F.dropout(xn, p=self.dropout, training=self.training)
+        xn = F.dropout(xn, p=self.dropout, training=self.training)
         #xn = self.singleLayer(xn, self.K2Nopen, relu=True, openclose=True, norm=False)
 
 
@@ -1035,7 +1035,7 @@ class graphNetwork_nodesOnly(nn.Module):
                             # dxn = (self.singleLayer(dxn, self.interClosing[i], norm=False, relu=False, groups=1))
                         else:
                             dxn = self.finalDoubleLayer(gradX, self.KN1[i], self.KN2[i])
-                        dxn = 0.1*x0 + 0.9*Graph.edgeDiv(dxn)  # + Graph.edgeAve(dxe2, method='ave')
+                        dxn = Graph.edgeDiv(dxn)  # + Graph.edgeAve(dxe2, method='ave')
 
                         if self.tripleConv:
                             dxn = self.singleLayer(dxn, self.KN3[i], norm=False, relu=False)
