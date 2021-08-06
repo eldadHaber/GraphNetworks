@@ -50,7 +50,7 @@ nEin = 1
 nopen = 64
 nhid = 64
 nNclose = 64
-nlayer = 16
+nlayer = 2
 h = 2 # 16 / nlayer
 
 import os
