@@ -934,6 +934,10 @@ class graphNetwork_nodesOnly(nn.Module):
             plt.close()
 
         xn = self.singleLayer(xn, self.K1Nopen, relu=True, openclose=True, norm=False)
+        if self.dropout:
+            xn = F.dropout(xn, p=self.dropout, training=self.training)
+        xn = self.singleLayer(xn, self.K2Nopen, relu=True, openclose=True, norm=False)
+
         # xn = F.normalize(xn)
         # xn = self.singleLayer(xn, self.K2Nopen, relu=True, openclose=True)
         x0 = xn.clone()
@@ -980,7 +984,7 @@ class graphNetwork_nodesOnly(nn.Module):
             # if debug and image:
             #    self.saveOperatorImages(operators)
             if self.realVarlet:
-                gradX = Graph.nodeGrad(0.1*x0 + 0.9*xn)
+                gradX = Graph.nodeGrad(xn)
                 intX = Graph.nodeAve(xn)
                 dxe = torch.cat([intX, gradX], dim=1)
                 if self.dropout:
@@ -1026,8 +1030,6 @@ class graphNetwork_nodesOnly(nn.Module):
                         if not self.doubleConv:
                             # gradSq = gradX * gradX #Graph.nodeAve(xn)
                             # gradX = torch.cat([gradX, gradSq], dim=1)
-
-                            #############WATCH HERE !!################
                             dxn = (self.singleLayer(gradX, self.KN1[i], norm=False, relu=True, groups=1))  # KN2
                             # dxn = (self.singleLayer(dxn, self.interClosing[i], norm=False, relu=False, groups=1))
                         else:

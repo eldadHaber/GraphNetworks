@@ -98,7 +98,7 @@ if not realVarlet:
         dict(params=model.KNclose, weight_decay=5e-4),
         #dict(params=model.KNclose2, weight_decay=5e-4),
 
-        #dict(params=model.alpha, lr=0.01, weight_decay=0)
+        dict(params=model.alpha, lr=0.0001, weight_decay=0)
     ], lr=0.01)
 else:
     optimizer = torch.optim.Adam([
@@ -123,12 +123,12 @@ scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=500, gamma=0.5)
 betas = []
 
 
-save_path = '/home/cluster/users/erant_group/moshe/pdegcnCheckpoints/'
-filename = 'nopen_64nhid_64nlayer_4h_0.25dropout_0.0wave_True_5_3_1_2_22.pth'
-state_dict = torch.load(save_path+filename)
-state_dict.pop('K1Nopen')
-state_dict.pop('K2Nopen')
-state_dict.pop('KNclose')
+# save_path = '/home/cluster/users/erant_group/moshe/pdegcnCheckpoints/'
+# filename = 'nopen_64nhid_64nlayer_4h_0.25dropout_0.0wave_True_5_3_1_2_22.pth'
+# state_dict = torch.load(save_path+filename)
+# state_dict.pop('K1Nopen')
+# state_dict.pop('K2Nopen')
+# state_dict.pop('KNclose')
 
 
 #model.load_state_dict(state_dict, strict=False)
@@ -171,7 +171,7 @@ def train():
     loss.backward()
 
     optimizer.step()
-    scheduler.step()
+    #scheduler.step()
 
     # gKN2 = model.KN2.grad.norm().item()
     gKN2 = 0
