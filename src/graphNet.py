@@ -1019,6 +1019,7 @@ class graphNetwork_nodesOnly(nn.Module):
                 if self.dropout:
                     if self.varlet:
                         gradX = F.dropout(gradX, p=self.dropout, training=self.training)
+                        gradX = 0.1*x0 + 0.9*gradX
                         # intX = F.dropout(intX, p=self.dropout, training=self.training)
                         # lapX = F.dropout(lapX, p=self.dropout, training=self.training)
                 # dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
@@ -1113,7 +1114,7 @@ class graphNetwork_nodesOnly(nn.Module):
                     tmp = xn.clone()
                     # print("xn shape:", xn.shape)
                     # print("dxn shape:", dxn.shape)
-                    xn = (xn - self.h * dxn)  # +
+                    xn = (xn - self.h * dxn)   # +
                     # xn = (xn_old - self.h * dxn)
                     xn_old = tmp
 
