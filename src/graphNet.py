@@ -1019,7 +1019,7 @@ class graphNetwork_nodesOnly(nn.Module):
                 if self.dropout:
                     if self.varlet:
                         gradX = F.dropout(gradX, p=self.dropout, training=self.training)
-                        gradX = 0.9*gradX + 0.1*Graph.nodeGrad(x0)
+                        gradX = 0.8*gradX + 0.2*Graph.nodeGrad(x0)
                         # intX = F.dropout(intX, p=self.dropout, training=self.training)
                         # lapX = F.dropout(lapX, p=self.dropout, training=self.training)
                 # dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
