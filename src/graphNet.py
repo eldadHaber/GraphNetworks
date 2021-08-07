@@ -1019,7 +1019,7 @@ class graphNetwork_nodesOnly(nn.Module):
                 if self.dropout:
                     if self.varlet:
                         gradX = F.dropout(gradX, p=self.dropout, training=self.training)
-                        gradX = 0.9*gradX + 0.1*Graph.nodeGrad(x0)
+                        #gradX = 0.9*gradX + 0.1*Graph.nodeGrad(x0)
                         # intX = F.dropout(intX, p=self.dropout, training=self.training)
                         # lapX = F.dropout(lapX, p=self.dropout, training=self.training)
                 # dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
@@ -1560,7 +1560,7 @@ class graphNetwork_seq(nn.Module):
 
         return custom_forward
 
-    def forward(self, xn, Graph, data=None, segments=4):
+    def forward(self, xn, Graph, data=None, segments=8):
         [Graph, edge_index] = self.updateGraph(Graph)
         I = Graph.iInd
         J = Graph.jInd

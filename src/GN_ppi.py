@@ -101,11 +101,11 @@ dataset = 'ppi'
 
 nNin = train_dataset.num_features
 nEin = 1
-nopen = 2048
-nhid = 2048
-nNclose = 2048
-nlayer = 12
-h = 0.2  # 25  # 1 / nlayer
+nopen = 4096
+nhid = 4096
+nNclose = 4096
+nlayer = 8
+h = 0.1  # 25  # 1 / nlayer
 dropout = 0.0
 mixDynamics = False
 mixPerLayer = False  # always true for ppi
