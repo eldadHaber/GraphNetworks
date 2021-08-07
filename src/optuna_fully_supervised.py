@@ -74,11 +74,11 @@ for nlayers in num_layers:
         nhid = n_channels
         nNclose = n_channels
         nlayer = nlayers
-        datastr = "cora"
+        datastr = "pubmed"
         print("DATA SET IS:", datastr)
         # h = 1 / n_layers
         # h = trial.suggest_discrete_uniform('h', 0.1 / nlayer, 3, q=0.1 / (nlayer))
-        h = trial.suggest_discrete_uniform('h', 0.1, 2, q=0.1)
+        h = trial.suggest_discrete_uniform('h', 0.1, 3, q=0.1)
         dropout = trial.suggest_discrete_uniform('dropout', 0.5, 0.7, q=0.1)
         # dropout = 0.6
         # h = 20 / nlayer
