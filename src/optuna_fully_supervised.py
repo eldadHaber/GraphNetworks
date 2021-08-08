@@ -90,10 +90,10 @@ for nlayers in num_layers:
         device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
         realVarlet = False
 
-        lr = trial.suggest_float("lr", 1e-2, 1e-1, log=True)
-        lr_alpha = trial.suggest_float("lr_alpha", 1e-6, 1e-2, log=True)
+        lr = trial.suggest_float("lr", 1e-3, 1e-1, log=True)
+        lr_alpha = trial.suggest_float("lr_alpha", 1e-6, 1e-3, log=True)
 
-        lrGCN = trial.suggest_float("lrGCN", 1e-6, 1e-3, log=True)
+        lrGCN = trial.suggest_float("lrGCN", 1e-5, 1e-2, log=True)
         wd = trial.suggest_float("wd", 5e-8, 1e-3, log=True)
 
         # wdGCN = trial.suggest_float("wdGCN", 1e-10, 1e-2, log=True)
