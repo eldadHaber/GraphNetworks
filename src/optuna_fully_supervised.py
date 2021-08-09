@@ -74,7 +74,7 @@ for nlayers in num_layers:
         nhid = n_channels
         nNclose = n_channels
         nlayer = nlayers
-        datastr = "chameleon"
+        datastr = "pubmed"
         print("DATA SET IS:", datastr)
         # h = 1 / n_layers
         # h = trial.suggest_discrete_uniform('h', 0.1 / nlayer, 3, q=0.1 / (nlayer))
@@ -179,7 +179,7 @@ for nlayers in num_layers:
 
             bad_counter = 0
             best = 0
-            for epoch in range(2000):
+            for epoch in range(800):
                 loss_tra, acc_tra = train_step(model, optimizer, features, labels, edge_index, idx_train)
                 loss_val, acc_test = test_step(model, features, labels, edge_index, idx_test)
                 if (epoch + 1) % 10000000000 == 0:
