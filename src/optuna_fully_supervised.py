@@ -230,4 +230,4 @@ for nlayers in num_layers:
 
 
     study = optuna.create_study(direction='maximize')
-    study.optimize(objective, n_trials=200)
+    study.optimize(objective, n_trials=150)
