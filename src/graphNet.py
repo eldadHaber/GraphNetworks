@@ -1874,7 +1874,7 @@ class graphNetwork_nodesOnly_quant(nn.Module):
                  diffOrder=1, num_output=1024, dropOut=False, modelnet=False, faust=False, GCNII=False,
                  graphUpdate=None, PPI=False, gated=False, realVarlet=False, mixDyamics=False, doubleConv=False,
                  tripleConv=False, perLayerDynamics=False, act_bit=32):
-        super(graphNetwork_nodesOnly, self).__init__()
+        super(graphNetwork_nodesOnly_quant, self).__init__()
         self.wave = wave
         self.realVarlet = realVarlet
         self.act_bit = act_bit
