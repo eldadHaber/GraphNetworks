@@ -2210,11 +2210,7 @@ class graphNetwork_nodesOnly_quant(nn.Module):
 
                 if self.modelnet:
                     xhist.append(xn)
-            if debug:
-                if image:
-                    self.savePropagationImage(xn, Graph, i + 1, minv=minv, maxv=maxv)
-                else:
-                    saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, i + 1, vmax=vmax, vmin=vmin)
+
 
         if not self.modelnet:
             xn = F.dropout(xn, p=self.dropout, training=self.training)
