@@ -2112,7 +2112,7 @@ class graphNetwork_nodesOnly_quant(nn.Module):
         if self.dropout:
             xn = F.dropout(xn, p=self.dropout, training=self.training)
 
-        xn = self.singleLayer(xn, self.K1Nopen, relu=True, openclose=True, norm=False)
+        xn = self.singleLayer(xn, self.K1Nopen, i=False,relu=True, openclose=True, norm=False)
         xn = F.dropout(xn, p=self.dropout, training=self.training)
 
         x0 = xn.clone()
