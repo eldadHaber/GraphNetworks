@@ -1868,7 +1868,7 @@ if Test:
 
 #-----------------
 
-from src.utils import uniform_quantization
+from utils import uniform_quantization
 class graphNetwork_nodesOnly_quant(nn.Module):
     def __init__(self, nNin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=False, wave=True,
                  diffOrder=1, num_output=1024, dropOut=False, modelnet=False, faust=False, GCNII=False,
