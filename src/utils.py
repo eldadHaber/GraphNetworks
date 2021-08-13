@@ -290,3 +290,42 @@ class h_swish(nn.Module):
 
     def forward(self, x):
         return x * self.sigmoid(x)
+
+
+
+def uniform_quantization(tensor, alpha, bit, signed_quantization=False, symmetric=False):
+    # scale to about [-1, 1] or [0, 1]
+    data = tensor / alpha
+
+    # clamp dynamic range
+    integer_range = (2 ** (bit - 1)) if signed_quantization else (2 ** bit - 1)
+
+    if bit == 1 or symmetric:
+            data = data.clamp(-1, 1)
+            delta = (2 ** bit) / (2 ** bit - 1)
+            integer_range = (2 ** (bit - 1))
+
+            # scale to integer range
+            data = data * integer_range
+
+            # round with equally spaced values
+            data_rounded = torch.ceil((data + integer_range + 1e-8)) * delta - (integer_range + delta)
+
+    else:
+        data = (
+            data.clamp(-1, (integer_range - 1) / integer_range)
+            if signed_quantization
+            else data.clamp(0, 1)
+        )
+
+        # scale to integer range
+        data = data * integer_range
+
+        data_rounded = data.round()
+
+    # round and STE
+    data_q = (data_rounded - data).detach() + data
+
+    # rescale back to original range
+    data_q = (data_q / integer_range) * alpha
+    return data_q

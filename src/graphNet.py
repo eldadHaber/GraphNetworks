@@ -1862,3 +1862,383 @@ if Test:
     G = GO.dense_graph(L)
 
     xnout, xeout = model(xn, xe, G)
+
+
+
+
+#-----------------
+
+from src.utils import uniform_quantization
+class graphNetwork_nodesOnly_quant(nn.Module):
+    def __init__(self, nNin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=False, wave=True,
+                 diffOrder=1, num_output=1024, dropOut=False, modelnet=False, faust=False, GCNII=False,
+                 graphUpdate=None, PPI=False, gated=False, realVarlet=False, mixDyamics=False, doubleConv=False,
+                 tripleConv=False, perLayerDynamics=False, act_bit=32):
+        super(graphNetwork_nodesOnly, self).__init__()
+        self.wave = wave
+        self.realVarlet = realVarlet
+        self.act_bit = act_bit
+        self.final_activation_alpha = torch.nn.Parameter(6.0*torch.ones(nlayer))
+
+        if not wave:
+            self.heat = True
+        else:
+            self.heat = False
+        self.mixDynamics = mixDyamics
+        self.h = h
+        self.varlet = varlet
+        self.dense = dense
+        self.diffOrder = diffOrder
+        self.num_output = num_output
+        self.graphUpdate = graphUpdate
+        self.doubleConv = doubleConv
+        self.tripleConv = tripleConv
+        self.gated = gated
+        self.faust = faust
+        self.PPI = PPI
+        self.perLayerDynamics = perLayerDynamics
+        if dropOut > 0.0:
+            self.dropout = dropOut
+        else:
+            self.dropout = False
+        self.nlayers = nlayer
+        stdv = 1e-2
+        stdvp = 1e-2
+        if self.faust or self.PPI:
+            stdv = 1e-1
+            stdvp = 1e-1
+            stdv = 1e-2
+            stdvp = 1e-2
+        self.K1Nopen = nn.Parameter(torch.randn(nopen, nNin) * stdv)
+        self.K2Nopen = nn.Parameter(torch.randn(nopen, nopen) * stdv)
+        self.convs1x1 = nn.Parameter(torch.randn(nlayer, nopen, nopen) * stdv)
+        self.modelnet = modelnet
+
+        if self.modelnet:
+            self.KNclose = nn.Parameter(torch.randn(1024, num_output) * stdv)  # num_output on left size
+        elif not self.faust:
+            self.KNclose = nn.Parameter(torch.randn(num_output, nopen) * stdv)  # num_output on left size
+            # self.KNclose2 = nn.Parameter(torch.randn(num_output, int(round(nopen / 2))) * stdv)
+        else:
+            self.KNclose = nn.Parameter(torch.randn(nopen, nopen) * stdv)
+
+        if varlet:
+            Nfeatures = 1 * nopen
+        else:
+            Nfeatures = 1 * nopen
+
+        self.KN1 = nn.Parameter(torch.rand(nlayer, Nfeatures, nhid) * stdvp)
+        rrnd = torch.rand(nlayer, Nfeatures, nhid) * (1e-3)
+
+        self.KN1 = nn.Parameter(identityInit(self.KN1) + rrnd)
+
+        # if Nfeatures != nhid:
+        #    self.interClosing = nn.Parameter(torch.rand(nlayer, Nfeatures, nhid) * stdvp)
+        if self.realVarlet:
+            self.KN1 = nn.Parameter(torch.rand(nlayer, nhid, 2 * Nfeatures) * stdvp)
+            self.KE1 = nn.Parameter(torch.rand(nlayer, nhid, 2 * Nfeatures) * stdvp)
+
+        if self.mixDynamics:
+            if self.perLayerDynamics:
+                self.alpha = nn.Parameter(-0 * torch.ones(nlayer, 1))
+            # self.alpha = nn.Parameter(torch.rand(nlayer, 1) * stdvp)
+            else:
+                self.alpha = nn.Parameter(-0 * torch.ones(1, 1))
+
+        self.KN2 = nn.Parameter(torch.rand(nlayer, nhid, 1 * nhid) * stdvp)
+        rrnd2 = torch.rand(nlayer, nhid, nhid) * (1e-3)
+        self.KN2 = nn.Parameter(identityInit(self.KN2))
+
+        if self.tripleConv:
+            self.KN3 = nn.Parameter(torch.rand(nlayer, nopen, 1 * nhid) * stdvp)
+            self.KN3 = nn.Parameter(identityInit(self.KN3))
+        self.GCNII = GCNII
+        if self.GCNII:
+            self.convs = torch.nn.ModuleList()
+            alpha = 0.1
+            theta = 0.5
+            shared_weights = True
+            for layer in range(self.nlayers):
+                self.convs.append(
+                    GCN2Conv(nhid, alpha, theta, layer + 1,
+                             shared_weights, normalize=False))
+
+            self.lin1 = torch.nn.Linear(nopen, nopen)
+            self.lin2 = torch.nn.Linear(nopen, num_output)
+
+        if self.faust:
+            self.lin1 = torch.nn.Linear(nopen, nopen)
+            self.lin2 = torch.nn.Linear(nopen, num_output)
+
+        self.modelnet = modelnet
+
+        self.PPI = PPI
+        if self.modelnet:
+            self.mlp = Seq(
+                MLP([1024, 512]), Dropout(0.5), MLP([512, 256]), Dropout(0.5),
+                Lin(256, 40))
+
+    def reset_parameters(self):
+        # glorot(self.KN1)
+        # glorot(self.KN2)
+        glorot(self.K1Nopen)
+        glorot(self.K2Nopen)
+        glorot(self.KNclose)
+        if self.realVarlet:
+            glorot(self.KE1)
+        if self.modelnet:
+            glorot(self.mlp)
+
+    def edgeConv(self, xe, K, groups=1):
+        if xe.dim() == 4:
+            if K.dim() == 2:
+                xe = F.conv2d(xe, K.unsqueeze(-1).unsqueeze(-1), groups=groups)
+            else:
+                xe = conv2(xe, K, groups=groups)
+        elif xe.dim() == 3:
+            if K.dim() == 2:
+                xe = F.conv1d(xe, K.unsqueeze(-1), groups=groups)
+            else:
+                xe = conv1(xe, K, groups=groups)
+        return xe
+
+    def singleLayer(self, x, K, i, relu=True, norm=False, groups=1, openclose=False):
+        if openclose:  # if K.shape[0] != K.shape[1]:
+            x = self.edgeConv(x, K, groups=groups)
+            if norm:
+                x = F.instance_norm(x)
+            if relu:
+                x = F.relu(x)
+            else:
+                x = F.tanh(x)
+        if not openclose:  # if K.shape[0] == K.shape[1]:
+            # x = F.relu(x)
+            x = uniform_quantization(
+                x, self.final_activation_alpha[i], self.act_bit, signed_quantization=True,
+                symmetric=True
+            )
+            x = self.edgeConv(x, K, groups=groups)
+            if not relu:
+                x = F.tanh(x)
+            else:
+                x = F.relu(x)
+            if norm:
+                # x = F.layer_norm(x, x.shape)
+                beta = torch.norm(x)
+                x = beta * tv_norm(x)
+            x = self.edgeConv(x, K.t(), groups=groups)
+            # F.relu(x)
+        return x
+
+    def newDoubleLayer(self, x, K1, K2):
+        x = K1(x)
+        # x = F.layer_norm(x, x.shape)
+        x = torch.tanh(x)
+        if self.dropout:
+            # print("self.training:", self.training)
+            x = F.dropout(x, p=self.dropout, training=self.training)
+        x = K2(x)
+
+        return x
+
+    def doubleLayer(self, x, K1, K2):
+        x = self.edgeConv(x, K1)
+        if not self.dropout:
+            x = F.layer_norm(x, x.shape)
+            x = torch.tanh(x)
+        else:
+            x = F.dropout(x, p=self.dropout, training=self.training)
+            # x = F.layer_norm(x, x.shape)
+            x = torch.relu(x)
+        x = self.edgeConv(x, K2)
+        x = F.relu(x)
+
+        return x
+
+    def finalDoubleLayer(self, x, K1, K2):
+        x = F.tanh(x)
+        x = self.edgeConv(x, K1)
+        x = F.tanh(x)
+        x = self.edgeConv(x, K2)
+        x = F.tanh(x)
+        x = self.edgeConv(x, K2.t())
+        x = F.tanh(x)
+        x = self.edgeConv(x, K1.t())
+        x = F.tanh(x)
+        return x
+
+    def updateGraph(self, Graph, features=None):
+        # If features are given - update graph according to feaure space l2 distance
+        N = Graph.nnodes
+        I = Graph.iInd
+        J = Graph.jInd
+        edge_index = torch.cat([I.unsqueeze(0), J.unsqueeze(0)], dim=0)
+        if features is not None:
+            features = features.squeeze()
+            D = torch.relu(torch.sum(features ** 2, dim=0, keepdim=True) + \
+                           torch.sum(features ** 2, dim=0, keepdim=True).t() - \
+                           2 * features.t() @ features)
+            D = D / D.std()
+            D = torch.exp(-2 * D)
+            w = D[I, J]
+            Graph = GO.graph(I, J, N, W=w, pos=None, faces=None)
+
+        else:
+            [edge_index, edge_weights] = gcn_norm(edge_index)  # Pre-process GCN normalization.
+            I = edge_index[0, :]
+            J = edge_index[1, :]
+            # deg = self.getDegreeMat(Graph)
+            Graph = GO.graph(I, J, N, W=edge_weights, pos=None, faces=None)
+
+        return Graph, edge_index
+
+
+    def forward(self, xn, Graph, data=None, xe=None):
+        # Opening layer
+        # xn = [B, C, N]
+        # xe = [B, C, N, N] or [B, C, E]
+        # Opening layer
+        if not self.faust:
+            [Graph, edge_index] = self.updateGraph(Graph)
+
+        xhist = []
+
+        if self.realVarlet:
+            xe = Graph.nodeGrad(xn)
+            if self.dropout:
+                xe = F.dropout(xe, p=self.dropout, training=self.training)
+            xe = self.singleLayer(xe, self.K2Nopen, relu=True)
+
+        if self.dropout:
+            xn = F.dropout(xn, p=self.dropout, training=self.training)
+
+        xn = self.singleLayer(xn, self.K1Nopen, relu=True, openclose=True, norm=False)
+        xn = F.dropout(xn, p=self.dropout, training=self.training)
+
+        x0 = xn.clone()
+        xn_old = x0
+        nlayers = self.nlayers
+        for i in range(nlayers):
+            if self.graphUpdate is not None:
+                if i % self.graphUpdate == self.graphUpdate - 1:  # update graph
+                    Graph, edge_index = self.updateGraph(Graph, features=xn)
+
+            if self.realVarlet:
+                gradX = Graph.nodeGrad(xn)
+                intX = Graph.nodeAve(xn)
+                dxe = torch.cat([intX, gradX], dim=1)
+                if self.dropout:
+                    dxe = F.dropout(dxe, p=self.dropout, training=self.training)
+                dxe = (self.singleLayer(dxe, self.KE1[i], relu=False))
+                xe = (xe + self.h * dxe)
+
+                divE = Graph.edgeDiv(xe)
+                aveE = Graph.edgeAve(xe, method='ave')
+                dxn = torch.cat([aveE, divE], dim=1)
+                if self.dropout:
+                    dxn = F.dropout(dxn, p=self.dropout, training=self.training)
+                dxn = F.tanh(self.singleLayer(dxn, self.KN1[i], relu=False))
+                xn = (xn + self.h * dxn)
+
+            if not self.realVarlet:
+                if self.varlet:
+                    gradX = Graph.nodeGrad(xn)
+
+
+                if self.dropout:
+                    if self.varlet:
+                        gradX = F.dropout(gradX, p=self.dropout, training=self.training)
+                if self.varlet and not self.gated:
+                    efficient = True
+                    if efficient:
+                        if not self.doubleConv:
+
+                            dxn = (self.singleLayer(gradX, self.KN1[i], i, norm=False, relu=True, groups=1))  # KN2
+                        else:
+                            dxn = self.finalDoubleLayer(gradX, self.KN1[i], self.KN2[i])
+                        dxn = Graph.edgeDiv(dxn)  # + Graph.edgeAve(dxe2, method='ave')
+
+                        if self.tripleConv:
+                            dxn = self.singleLayer(dxn, self.KN3[i], norm=False, relu=False)
+                    else:
+                        if not self.doubleConv:
+                            dxe = (self.singleLayer(gradX, self.KN1[i], i, norm=False, relu=False, groups=1))
+                        else:
+                            dxe = self.finalDoubleLayer(gradX, self.KN1[i], self.KN2[i])
+                        dxn = Graph.edgeDiv(dxe)  # + Graph.edgeAve(dxe2, method='ave')
+                        if self.tripleConv:
+                            dxn = self.singleLayer(dxn, self.KN3[i], norm=False, relu=False)
+
+                elif self.varlet and self.gated:
+                    W = F.tanh(Graph.nodeGrad(self.singleLayer(xn, self.KN2[i], relu=False)))
+                    lapX = Graph.nodeLap(xn)
+                    dxn = F.tanh(lapX + Graph.edgeDiv(W * Graph.nodeGrad(xn)))
+                else:
+                    dxn = (self.singleLayer(lapX, self.KN1[i], relu=False))
+                    dxn = F.tanh(dxn)
+
+
+                if self.mixDynamics:
+                    tmp_xn = xn.clone()
+                    if not self.perLayerDynamics:
+                        beta = F.sigmoid(self.alpha)
+                        alpha = 1 - beta
+                    else:
+                        beta = F.sigmoid(self.alpha[i])
+                        alpha = 1 - beta
+
+                    if 1 == 1:
+                        alpha = alpha / self.h
+                        beta = beta / (self.h ** 2)
+
+                        xn = (2 * beta * xn - beta * xn_old + alpha * xn - dxn) / (beta + alpha)
+                    else:
+                        alpha = 0.5 * alpha / self.h
+                        beta = beta / (self.h ** 2)
+
+                        xn = (2 * beta * xn - beta * xn_old + alpha * xn_old - dxn) / (beta + alpha)
+                    xn_old = tmp_xn
+
+                elif self.wave:
+                    tmp_xn = xn.clone()
+                    xn = 2 * xn - xn_old - (self.h ** 2) * dxn
+                    xn_old = tmp_xn
+                else:
+                    tmp = xn.clone()
+                    xn = (xn - self.h * dxn)
+                    xn_old = tmp
+
+                if self.modelnet:
+                    xhist.append(xn)
+            if debug:
+                if image:
+                    self.savePropagationImage(xn, Graph, i + 1, minv=minv, maxv=maxv)
+                else:
+                    saveMesh(xn.squeeze().t(), Graph.faces, Graph.pos, i + 1, vmax=vmax, vmin=vmin)
+
+        if not self.modelnet:
+            xn = F.dropout(xn, p=self.dropout, training=self.training)
+            xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
+        else:
+            xn = torch.cat(xhist, dim=1)
+            xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
+        # xn = F.conv1d(xn, self.KNclose2.unsqueeze(-1))
+        xn = xn.squeeze().t()
+        if self.modelnet:
+            out = global_max_pool(xn, data.batch)
+            out = self.mlp(out)
+            return F.log_softmax(out, dim=-1)
+
+        if self.faust:
+            x = F.elu(self.lin1(xn))
+            if self.dropout:
+                x = F.dropout(x, p=self.dropout, training=self.training)
+            x = self.lin2(x)
+            return F.log_softmax(x, dim=1), F.sigmoid(self.alpha)
+
+        if self.PPI:
+            return xn, Graph
+
+        ## Otherwise its citation graph node classification:
+        return F.log_softmax(xn, dim=1), Graph  # , F.sigmoid(self.alpha)
+

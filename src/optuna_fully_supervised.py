@@ -179,7 +179,7 @@ for nlayers in num_layers:
 
             bad_counter = 0
             best = 0
-            for epoch in range(800):
+            for epoch in range(200):
                 loss_tra, acc_tra = train_step(model, optimizer, features, labels, edge_index, idx_train)
                 loss_val, acc_test = test_step(model, features, labels, edge_index, idx_test)
                 if (epoch + 1) % 10000000000 == 0:
@@ -230,4 +230,4 @@ for nlayers in num_layers:
 
 
     study = optuna.create_study(direction='maximize')
-    study.optimize(objective, n_trials=150)
+    study.optimize(objective, n_trials=200)
