@@ -8,16 +8,22 @@ import torch_geometric.transforms as T
 from torch_geometric.nn import GCN2Conv
 from torch_geometric.nn.conv.gcn_conv import gcn_norm
 import optuna
-import numpy as np
+
 import sys
-import process
-import utils_gcnii
-from torch_geometric.utils import sparse as sparseConvert
-import optuna
+
+print(torch.cuda.get_device_name(0))
 print(torch.cuda.get_device_properties('cuda:0'))
 
 if "s" in sys.argv:
-    base_path = '/home/eliasof/pdeGraphs/data/'
+    base_path = '/home/eliasof/pFold/data/'
+    import graphOps as GO
+    import processContacts as prc
+    import utils
+    import graphNet as GN
+    import pnetArch as PNA
+
+elif "j" in sys.argv or "b" in sys.argv:
+    base_path = '/home/ephrathj/pFold/data/'
     import graphOps as GO
     import processContacts as prc
     import utils
@@ -42,10 +48,14 @@ else:
     from src import graphNet as GN
     from src import pnetArch as PNA
 
-# Setup the network and its parameters
+num_layers = [2, 4, 8, 16, 32, 64]
+quant_bits = [32, 8, 4, 2, 1]
+
+print(torch.cuda.get_device_name(0))
+print(torch.cuda.get_device_properties('cuda:0'))
 
 print("**********************************************************************************")
-file2Open = "src/optuna_fully_supervised.py"
+file2Open = "src/optuna_GNcora.py"
 print("DRIVER CODE:")
 f = open(file2Open, "r")
 for line in f:
@@ -59,183 +69,173 @@ for line in f:
 
 print("**********************************************************************************")
 
-num_layers = [2, 4, 8, 16, 32, 64]
-quant_bits = [32, 8, 4, 2, 1]
+# Setup the network and its parameters
 for nlayers in num_layers:
     for bit in quant_bits:
         torch.cuda.synchronize()
-        print("Without symmetric conv - not using TransposedConv !!!")
+        print("DOING MIXED MODEL  !!!")
         print("Doing experiment for ", nlayers, " layers!", flush=True)
-        print("Doing experiment for ", bit, " bit!", flush=True)
+        print("Doing experiment for ", bit, " bits!", flush=True)
 
         torch.cuda.synchronize()
 
 
         def objective(trial):
+            dataset = 'Cora'
+            if dataset == 'Cora':
+                nNin = 1433
+            elif dataset == 'CiteSeer':
+                nNin = 3703
+            elif dataset == 'PubMed':
+                nNin = 500
             nEin = 1
             n_channels = 64  # trial.suggest_categorical('n_channels', [64, 128, 256])
             nopen = n_channels
             nhid = n_channels
             nNclose = n_channels
-            nlayer = nlayers
-            datastr = "cora"
-            print("DATA SET IS:", datastr)
-            # h = 1 / n_layers
-            # h = trial.suggest_discrete_uniform('h', 0.1 / nlayer, 3, q=0.1 / (nlayer))
-            h = trial.suggest_discrete_uniform('h', 0.1, 3, q=0.1)
-            dropout = trial.suggest_discrete_uniform('dropout', 0.5, 0.7, q=0.1)
-            # dropout = 0.6
-            # h = 20 / nlayer
-            print("n channels:", nopen)
-            print("n layers:", nlayer)
-            print("h step:", h)
-            print("dropout:", dropout)
+            n_layers = nlayers
+            print("DATA SET IS:", dataset)
             print("bit:", bit)
 
-            device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
-            realVarlet = False
+            # h = 1 / n_layers
+            h = trial.suggest_discrete_uniform('h', 1 / (n_layers), 3, q=1 / (n_layers))
+            #h = trial.suggest_discrete_uniform('h', 0.1, 3, q=0.1)
 
-            lr = trial.suggest_float("lr", 1e-3, 1e-1, log=True)
-            lr_alpha = trial.suggest_float("lr_alpha", 1e-6, 1e-3, log=True)
+            batchSize = 32
+
+            if "s" in sys.argv:
+                path = '/home/eliasof/GraphNetworks/data/' + dataset
+            elif "j" in sys.argv:
+                path = '/home/ephrathj/GraphNetworks/data/' + dataset
+            elif "b" in sys.argv:
+                path = '/home/bodnerb/GraphNetworks/data/' + dataset
+
+            else:
+                path = '/home/cluster/users/erant_group/moshe/' + dataset
+            transform = T.Compose([T.NormalizeFeatures()])
+            dataset = Planetoid(path, dataset, transform=transform)
+            data = dataset[0]
+
+            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+            data = data.to(device)
+            dropout = trial.suggest_discrete_uniform('dropout', 0.6, 0.8, q=0.1)
+            lr = trial.suggest_float("lr", 1e-3, 1e-2, log=True)
+            lrGCN = trial.suggest_float("lrGCN", 1e-5, 1e-3, log=True)
             lrBit = trial.suggest_float("lrBit", 1e-5, 1e-2, log=True)
-            lrGCN = trial.suggest_float("lrGCN", 1e-5, 1e-2, log=True)
-            wd = trial.suggest_float("wd", 5e-8, 1e-3, log=True)
-
+            wd = trial.suggest_float("wd", 5e-6, 1e-3, log=True)
             # wdGCN = trial.suggest_float("wdGCN", 1e-10, 1e-2, log=True)
-            def train_step(model, optimizer, features, labels, adj, idx_train):
-                model.train()
-                optimizer.zero_grad()
-                I = adj[0, :]
-                J = adj[1, :]
-                N = labels.shape[0]
-                w = torch.ones(adj.shape[1]).to(device)
-                G = GO.graph(I, J, N, W=w, pos=None, faces=None)
-                G = G.to(device)
-                xn = features  # data.x.t().unsqueeze(0)
-                xe = torch.ones(1, 1, I.shape[0]).to(device)
+            lr_alpha = trial.suggest_float("lr_alpha", 1e-5, 1e-2, log=True)
+            model = GN.graphNetwork_nodesOnly_quant(nNin, nopen, nhid, nNclose, n_layers, h=h, dense=False, varlet=True,
+                                              wave=False,
+                                              diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, gated=False,
+                                              realVarlet=False, mixDyamics=True, doubleConv=False, tripleConv=False,
+                                              perLayerDynamics=True)
 
-                # out = model(xn, xe, G)
-                [out, G] = model(xn, G)
-
-                g = G.nodeGrad(out.t().unsqueeze(0))
-                eps = 1e-4
-                absg = torch.sum(g ** 2, dim=1)
-                tvreg = absg.mean()
-                # tvreg = torch.norm(G.nodeGrad(out.t().unsqueeze(0)), p=1) / I.shape[0]
-                # out = out.squeeze()
-                acc_train = utils_gcnii.accuracy(out[idx_train], labels[idx_train].to(device))
-                loss_train = F.nll_loss(out[idx_train], labels[idx_train].to(device))
-                loss_train.backward()
-                optimizer.step()
-                return loss_train.item(), acc_train.item()
-
-            def test_step(model, features, labels, adj, idx_test):
-                model.eval()
-                with torch.no_grad():
-                    I = adj[0, :]
-                    J = adj[1, :]
-                    N = labels.shape[0]
-                    w = torch.ones(adj.shape[1]).to(device)
-
-                    G = GO.graph(I, J, N, W=w, pos=None, faces=None)
-                    G = G.to(device)
-                    xn = features  # data.x.t().unsqueeze(0)
-                    xe = torch.ones(1, 1, I.shape[0]).to(device)
-
-                    # out = model(xn, xe, G)
-                    [out, G] = model(xn, G)
-
-                    loss_test = F.nll_loss(out[idx_test], labels[idx_test].to(device))
-                    acc_test = utils_gcnii.accuracy(out[idx_test], labels[idx_test].to(device))
-                    return loss_test.item(), acc_test.item()
-
-            def train(datastr, splitstr, num_output):
-                slurm = ("s" in sys.argv) or ("e" in sys.argv)
-                adj, features, labels, idx_train, idx_val, idx_test, num_features, num_labels = process.full_load_data(
-                    datastr,
-                    splitstr, slurm=slurm)
-                adj = adj.to_dense()
-                # print("adj shape:", adj.shape)
-                [edge_index, edge_weight] = sparseConvert.dense_to_sparse(adj)
-                del adj
-                # print("edge index shape:", edge_index.shape)
-                # print("features shape:", features.shape)
-                # print("labels shhape:", labels.shape)
-                # print("idx shape:", idx_train.shape)
-                edge_index = edge_index.to(device)
-                features = features.to(device).t().unsqueeze(0)
-                idx_train = idx_train.to(device)
-                idx_test = idx_test.to(device)
-                labels = labels.to(device)
-                #
-                model = GN.graphNetwork_nodesOnly_quant(num_features, nopen, nhid, nNclose, nlayer, h=h, dense=False,
-                                                        varlet=True,
-                                                        wave=False,
-                                                        diffOrder=1, num_output=num_output, dropOut=dropout,
-                                                        gated=False,
-                                                        realVarlet=realVarlet, mixDyamics=True, perLayerDynamics=True,
-                                                        act_bit=bit)
-                model = model.to(device)
-
+            # model = GN.graphNetwork_seq(nNin, nopen, nhid, nNclose, n_layers, h=h, dense=False, varlet=True, wave=False,
+            #                            diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, PPI=False,
+            #                            gated=False,
+            #                            realVarlet=False, mixDyamics=False, doubleConv=False)
+            model.reset_parameters()
+            model.to(device)
+            # optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=wd)
+            nonseq = True
+            if nonseq:
                 optimizer = torch.optim.Adam([
                     dict(params=model.KN1, lr=lrGCN, weight_decay=0),
                     dict(params=model.KN2, lr=lrGCN, weight_decay=0),
+                    # dict(params=model.KN3, lr=lrGCN, weight_decay=0),
                     dict(params=model.K1Nopen, weight_decay=wd),
                     dict(params=model.KNclose, weight_decay=wd),
                     dict(params=model.alpha, lr=lr_alpha, weight_decay=0),
                     dict(params=model.final_activation_alpha, lr=lrBit, weight_decay=0)
                 ], lr=lr)
+            else:
+                optimizer = torch.optim.Adam([
+                    dict(params=model.graph_convs.parameters(), lr=0, weight_decay=0),
+                    dict(params=model.K1Nopen, weight_decay=wd),
+                    dict(params=model.KNclose, weight_decay=wd),
+                    # dict(params=model.alpha, lr=lr_alpha, weight_decay=0),
 
-                bad_counter = 0
-                best = 0
-                for epoch in range(200):
-                    loss_tra, acc_tra = train_step(model, optimizer, features, labels, edge_index, idx_train)
-                    loss_val, acc_test = test_step(model, features, labels, edge_index, idx_test)
-                    if (epoch + 1) % 10000000000 == 0:
-                        print('Epoch:{:04d}'.format(epoch + 1),
-                              'train',
-                              'loss:{:.3f}'.format(loss_tra),
-                              'acc:{:.2f}'.format(acc_tra * 100),
-                              '| test',
-                              'loss:{:.3f}'.format(loss_val),
-                              'acc:{:.2f}'.format(acc_test * 100))
-                    if acc_test > best:
-                        best = acc_test
-                        # torch.save(model.state_dict(), checkpt_file)
-                        bad_counter = 0
-                    else:
-                        bad_counter += 1
+                ], lr=lr)
 
-                    if bad_counter == 200:
-                        break
-                acc = best
+            # optimizer = torch.optim.Adam([
+            #     dict(params=model.convs.parameters(), weight_decay=0.01),
+            #     dict(params=model.K1Nopen, weight_decay=5e-4),
+            #     dict(params=model.KNclose, weight_decay=5e-4)
+            # ], lr=0.01)
+            scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=200, gamma=0.1)
 
-                return acc * 100
+            def train():
+                model.train()
+                optimizer.zero_grad()
 
-            acc_list = []
-            for i in range(10):
-                # datastr = "citeseer"
-                if datastr == "cora":
-                    num_output = 7
-                elif datastr == "citeseer":
-                    num_output = 6
-                elif datastr == "pubmed":
-                    num_output = 3
-                elif datastr == "chameleon":
-                    num_output = 5
-                else:
-                    num_output = 5
-                if ("s" in sys.argv) or ("e" in sys.argv):
-                    splitstr = 'splits/' + datastr + '_split_0.6_0.2_' + str(i) + '.npz'
-                else:
-                    splitstr = '../splits/' + datastr + '_split_0.6_0.2_' + str(i) + '.npz'
+                I = data.edge_index[0, :]
+                J = data.edge_index[1, :]
+                N = data.y.shape[0]
 
-                acc_list.append(train(datastr, splitstr, num_output))
-                print(i, ": {:.2f}".format(acc_list[-1]))
+                features = data.x.squeeze().t()
+                D = torch.relu(torch.sum(features ** 2, dim=0, keepdim=True) + \
+                               torch.sum(features ** 2, dim=0, keepdim=True).t() - \
+                               2 * features.t() @ features)
 
-            mean_test_acc = np.mean(acc_list)
-            print("Test acc.:{:.2f}".format(mean_test_acc))
-            return mean_test_acc
+                D = D / D.std()
+                D = torch.exp(-2 * D)
+
+                w = D[I, J]
+                G = GO.graph(I, J, N, W=w, pos=None, faces=None)
+                G = G.to(device)
+                xn = data.x.t().unsqueeze(0)
+                xe = torch.ones(1, 1, I.shape[0]).to(device)
+
+                # out = model(xn, xe, G)
+                [out, G] = model(xn, G)
+                [valmax, argmax] = torch.max(out, dim=1)
+                g = G.nodeGrad(out.t().unsqueeze(0))
+                eps = 1e-4
+                absg = torch.sum(g ** 2, dim=1)
+                tvreg = absg.mean()
+                loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask])  # 0.1 * tvreg +
+                loss.backward()
+                optimizer.step()
+                # scheduler.step()
+                return float(loss)
+
+            @torch.no_grad()
+            def test():
+                model.eval()
+                I = data.edge_index[0, :]
+                J = data.edge_index[1, :]
+                N = data.y.shape[0]
+                features = data.x.squeeze().t()
+                D = torch.relu(torch.sum(features ** 2, dim=0, keepdim=True) + \
+                               torch.sum(features ** 2, dim=0, keepdim=True).t() - \
+                               2 * features.t() @ features)
+
+                D = D / D.std()
+                D = torch.exp(-2 * D)
+                w = D[I, J]
+                G = GO.graph(I, J, N, W=w, pos=None, faces=None)
+                G = G.to(device)
+                xn = data.x.t().unsqueeze(0)
+                xe = torch.ones(1, 1, I.shape[0]).to(device)
+                [out, G] = model(xn, G)
+                pred, accs = out.argmax(dim=-1), []
+                for _, mask in data('train_mask', 'val_mask', 'test_mask'):
+                    accs.append(int((pred[mask] == data.y[mask]).sum()) / int(mask.sum()))
+                return accs
+
+            best_val_acc = test_acc = 0
+            for epoch in range(1, 2001):
+                loss = train()
+                train_acc, val_acc, tmp_test_acc = test()
+                if tmp_test_acc > best_val_acc:
+                    best_val_acc = tmp_test_acc
+                    test_acc = tmp_test_acc
+                    print(f'Epoch: {epoch:04d}, Loss: {loss:.4f} Train: {train_acc:.4f}, '
+                          f'Val: {val_acc:.4f}, Test: {tmp_test_acc:.4f}, '
+                          f'Final Test: {test_acc:.4f}')
+
+            return test_acc
 
 
         study = optuna.create_study(direction='maximize')
