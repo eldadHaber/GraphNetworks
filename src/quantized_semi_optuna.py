@@ -129,7 +129,7 @@ for nlayers in num_layers:
                                               wave=False,
                                               diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, gated=False,
                                               realVarlet=False, mixDyamics=True, doubleConv=False, tripleConv=False,
-                                              perLayerDynamics=True)
+                                              perLayerDynamics=True, act_bit=bit)
 
             # model = GN.graphNetwork_seq(nNin, nopen, nhid, nNclose, n_layers, h=h, dense=False, varlet=True, wave=False,
             #                            diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, PPI=False,
