@@ -81,7 +81,7 @@ for nlayers in num_layers:
 
 
         def objective(trial):
-            dataset = 'PubMed'
+            dataset = 'CiteSeer'
             if dataset == 'Cora':
                 nNin = 1433
             elif dataset == 'CiteSeer':
