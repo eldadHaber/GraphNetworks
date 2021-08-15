@@ -76,7 +76,7 @@ for nlayers in num_layers:
         print("DOING MIXED MODEL  !!!")
         print("Doing experiment for ", nlayers, " layers!", flush=True)
         print("Doing experiment for ", bit, " bits!", flush=True)
-
+        print("NOT SYMMETRIC OPERATOR !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         torch.cuda.synchronize()
 
 

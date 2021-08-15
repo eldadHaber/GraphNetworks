@@ -2026,7 +2026,8 @@ class graphNetwork_nodesOnly_quant(nn.Module):
                 # x = F.layer_norm(x, x.shape)
                 beta = torch.norm(x)
                 x = beta * tv_norm(x)
-            x = self.edgeConv(x, K.t(), groups=groups)
+            #WATCH HERE!!!!!!!!!!!!!!!!!!!!!!!!!!
+            #x = self.edgeConv(x, K.t(), groups=groups)
             # F.relu(x)
         return x
 
