@@ -76,12 +76,12 @@ for nlayers in num_layers:
         print("DOING MIXED MODEL  !!!")
         print("Doing experiment for ", nlayers, " layers!", flush=True)
         print("Doing experiment for ", bit, " bits!", flush=True)
-        print("NOT SYMMETRIC OPERATOR !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        #print("NOT SYMMETRIC OPERATOR !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         torch.cuda.synchronize()
 
 
         def objective(trial):
-            dataset = 'PubMed'
+            dataset = 'Cora'
             if dataset == 'Cora':
                 nNin = 1433
             elif dataset == 'CiteSeer':
@@ -89,7 +89,7 @@ for nlayers in num_layers:
             elif dataset == 'PubMed':
                 nNin = 500
             nEin = 1
-            n_channels = 256  # trial.suggest_categorical('n_channels', [64, 128, 256])
+            n_channels = 64  # trial.suggest_categorical('n_channels', [64, 128, 256])
             nopen = n_channels
             nhid = n_channels
             nNclose = n_channels
@@ -128,8 +128,8 @@ for nlayers in num_layers:
             model = GN.graphNetwork_nodesOnly_quant(nNin, nopen, nhid, nNclose, n_layers, h=h, dense=False, varlet=True,
                                               wave=False,
                                               diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, gated=False,
-                                              realVarlet=False, mixDyamics=True, doubleConv=False, tripleConv=False,
-                                              perLayerDynamics=True, act_bit=bit)
+                                              realVarlet=False, mixDyamics=False, doubleConv=False, tripleConv=False,
+                                              perLayerDynamics=False, act_bit=bit)
 
             # model = GN.graphNetwork_seq(nNin, nopen, nhid, nNclose, n_layers, h=h, dense=False, varlet=True, wave=False,
             #                            diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, PPI=False,
@@ -146,7 +146,7 @@ for nlayers in num_layers:
                     # dict(params=model.KN3, lr=lrGCN, weight_decay=0),
                     dict(params=model.K1Nopen, weight_decay=wd),
                     dict(params=model.KNclose, weight_decay=wd),
-                    dict(params=model.alpha, lr=lr_alpha, weight_decay=0),
+                    #dict(params=model.alpha, lr=lr_alpha, weight_decay=0),
                     dict(params=model.final_activation_alpha, lr=lrBit, weight_decay=0)
                 ], lr=lr)
             else:
