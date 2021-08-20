@@ -74,7 +74,7 @@ for nlayers in num_layers:
         torch.cuda.synchronize()
         print("**********************************************************************************")
 
-        print("DOING UNSTABLE HEAT MODEL  !!!")
+        print("DOING STABLE HEAT MODEL  !!!")
         print("Doing experiment for ", nlayers, " layers!", flush=True)
         print("Doing experiment for ", bit, " bits!", flush=True)
         # print("NOT SYMMETRIC OPERATOR !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
