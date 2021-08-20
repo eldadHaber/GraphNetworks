@@ -2148,7 +2148,7 @@ class graphNetwork_nodesOnly_quant(nn.Module):
                             #         symmetric=True, round=False
                             #     )
                             dxn = (self.singleLayer(gradX, self.KN1[i], i, norm=False, relu=False, groups=1,
-                                                    K2=None))  # KN2
+                                                    K2=self.KN2[i]))  # KN2
 
                         else:
                             dxn = self.finalDoubleLayer(gradX, self.KN1[i], self.KN2[i])
