@@ -293,7 +293,7 @@ class h_swish(nn.Module):
 
 
 
-def uniform_quantization(tensor, alpha, bit, signed_quantization=False, symmetric=False):
+def uniform_quantization(tensor, alpha, bit, signed_quantization=False, symmetric=False, round=True):
     # scale to about [-1, 1] or [0, 1]
     data = tensor / alpha
 
@@ -309,7 +309,10 @@ def uniform_quantization(tensor, alpha, bit, signed_quantization=False, symmetri
             data = data * integer_range
 
             # round with equally spaced values
-            data_rounded = torch.ceil((data + integer_range + 1e-8)) * delta - (integer_range + delta)
+            if round:
+                data_rounded = torch.ceil((data + integer_range + 1e-8)) * delta - (integer_range + delta)
+            else:
+                data_rounded = data
 
     else:
         data = (
@@ -321,7 +324,10 @@ def uniform_quantization(tensor, alpha, bit, signed_quantization=False, symmetri
         # scale to integer range
         data = data * integer_range
 
-        data_rounded = data.round()
+        if round:
+            data_rounded = data.round()
+        else:
+            data_rounded = data
 
     # round and STE
     data_q = (data_rounded - data).detach() + data

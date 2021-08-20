@@ -10,7 +10,6 @@ from torch_geometric.nn.conv.gcn_conv import gcn_norm
 import optuna
 
 import sys
-
 print(torch.cuda.get_device_name(0))
 print(torch.cuda.get_device_properties('cuda:0'))
 
@@ -48,8 +47,8 @@ else:
     from src import graphNet as GN
     from src import pnetArch as PNA
 
-num_layers = [2, 4, 8, 16, 32, 64]
-quant_bits = [32, 8, 4, 2, 1]
+num_layers = [32, 16, 64]
+quant_bits = [32, 8, 4, 2]
 
 print(torch.cuda.get_device_name(0))
 print(torch.cuda.get_device_properties('cuda:0'))
@@ -73,10 +72,12 @@ print("*************************************************************************
 for nlayers in num_layers:
     for bit in quant_bits:
         torch.cuda.synchronize()
-        print("DOING MIXED MODEL  !!!")
+        print("**********************************************************************************")
+
+        print("DOING UNSTABLE HEAT MODEL  !!!")
         print("Doing experiment for ", nlayers, " layers!", flush=True)
         print("Doing experiment for ", bit, " bits!", flush=True)
-        #print("NOT SYMMETRIC OPERATOR !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        # print("NOT SYMMETRIC OPERATOR !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         torch.cuda.synchronize()
 
 
@@ -99,8 +100,7 @@ for nlayers in num_layers:
 
             # h = 1 / n_layers
             h = trial.suggest_discrete_uniform('h', 1 / (n_layers), 3, q=1 / (n_layers))
-            #h = trial.suggest_discrete_uniform('h', 0.1, 3, q=0.1)
-
+            # h = trial.suggest_discrete_uniform('h', 0.1, 3, q=0.1)
             batchSize = 32
 
             if "s" in sys.argv:
@@ -126,10 +126,12 @@ for nlayers in num_layers:
             # wdGCN = trial.suggest_float("wdGCN", 1e-10, 1e-2, log=True)
             lr_alpha = trial.suggest_float("lr_alpha", 1e-5, 1e-2, log=True)
             model = GN.graphNetwork_nodesOnly_quant(nNin, nopen, nhid, nNclose, n_layers, h=h, dense=False, varlet=True,
-                                              wave=False,
-                                              diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, gated=False,
-                                              realVarlet=False, mixDyamics=False, doubleConv=False, tripleConv=False,
-                                              perLayerDynamics=False, act_bit=bit)
+                                                    wave=False,
+                                                    diffOrder=1, num_output=dataset.num_classes, dropOut=dropout,
+                                                    gated=False,
+                                                    realVarlet=False, mixDyamics=False, doubleConv=False,
+                                                    tripleConv=False,
+                                                    perLayerDynamics=False, act_bit=bit)
 
             # model = GN.graphNetwork_seq(nNin, nopen, nhid, nNclose, n_layers, h=h, dense=False, varlet=True, wave=False,
             #                            diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, PPI=False,
@@ -146,7 +148,7 @@ for nlayers in num_layers:
                     # dict(params=model.KN3, lr=lrGCN, weight_decay=0),
                     dict(params=model.K1Nopen, weight_decay=wd),
                     dict(params=model.KNclose, weight_decay=wd),
-                    #dict(params=model.alpha, lr=lr_alpha, weight_decay=0),
+                    # dict(params=model.alpha, lr=lr_alpha, weight_decay=0),
                     dict(params=model.final_activation_alpha, lr=lrBit, weight_decay=0)
                 ], lr=lr)
             else:
@@ -155,7 +157,6 @@ for nlayers in num_layers:
                     dict(params=model.K1Nopen, weight_decay=wd),
                     dict(params=model.KNclose, weight_decay=wd),
                     # dict(params=model.alpha, lr=lr_alpha, weight_decay=0),
-
                 ], lr=lr)
 
             # optimizer = torch.optim.Adam([
@@ -165,7 +166,7 @@ for nlayers in num_layers:
             # ], lr=0.01)
             scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=200, gamma=0.1)
 
-            def train():
+            def train(doCheck=False):
                 model.train()
                 optimizer.zero_grad()
 
@@ -188,7 +189,16 @@ for nlayers in num_layers:
                 xe = torch.ones(1, 1, I.shape[0]).to(device)
 
                 # out = model(xn, xe, G)
-                [out, G] = model(xn, G)
+                [out, G, actvals_quant] = model(xn, G, runWOQuant=False)
+                if doCheck:
+                    with torch.no_grad():
+                        [_, _, actvals_NOquant] = model(xn, G, runWOQuant=True)
+                        actvals_quant = torch.cat(actvals_quant)
+                        actvals_NOquant = torch.cat(actvals_NOquant)
+                        print("TRAIN MSE:", F.mse_loss(actvals_quant, actvals_NOquant).item(), "NORM:",
+                              torch.norm(actvals_quant - actvals_NOquant).item(), flush=True)
+                        print("TRAIN MSE PER LAYER:", (actvals_quant - actvals_NOquant).norm(dim=[1, 2]), flush=True)
+
                 [valmax, argmax] = torch.max(out, dim=1)
                 g = G.nodeGrad(out.t().unsqueeze(0))
                 eps = 1e-4
@@ -201,7 +211,7 @@ for nlayers in num_layers:
                 return float(loss)
 
             @torch.no_grad()
-            def test():
+            def test(doCheck=False):
                 model.eval()
                 I = data.edge_index[0, :]
                 J = data.edge_index[1, :]
@@ -218,7 +228,18 @@ for nlayers in num_layers:
                 G = G.to(device)
                 xn = data.x.t().unsqueeze(0)
                 xe = torch.ones(1, 1, I.shape[0]).to(device)
-                [out, G] = model(xn, G)
+                [out, G, actvals_quant] = model(xn, G, runWOQuant=False)
+
+                if doCheck:
+                    with torch.no_grad():
+                        [_, _, actvals_NOquant] = model(xn, G, runWOQuant=True)
+                        actvals_quant = torch.cat(actvals_quant)
+                        actvals_NOquant = torch.cat(actvals_NOquant)
+                        print("TRAIN MSE:", F.mse_loss(actvals_quant, actvals_NOquant).item(), "NORM:",
+                              torch.norm(actvals_quant - actvals_NOquant).item(), flush=True)
+                        print("TRAIN MSE PER LAYER:", (actvals_quant - actvals_NOquant).norm(dim=[1, 2]), flush=True)
+                        print("TRAIN TOTAL MSE:", (actvals_quant - actvals_NOquant).norm(), flush=True)
+
                 pred, accs = out.argmax(dim=-1), []
                 for _, mask in data('train_mask', 'val_mask', 'test_mask'):
                     accs.append(int((pred[mask] == data.y[mask]).sum()) / int(mask.sum()))
@@ -226,17 +247,20 @@ for nlayers in num_layers:
 
             best_val_acc = test_acc = 0
             for epoch in range(1, 2001):
-                loss = train()
-                train_acc, val_acc, tmp_test_acc = test()
+                loss = train(doCheck=False)
+                train_acc, val_acc, tmp_test_acc = test(doCheck=False)
+
                 if tmp_test_acc > best_val_acc:
                     best_val_acc = tmp_test_acc
                     test_acc = tmp_test_acc
-                    print(f'Epoch: {epoch:04d}, Loss: {loss:.4f} Train: {train_acc:.4f}, '
-                          f'Val: {val_acc:.4f}, Test: {tmp_test_acc:.4f}, '
-                          f'Final Test: {test_acc:.4f}')
+                    train_acc, val_acc, tmp_test_acc = test(doCheck=True)
+
+            print(f'Epoch: {epoch:04d}, Loss: {loss:.4f} Train: {train_acc:.4f}, '
+                  f'Val: {val_acc:.4f}, Test: {tmp_test_acc:.4f}, '
+                  f'Final Test: {test_acc:.4f}', flush=True)
 
             return test_acc
 
 
         study = optuna.create_study(direction='maximize')
-        study.optimize(objective, n_trials=100)
+        study.optimize(objective, n_trials=200)

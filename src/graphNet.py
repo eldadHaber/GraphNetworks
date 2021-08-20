@@ -934,11 +934,9 @@ class graphNetwork_nodesOnly(nn.Module):
             plt.close()
 
         xn = self.singleLayer(xn, self.K1Nopen, relu=True, openclose=True, norm=False)
-        #if self.dropout:
+        # if self.dropout:
         xn = F.dropout(xn, p=self.dropout, training=self.training)
-        #xn = self.singleLayer(xn, self.K2Nopen, relu=True, openclose=True, norm=False)
-
-
+        # xn = self.singleLayer(xn, self.K2Nopen, relu=True, openclose=True, norm=False)
         # xn = F.normalize(xn)
         # xn = self.singleLayer(xn, self.K2Nopen, relu=True, openclose=True)
         x0 = xn.clone()
@@ -1019,7 +1017,7 @@ class graphNetwork_nodesOnly(nn.Module):
                 if self.dropout:
                     if self.varlet:
                         gradX = F.dropout(gradX, p=self.dropout, training=self.training)
-                        #gradX = 0.9*gradX + 0.1*Graph.nodeGrad(x0)
+                        # gradX = 0.9*gradX + 0.1*Graph.nodeGrad(x0)
                         # intX = F.dropout(intX, p=self.dropout, training=self.training)
                         # lapX = F.dropout(lapX, p=self.dropout, training=self.training)
                 # dxn = self.doubleLayer(dxn, self.KN1[i], self.KN2[i])
@@ -1114,7 +1112,7 @@ class graphNetwork_nodesOnly(nn.Module):
                     tmp = xn.clone()
                     # print("xn shape:", xn.shape)
                     # print("dxn shape:", dxn.shape)
-                    xn = (xn - self.h * dxn)   # +
+                    xn = (xn - self.h * dxn)  # +
                     # xn = (xn_old - self.h * dxn)
                     xn_old = tmp
 
@@ -1641,7 +1639,6 @@ class graphNetwork_faust(nn.Module):
 
         self.KNclose = nn.Parameter(torch.randn(nNclose, nopen) * stdv)
         if self.mixDynamics:
-
             # self.alpha = nn.Parameter(torch.rand(nlayer, 1) * stdvp)
             self.alpha = nn.Parameter(-0 * torch.ones(1, 1))
         else:
@@ -1863,12 +1860,11 @@ if Test:
 
     xnout, xeout = model(xn, xe, G)
 
-
-
-
-#-----------------
+# -----------------
 
 from utils import uniform_quantization
+
+
 class graphNetwork_nodesOnly_quant(nn.Module):
     def __init__(self, nNin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=False, wave=True,
                  diffOrder=1, num_output=1024, dropOut=False, modelnet=False, faust=False, GCNII=False,
@@ -1878,7 +1874,8 @@ class graphNetwork_nodesOnly_quant(nn.Module):
         self.wave = wave
         self.realVarlet = realVarlet
         self.act_bit = act_bit
-        self.final_activation_alpha = torch.nn.Parameter(6.0*torch.ones(nlayer))
+        self.final_activation_alpha = torch.nn.Parameter(6.0 * torch.ones(nlayer))
+        self.final_activation_alpha_grad = torch.nn.Parameter(6.0 * torch.ones(nlayer))
 
         if not wave:
             self.heat = True
@@ -1928,9 +1925,14 @@ class graphNetwork_nodesOnly_quant(nn.Module):
             Nfeatures = 1 * nopen
 
         self.KN1 = nn.Parameter(torch.rand(nlayer, Nfeatures, nhid) * stdvp)
-        rrnd = torch.rand(nlayer, Nfeatures, nhid) * (1e-3)
+        rrnd = torch.rand(nlayer, Nfeatures, nhid) * (1e-9)
 
         self.KN1 = nn.Parameter(identityInit(self.KN1) + rrnd)
+
+        self.KN2 = nn.Parameter(torch.rand(nlayer, Nfeatures, nhid) * stdvp)
+        rrnd = torch.rand(nlayer, Nfeatures, nhid) * (1e-9)
+
+        self.KN2 = nn.Parameter(identityInit(self.KN2) + rrnd)
 
         # if Nfeatures != nhid:
         #    self.interClosing = nn.Parameter(torch.rand(nlayer, Nfeatures, nhid) * stdvp)
@@ -1945,10 +1947,9 @@ class graphNetwork_nodesOnly_quant(nn.Module):
             else:
                 self.alpha = nn.Parameter(-0 * torch.ones(1, 1))
 
-        self.KN2 = nn.Parameter(torch.rand(nlayer, nhid, 1 * nhid) * stdvp)
+        # self.KN2 = nn.Parameter(torch.rand(nlayer, nhid, 1 * nhid) * stdvp)
         rrnd2 = torch.rand(nlayer, nhid, nhid) * (1e-3)
-        self.KN2 = nn.Parameter(identityInit(self.KN2))
-
+        # self.KN2 = nn.Parameter(identityInit(self.KN2))
         if self.tripleConv:
             self.KN3 = nn.Parameter(torch.rand(nlayer, nopen, 1 * nhid) * stdvp)
             self.KN3 = nn.Parameter(identityInit(self.KN3))
@@ -2002,7 +2003,7 @@ class graphNetwork_nodesOnly_quant(nn.Module):
                 xe = conv1(xe, K, groups=groups)
         return xe
 
-    def singleLayer(self, x, K, i, relu=True, norm=False, groups=1, openclose=False):
+    def singleLayer(self, x, K, i, relu=True, norm=False, groups=1, openclose=False, K2=None):
         if openclose:  # if K.shape[0] != K.shape[1]:
             x = self.edgeConv(x, K, groups=groups)
             if norm:
@@ -2013,10 +2014,6 @@ class graphNetwork_nodesOnly_quant(nn.Module):
                 x = F.tanh(x)
         if not openclose:  # if K.shape[0] == K.shape[1]:
             # x = F.relu(x)
-            x = uniform_quantization(
-                x, self.final_activation_alpha[i], self.act_bit, signed_quantization=True,
-                symmetric=True
-            )
             x = self.edgeConv(x, K, groups=groups)
             if not relu:
                 x = F.tanh(x)
@@ -2026,8 +2023,11 @@ class graphNetwork_nodesOnly_quant(nn.Module):
                 # x = F.layer_norm(x, x.shape)
                 beta = torch.norm(x)
                 x = beta * tv_norm(x)
-            #WATCH HERE!!!!!!!!!!!!!!!!!!!!!!!!!!
-            x = self.edgeConv(x, K.t(), groups=groups)
+            # WATCH HERE!!!!!!!!!!!!!!!!!!!!!!!!!!
+            if K2 is not None:
+                x = self.edgeConv(x, K2, groups=groups)
+            else:
+                x = self.edgeConv(x, K.t(), groups=groups)
             # F.relu(x)
         return x
 
@@ -2093,15 +2093,17 @@ class graphNetwork_nodesOnly_quant(nn.Module):
 
         return Graph, edge_index
 
-
-    def forward(self, xn, Graph, data=None, xe=None):
+    def forward(self, xn, Graph, data=None, xe=None, runWOQuant=False):
         # Opening layer
         # xn = [B, C, N]
         # xe = [B, C, N, N] or [B, C, E]
         # Opening layer
         if not self.faust:
             [Graph, edge_index] = self.updateGraph(Graph)
-
+        actvals = []
+        x_quant = []
+        x_no_quant = []
+        quantNquant_MSE = []
         xhist = []
 
         if self.realVarlet:
@@ -2113,7 +2115,7 @@ class graphNetwork_nodesOnly_quant(nn.Module):
         if self.dropout:
             xn = F.dropout(xn, p=self.dropout, training=self.training)
 
-        xn = self.singleLayer(xn, self.K1Nopen, i=False,relu=True, openclose=True, norm=False)
+        xn = self.singleLayer(xn, self.K1Nopen, i=False, relu=True, openclose=True, norm=False)
         xn = F.dropout(xn, p=self.dropout, training=self.training)
 
         x0 = xn.clone()
@@ -2124,27 +2126,9 @@ class graphNetwork_nodesOnly_quant(nn.Module):
                 if i % self.graphUpdate == self.graphUpdate - 1:  # update graph
                     Graph, edge_index = self.updateGraph(Graph, features=xn)
 
-            if self.realVarlet:
-                gradX = Graph.nodeGrad(xn)
-                intX = Graph.nodeAve(xn)
-                dxe = torch.cat([intX, gradX], dim=1)
-                if self.dropout:
-                    dxe = F.dropout(dxe, p=self.dropout, training=self.training)
-                dxe = (self.singleLayer(dxe, self.KE1[i], relu=False))
-                xe = (xe + self.h * dxe)
-
-                divE = Graph.edgeDiv(xe)
-                aveE = Graph.edgeAve(xe, method='ave')
-                dxn = torch.cat([aveE, divE], dim=1)
-                if self.dropout:
-                    dxn = F.dropout(dxn, p=self.dropout, training=self.training)
-                dxn = F.tanh(self.singleLayer(dxn, self.KN1[i], relu=False))
-                xn = (xn + self.h * dxn)
-
             if not self.realVarlet:
                 if self.varlet:
                     gradX = Graph.nodeGrad(xn)
-
 
                 if self.dropout:
                     if self.varlet:
@@ -2153,12 +2137,51 @@ class graphNetwork_nodesOnly_quant(nn.Module):
                     efficient = True
                     if efficient:
                         if not self.doubleConv:
+                            # if not runWOQuant:
+                            #     gradX = uniform_quantization(
+                            #         gradX, self.final_activation_alpha_grad[i], self.act_bit, signed_quantization=True,
+                            #         symmetric=True, round=True
+                            #     )
+                            # else:
+                            #     gradX = uniform_quantization(
+                            #         gradX, self.final_activation_alpha_grad[i], self.act_bit, signed_quantization=True,
+                            #         symmetric=True, round=False
+                            #     )
+                            dxn = (self.singleLayer(gradX, self.KN1[i], i, norm=False, relu=False, groups=1,
+                                                    K2=self.KN2[i]))  # KN2
 
-                            dxn = (self.singleLayer(gradX, self.KN1[i], i, norm=False, relu=True, groups=1))  # KN2
                         else:
                             dxn = self.finalDoubleLayer(gradX, self.KN1[i], self.KN2[i])
-                        dxn = Graph.edgeDiv(dxn)  # + Graph.edgeAve(dxe2, method='ave')
 
+                        dxn = Graph.edgeDiv(dxn)  # + Graph.edgeAve(dxe2, method='ave')
+                        if not runWOQuant:
+                            dxn = uniform_quantization(
+                                dxn, self.final_activation_alpha[i], self.act_bit, signed_quantization=True,
+                                symmetric=True, round=True
+                            )
+                        else:
+                            dxn = uniform_quantization(
+                                dxn, self.final_activation_alpha[i], self.act_bit, signed_quantization=True,
+                                symmetric=True, round=False
+                            )
+
+                        actvals.append(dxn)
+                        ##################################
+                        # with torch.no_grad():
+                        #     x_NQ = uniform_quantization(
+                        #         dxn, self.final_activation_alpha[i], self.act_bit, signed_quantization=True,
+                        #         symmetric=True, round=False
+                        #     )
+                        #
+                        #     x_Q = uniform_quantization(
+                        #         dxn, self.final_activation_alpha[i], self.act_bit, signed_quantization=True,
+                        #         symmetric=True, round=True
+                        #     )
+                        #
+                        #     x_no_quant.append(x_NQ)
+                        #     x_quant.append(x_Q)
+                        #     quantNquant_MSE.append((dxn - x_Q).norm().item())
+                        ##################################
                         if self.tripleConv:
                             dxn = self.singleLayer(dxn, self.KN3[i], norm=False, relu=False)
                     else:
@@ -2177,7 +2200,6 @@ class graphNetwork_nodesOnly_quant(nn.Module):
                 else:
                     dxn = (self.singleLayer(lapX, self.KN1[i], relu=False))
                     dxn = F.tanh(dxn)
-
 
                 if self.mixDynamics:
                     tmp_xn = xn.clone()
@@ -2212,7 +2234,6 @@ class graphNetwork_nodesOnly_quant(nn.Module):
                 if self.modelnet:
                     xhist.append(xn)
 
-
         if not self.modelnet:
             xn = F.dropout(xn, p=self.dropout, training=self.training)
             xn = F.conv1d(xn, self.KNclose.unsqueeze(-1))
@@ -2237,5 +2258,5 @@ class graphNetwork_nodesOnly_quant(nn.Module):
             return xn, Graph
 
         ## Otherwise its citation graph node classification:
-        return F.log_softmax(xn, dim=1), Graph  # , F.sigmoid(self.alpha)
-
+        # print("MSE: ", quantNquant_MSE, "TRAIN:", self.training)
+        return F.log_softmax(xn, dim=1), Graph, actvals  # , F.sigmoid(self.alpha)
