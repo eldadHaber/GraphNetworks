@@ -48,7 +48,7 @@ else:
     from src import pnetArch as PNA
 
 num_layers = [32, 16, 64]
-quant_bits = [32, 8, 4, 2]
+quant_bits = [8, 4, 2, 32]
 
 print(torch.cuda.get_device_name(0))
 print(torch.cuda.get_device_properties('cuda:0'))
@@ -82,7 +82,7 @@ for nlayers in num_layers:
 
 
         def objective(trial):
-            dataset = 'CiteSeer'
+            dataset = 'Cora'
             if dataset == 'Cora':
                 nNin = 1433
             elif dataset == 'CiteSeer':
@@ -90,7 +90,7 @@ for nlayers in num_layers:
             elif dataset == 'PubMed':
                 nNin = 500
             nEin = 1
-            n_channels = 256  # trial.suggest_categorical('n_channels', [64, 128, 256])
+            n_channels = 64  # trial.suggest_categorical('n_channels', [64, 128, 256])
             nopen = n_channels
             nhid = n_channels
             nNclose = n_channels
@@ -99,8 +99,8 @@ for nlayers in num_layers:
             print("bit:", bit)
 
             # h = 1 / n_layers
-            h = trial.suggest_discrete_uniform('h', 1 / (n_layers), 3, q=1 / (n_layers))
-            # h = trial.suggest_discrete_uniform('h', 0.1, 3, q=0.1)
+            # h = trial.suggest_discrete_uniform('h', 1 / (n_layers), 3, q=1 / (n_layers))
+            h = trial.suggest_discrete_uniform('h', 0.1, 2, q=0.1)
             batchSize = 32
 
             if "s" in sys.argv:
@@ -121,7 +121,7 @@ for nlayers in num_layers:
             dropout = trial.suggest_discrete_uniform('dropout', 0.6, 0.8, q=0.1)
             lr = trial.suggest_float("lr", 1e-3, 1e-2, log=True)
             lrGCN = trial.suggest_float("lrGCN", 1e-5, 1e-3, log=True)
-            lrBit = trial.suggest_float("lrBit", 1e-5, 1e-2, log=True)
+            lrBit = trial.suggest_float("lrBit", 1e-6, 1e-3, log=True)
             wd = trial.suggest_float("wd", 5e-6, 1e-3, log=True)
             # wdGCN = trial.suggest_float("wdGCN", 1e-10, 1e-2, log=True)
             lr_alpha = trial.suggest_float("lr_alpha", 1e-5, 1e-2, log=True)
@@ -131,7 +131,8 @@ for nlayers in num_layers:
                                                     gated=False,
                                                     realVarlet=False, mixDyamics=False, doubleConv=False,
                                                     tripleConv=False,
-                                                    perLayerDynamics=False, act_bit=bit)
+                                                    perLayerDynamics=False, act_bit=bit,
+                                                    stable=True)
 
             # model = GN.graphNetwork_seq(nNin, nopen, nhid, nNclose, n_layers, h=h, dense=False, varlet=True, wave=False,
             #                            diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, PPI=False,
@@ -149,7 +150,8 @@ for nlayers in num_layers:
                     dict(params=model.K1Nopen, weight_decay=wd),
                     dict(params=model.KNclose, weight_decay=wd),
                     # dict(params=model.alpha, lr=lr_alpha, weight_decay=0),
-                    dict(params=model.final_activation_alpha, lr=lrBit, weight_decay=0)
+                    dict(params=model.final_activation_alpha, lr=lrBit, weight_decay=0),
+                    dict(params=model.final_activation_alpha2, lr=lrBit, weight_decay=0)
                 ], lr=lr)
             else:
                 optimizer = torch.optim.Adam([

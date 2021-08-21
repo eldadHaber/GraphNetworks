@@ -1869,14 +1869,14 @@ class graphNetwork_nodesOnly_quant(nn.Module):
     def __init__(self, nNin, nopen, nhid, nNclose, nlayer, h=0.1, dense=False, varlet=False, wave=True,
                  diffOrder=1, num_output=1024, dropOut=False, modelnet=False, faust=False, GCNII=False,
                  graphUpdate=None, PPI=False, gated=False, realVarlet=False, mixDyamics=False, doubleConv=False,
-                 tripleConv=False, perLayerDynamics=False, act_bit=32):
+                 tripleConv=False, perLayerDynamics=False, act_bit=32, stable=True):
         super(graphNetwork_nodesOnly_quant, self).__init__()
         self.wave = wave
         self.realVarlet = realVarlet
         self.act_bit = act_bit
         self.final_activation_alpha = torch.nn.Parameter(6.0 * torch.ones(nlayer))
-        self.final_activation_alpha_grad = torch.nn.Parameter(6.0 * torch.ones(nlayer))
-
+        self.final_activation_alpha2 = torch.nn.Parameter(6.0 * torch.ones(nlayer))
+        self.stable = stable
         if not wave:
             self.heat = True
         else:
@@ -2003,7 +2003,7 @@ class graphNetwork_nodesOnly_quant(nn.Module):
                 xe = conv1(xe, K, groups=groups)
         return xe
 
-    def singleLayer(self, x, K, i, relu=True, norm=False, groups=1, openclose=False, K2=None):
+    def singleLayer(self, x, K, i, relu=True, norm=False, groups=1, openclose=False, K2=None, runWOQuant=False):
         if openclose:  # if K.shape[0] != K.shape[1]:
             x = self.edgeConv(x, K, groups=groups)
             if norm:
@@ -2019,6 +2019,18 @@ class graphNetwork_nodesOnly_quant(nn.Module):
                 x = F.tanh(x)
             else:
                 x = F.relu(x)
+
+            if not runWOQuant:
+                x = uniform_quantization(
+                    x, self.final_activation_alpha2[i], self.act_bit, signed_quantization=True,
+                    symmetric=True, round=True
+                )
+            else:
+                x = uniform_quantization(
+                    x, self.final_activation_alpha2[i], self.act_bit, signed_quantization=True,
+                    symmetric=True, round=False
+                )
+
             if norm:
                 # x = F.layer_norm(x, x.shape)
                 beta = torch.norm(x)
@@ -2125,7 +2137,19 @@ class graphNetwork_nodesOnly_quant(nn.Module):
             if self.graphUpdate is not None:
                 if i % self.graphUpdate == self.graphUpdate - 1:  # update graph
                     Graph, edge_index = self.updateGraph(Graph, features=xn)
-
+            ############################################################
+            if not runWOQuant:
+                xn = uniform_quantization(
+                    xn, self.final_activation_alpha[i], self.act_bit, signed_quantization=True,
+                    symmetric=True, round=True
+                )
+            else:
+                xn = uniform_quantization(
+                    xn, self.final_activation_alpha[i], self.act_bit, signed_quantization=True,
+                    symmetric=True, round=False
+                )
+            actvals.append(xn)
+            ############################################################
             if not self.realVarlet:
                 if self.varlet:
                     gradX = Graph.nodeGrad(xn)
@@ -2137,35 +2161,15 @@ class graphNetwork_nodesOnly_quant(nn.Module):
                     efficient = True
                     if efficient:
                         if not self.doubleConv:
-                            # if not runWOQuant:
-                            #     gradX = uniform_quantization(
-                            #         gradX, self.final_activation_alpha_grad[i], self.act_bit, signed_quantization=True,
-                            #         symmetric=True, round=True
-                            #     )
-                            # else:
-                            #     gradX = uniform_quantization(
-                            #         gradX, self.final_activation_alpha_grad[i], self.act_bit, signed_quantization=True,
-                            #         symmetric=True, round=False
-                            #     )
-                            dxn = (self.singleLayer(gradX, self.KN1[i], i, norm=False, relu=False, groups=1,
-                                                    K2=self.KN2[i]))  # KN2
+                            dxn = self.singleLayer(gradX, self.KN1[i], i, norm=False, relu=False, groups=1,
+                                                   K2=self.KN2[i] if self.stable else None,
+                                                   runWOQuant=runWOQuant)  # KN2
 
                         else:
                             dxn = self.finalDoubleLayer(gradX, self.KN1[i], self.KN2[i])
 
                         dxn = Graph.edgeDiv(dxn)  # + Graph.edgeAve(dxe2, method='ave')
-                        if not runWOQuant:
-                            dxn = uniform_quantization(
-                                dxn, self.final_activation_alpha[i], self.act_bit, signed_quantization=True,
-                                symmetric=True, round=True
-                            )
-                        else:
-                            dxn = uniform_quantization(
-                                dxn, self.final_activation_alpha[i], self.act_bit, signed_quantization=True,
-                                symmetric=True, round=False
-                            )
 
-                        actvals.append(dxn)
                         ##################################
                         # with torch.no_grad():
                         #     x_NQ = uniform_quantization(
