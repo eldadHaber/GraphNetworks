@@ -2020,6 +2020,9 @@ class graphNetwork_nodesOnly_quant(nn.Module):
             else:
                 x = F.relu(x)
 
+            if K2 is not None:
+                return x
+
             if not runWOQuant:
                 x = uniform_quantization(
                     x, self.final_activation_alpha2[i], self.act_bit, signed_quantization=True,
