@@ -47,7 +47,7 @@ else:
     from src import graphNet as GN
     from src import pnetArch as PNA
 
-num_layers = [16, 32, 8, 64]
+num_layers = [16, 32, 8, 64, 32, 32, 32]
 quant_bits = [8, 4, 2, 32]
 
 print(torch.cuda.get_device_name(0))
@@ -82,7 +82,7 @@ for nlayers in num_layers:
 
 
         def objective(trial):
-            dataset = 'CiteSeer'
+            dataset = 'Cora'
             if dataset == 'Cora':
                 nNin = 1433
             elif dataset == 'CiteSeer':
@@ -90,7 +90,7 @@ for nlayers in num_layers:
             elif dataset == 'PubMed':
                 nNin = 500
             nEin = 1
-            n_channels = 256  # trial.suggest_categorical('n_channels', [64, 128, 256])
+            n_channels = 64  # trial.suggest_categorical('n_channels', [64, 128, 256])
             nopen = n_channels
             nhid = n_channels
             nNclose = n_channels
@@ -132,7 +132,7 @@ for nlayers in num_layers:
                                                     realVarlet=False, mixDyamics=True, doubleConv=False,
                                                     tripleConv=False,
                                                     perLayerDynamics=True, act_bit=bit,
-                                                    stable=False)
+                                                    stable=True)
 
             # model = GN.graphNetwork_seq(nNin, nopen, nhid, nNclose, n_layers, h=h, dense=False, varlet=True, wave=False,
             #                            diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, PPI=False,
