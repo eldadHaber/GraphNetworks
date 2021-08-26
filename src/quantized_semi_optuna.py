@@ -54,7 +54,7 @@ print(torch.cuda.get_device_name(0))
 print(torch.cuda.get_device_properties('cuda:0'))
 
 print("**********************************************************************************")
-file2Open = "src/optuna_GNcora.py"
+file2Open = "src/quantized_semi_optuna.py"
 print("DRIVER CODE:")
 f = open(file2Open, "r")
 for line in f:
@@ -118,10 +118,10 @@ for nlayers in num_layers:
 
             device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
             data = data.to(device)
-            dropout = trial.suggest_discrete_uniform('dropout', 0.6, 0.8, q=0.1)
+            dropout = trial.suggest_discrete_uniform('dropout', 0.5, 0.8, q=0.1)
             lr = trial.suggest_float("lr", 1e-3, 1e-2, log=True)
-            lrGCN = trial.suggest_float("lrGCN", 1e-5, 1e-3, log=True)
-            lrBit = trial.suggest_float("lrBit", 1e-6, 1e-3, log=True)
+            lrGCN = trial.suggest_float("lrGCN", 1e-5, 1e-2, log=True)
+            lrBit = trial.suggest_float("lrBit", 1e-5, 1e-2, log=True)
             wd = trial.suggest_float("wd", 5e-6, 1e-3, log=True)
             # wdGCN = trial.suggest_float("wdGCN", 1e-10, 1e-2, log=True)
             lr_alpha = trial.suggest_float("lr_alpha", 1e-5, 1e-2, log=True)
@@ -129,9 +129,9 @@ for nlayers in num_layers:
                                                     wave=False,
                                                     diffOrder=1, num_output=dataset.num_classes, dropOut=dropout,
                                                     gated=False,
-                                                    realVarlet=False, mixDyamics=False, doubleConv=False,
+                                                    realVarlet=False, mixDyamics=True, doubleConv=False,
                                                     tripleConv=False,
-                                                    perLayerDynamics=False, act_bit=bit,
+                                                    perLayerDynamics=True, act_bit=bit,
                                                     stable=False)
 
             # model = GN.graphNetwork_seq(nNin, nopen, nhid, nNclose, n_layers, h=h, dense=False, varlet=True, wave=False,
@@ -149,7 +149,7 @@ for nlayers in num_layers:
                     # dict(params=model.KN3, lr=lrGCN, weight_decay=0),
                     dict(params=model.K1Nopen, weight_decay=wd),
                     dict(params=model.KNclose, weight_decay=wd),
-                    # dict(params=model.alpha, lr=lr_alpha, weight_decay=0),
+                    dict(params=model.alpha, lr=lr_alpha, weight_decay=0),
                     dict(params=model.final_activation_alpha, lr=lrBit, weight_decay=0),
                     dict(params=model.final_activation_alpha2, lr=lrBit, weight_decay=0)
                 ], lr=lr)
@@ -248,7 +248,7 @@ for nlayers in num_layers:
                 return accs
 
             best_val_acc = test_acc = 0
-            for epoch in range(1, 1001):
+            for epoch in range(1, 2002):
                 loss = train(doCheck=False)
                 train_acc, val_acc, tmp_test_acc = test(doCheck=False)
 
