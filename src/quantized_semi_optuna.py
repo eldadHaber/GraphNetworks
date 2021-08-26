@@ -82,7 +82,7 @@ for nlayers in num_layers:
 
 
         def objective(trial):
-            dataset = 'PubMed'
+            dataset = 'CiteSeer'
             if dataset == 'Cora':
                 nNin = 1433
             elif dataset == 'CiteSeer':
@@ -132,7 +132,7 @@ for nlayers in num_layers:
                                                     realVarlet=False, mixDyamics=True, doubleConv=False,
                                                     tripleConv=False,
                                                     perLayerDynamics=True, act_bit=bit,
-                                                    stable=False)
+                                                    stable=True)
 
             # model = GN.graphNetwork_seq(nNin, nopen, nhid, nNclose, n_layers, h=h, dense=False, varlet=True, wave=False,
             #                            diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, PPI=False,
