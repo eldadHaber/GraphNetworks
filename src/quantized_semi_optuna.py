@@ -133,7 +133,7 @@ for nlayers in num_layers:
                                                     realVarlet=False, mixDyamics=False, doubleConv=False,
                                                     tripleConv=False,
                                                     perLayerDynamics=False, act_bit=bit,
-                                                    stable=False)
+                                                    stable=True)
 
             # model = GN.graphNetwork_seq(nNin, nopen, nhid, nNclose, n_layers, h=h, dense=False, varlet=True, wave=False,
             #                            diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, PPI=False,
@@ -265,7 +265,10 @@ for nlayers in num_layers:
                     best_val_acc = tmp_test_acc
                     test_acc = tmp_test_acc
 
-            train_acc, val_acc, tmp_test_acc, train_accWOQ, val_accWOQ, tmp_test_accWOQ = test(doCheck=True)
+            #train_acc, val_acc, tmp_test_acc, train_accWOQ, val_accWOQ, tmp_test_accWOQ = test(doCheck=True)
+            res, resWOQ = test(doCheck=True)
+            train_acc, val_acc, tmp_test_acc = res
+            train_accWOQ, val_accWOQ, tmp_test_accWOQ = resWOQ
             print(f'Epoch: {epoch:04d}, Loss: {loss:.4f} Train: {train_acc:.4f}, '
                   f'Val: {val_acc:.4f}, Test: {tmp_test_acc:.4f}, '
                   f'Final Test: {test_acc:.4f}', flush=True)
