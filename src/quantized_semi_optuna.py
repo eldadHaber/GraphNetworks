@@ -118,7 +118,8 @@ for nlayers in num_layers:
 
             device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
             data = data.to(device)
-            dropout = trial.suggest_discrete_uniform('dropout', 0.5, 0.8, q=0.1)
+            #dropout = trial.suggest_discrete_uniform('dropout', 0.5, 0.8, q=0.1)
+            dropout = 0.6
             lr = trial.suggest_float("lr", 1e-3, 1e-2, log=True)
             lrGCN = trial.suggest_float("lrGCN", 1e-5, 1e-3, log=True)
             lrBit = trial.suggest_float("lrBit", 1e-5, 1e-2, log=True)
