@@ -47,7 +47,7 @@ else:
     from src import graphNet as GN
     from src import pnetArch as PNA
 
-num_layers = [16, 32, 8, 64, 32, 32, 32]
+num_layers = [8, 16, 32, 8, 64, 32, 32, 32]
 quant_bits = [8, 4, 2, 32]
 
 print(torch.cuda.get_device_name(0))
