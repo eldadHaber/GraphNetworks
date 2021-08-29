@@ -82,7 +82,7 @@ for nlayers in num_layers:
 
 
         def objective(trial):
-            dataset = 'CiteSeer'
+            dataset = 'PubMed'
             if dataset == 'Cora':
                 nNin = 1433
             elif dataset == 'CiteSeer':
@@ -119,7 +119,7 @@ for nlayers in num_layers:
             device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
             data = data.to(device)
             #dropout = trial.suggest_discrete_uniform('dropout', 0.5, 0.8, q=0.1)
-            dropout = 0.7
+            dropout = 0.5
             lr = trial.suggest_float("lr", 1e-3, 1e-2, log=True)
             lrGCN = trial.suggest_float("lrGCN", 1e-5, 1e-3, log=True)
             lrBit = trial.suggest_float("lrBit", 1e-5, 1e-2, log=True)
@@ -133,7 +133,7 @@ for nlayers in num_layers:
                                                     realVarlet=False, mixDyamics=False, doubleConv=False,
                                                     tripleConv=False,
                                                     perLayerDynamics=False, act_bit=bit,
-                                                    stable=False)
+                                                    stable=True)
 
             # model = GN.graphNetwork_seq(nNin, nopen, nhid, nNclose, n_layers, h=h, dense=False, varlet=True, wave=False,
             #                            diffOrder=1, num_output=dataset.num_classes, dropOut=dropout, PPI=False,
