@@ -234,7 +234,7 @@ for nlayers in num_layers:
 
                 if doCheck:
                     with torch.no_grad():
-                        [_, _, actvals_NOquant] = model(xn, G, runWOQuant=True)
+                        [outWOQ, GWOQ, actvals_NOquant] = model(xn, G, runWOQuant=True)
                         actvals_quant = torch.cat(actvals_quant)
                         actvals_NOquant = torch.cat(actvals_NOquant)
                         print("TRAIN MSE:", F.mse_loss(actvals_quant, actvals_NOquant).item(), "NORM:",
@@ -242,13 +242,21 @@ for nlayers in num_layers:
                         print("TRAIN MSE PER LAYER:", (actvals_quant - actvals_NOquant).norm(dim=[1, 2]), flush=True)
                         print("TRAIN TOTAL MSE:", (actvals_quant - actvals_NOquant).norm(), flush=True)
 
+                        predWOQ, accsWOQ = out.argmax(dim=-1), []
+                        for _, mask in data('train_mask', 'val_mask', 'test_mask'):
+                            accsWOQ.append(int((predWOQ[mask] == data.y[mask]).sum()) / int(mask.sum()))
+
+
                 pred, accs = out.argmax(dim=-1), []
                 for _, mask in data('train_mask', 'val_mask', 'test_mask'):
                     accs.append(int((pred[mask] == data.y[mask]).sum()) / int(mask.sum()))
+
+                if doCheck:
+                    return accs, accsWOQ
                 return accs
 
             best_val_acc = test_acc = 0
-            for epoch in range(1, 2002):
+            for epoch in range(1, 1001):
                 loss = train(doCheck=False)
                 train_acc, val_acc, tmp_test_acc = test(doCheck=False)
 
@@ -256,13 +264,18 @@ for nlayers in num_layers:
                     best_val_acc = tmp_test_acc
                     test_acc = tmp_test_acc
 
-            train_acc, val_acc, tmp_test_acc = test(doCheck=True)
+            train_acc, val_acc, tmp_test_acc, train_accWOQ, val_accWOQ, tmp_test_accWOQ = test(doCheck=True)
             print(f'Epoch: {epoch:04d}, Loss: {loss:.4f} Train: {train_acc:.4f}, '
                   f'Val: {val_acc:.4f}, Test: {tmp_test_acc:.4f}, '
                   f'Final Test: {test_acc:.4f}', flush=True)
+
+            print(f'WOQ 32A Epoch: {epoch:04d}, Loss: {loss:.4f} Train: {train_acc:.4f}, '
+                  f'Val: {val_acc:.4f}, Test: {tmp_test_acc:.4f}, '
+                  f'Final Test: {test_acc:.4f}', flush=True)
+
 
             return test_acc
 
 
         study = optuna.create_study(direction='maximize')
-        study.optimize(objective, n_trials=200)
+        study.optimize(objective, n_trials=100)
