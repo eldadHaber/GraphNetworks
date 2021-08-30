@@ -243,7 +243,7 @@ for nlayers in num_layers:
                         print("TRAIN MSE PER LAYER:", (actvals_quant - actvals_NOquant).norm(dim=[1, 2]), flush=True)
                         print("TRAIN TOTAL MSE:", (actvals_quant - actvals_NOquant).norm(), flush=True)
 
-                        predWOQ, accsWOQ = out.argmax(dim=-1), []
+                        predWOQ, accsWOQ = outWOQ.argmax(dim=-1), []
                         for _, mask in data('train_mask', 'val_mask', 'test_mask'):
                             accsWOQ.append(int((predWOQ[mask] == data.y[mask]).sum()) / int(mask.sum()))
 
